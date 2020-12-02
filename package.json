@@ -1,0 +1,41 @@
+{
+  "name": "inventurproject",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "test": "nightwatch",
+    "start": "nodemon"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "config": "^3.3.1",
+    "ejs": "^3.1.3",
+    "express": "^4.17.1",
+    "express-session": "^1.17.1",
+    "extsprintf": "^1.4.0",
+    "fs": "0.0.1-security",
+    "ldap-authentication": "^2.1.3",
+    "ldap-filter": "^0.3.3",
+    "ldapjs": "^2.0.0",
+    "mqtt": "^4.2.6",
+    "mysql": "^2.18.1",
+    "mysql2": "^2.1.0"
+  },
+  "devDependencies": {
+    "@wdio/cli": "^6.5.0",
+    "@wdio/local-runner": "^6.5.0",
+    "@wdio/mocha-framework": "^6.5.0",
+    "@wdio/spec-reporter": "^6.4.7",
+    "@wdio/sync": "^6.5.0",
+    "chromedriver": "^85.0.1",
+    "nodemon": "^2.0.6",
+    "wdio-chromedriver-service": "^6.0.4"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://git.bbw-it.de/wmacher/P2L.git"
+  },
+  "description": ""
+}

@@ -1,0 +1,17 @@
+{
+    "dbConfig": {
+        "host": "localhost",
+        "user": "root",
+        "password": "",
+        "multipleStatements": true
+    },
+    "ldap": {
+        "url": "ldap://bbw-azubi.local",
+        "domain": "dc=bbw-azubi, dc=local",
+        "reconnect": {
+            "initialDelay": 100,
+            "maxDelay": 1000,
+            "failAfter": 10
+        }
+    }
+}

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.css">
+    <link rel="stylesheet" href="assets/dataTables.semanticui.min.css">
+
+    <link rel="stylesheet" href="assets/main.css">
+    <link rel="stylesheet" href="assets/bundle.css">
+
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+
+    <script src="assets/js/qrcode.min.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+    <link rel="stylesheet" href="assets/css/qr.css">
+    <title>QR Code Generator</title>
+  </head>
+  <body>
+    <%- include('navbar'); %>
+    <div class="pt-4">
+      <div class="input-group mb-3">
+        <div class="input-group-prepend">
+          <span class="input-group-text" id="inputGroup-sizing-default">IP</span>
+        </div>
+        <input type="text" class="form-control" id="input-ip" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-default">
+      </div>
+    <div class="input-group mb-3">
+      <div class="input-group-prepend">
+        <span class="input-group-text" id="inputGroup-sizing-default">Gebäude</span>
+        <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <span class="sr-only">Toggle Dropdown</span>
+        </button>
+        <div class="dropdown-menu">
+         <a class="dropdown-item" href="#">Garage</a>
+         <a class="dropdown-item" href="#">Keller</a>
+         <a class="dropdown-item" href="#">Dachboden</a>
+       </div>
+      </div>
+      <input type="text" class="form-control" id="input-building" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-default">
+    </div>
+    <div class="input-group mb-3">
+      <div class="input-group-prepend">
+        <span class="input-group-text" id="inputGroup-sizing-default">Regal Nr.</span>
+      </div>
+      <input type="text" class="form-control noNegAndChar" id="input-shelf" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-default">
+    </div>
+    <div class="input-group mb-3">
+      <div class="input-group-prepend">
+        <span class="input-group-text" id="inputGroup-sizing-default">Weite</span>
+      </div>
+      <input type="text" class="form-control noNegAndChar" id="input-width" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-default">
+    </div>
+    <div class="input-group mb-3">
+      <div class="input-group-prepend">
+        <span class="input-group-text" id="inputGroup-sizing-default">Breite</span>
+      </div>
+      <input type="text" class="form-control noNegAndChar" id="input-height" aria-label="Sizing example input" aria-describedby="inputGroup-sizing-default">
+    </div>
+    <button type="button" class="btn btn-primary btn-lg btn-block mb-3" id="generate-qr-all">Generate QR Codes</button>
+    </div>
+    <!-- Section where the QR Code will be placed -->
+    <div id="qrcode">
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="warning" tabindex="-1" role="dialog" aria-labelledby="warning" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="warningTitle">Modal title</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body" id="warningMessage">
+            ...
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-success" id="negativeOption" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-danger" id="positiveOption" onclick="">Save changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="p-1" id="qrexample">
+
+  </div>
+  <footer></footer>
+    <!-- <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
+    <!-- <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script> -->
+    <script src="assets/js/qr.js" type="text/javascript"></script>
+    <%- include('scripts'); %>
+  </body>
+</html>

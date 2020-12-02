@@ -1,0 +1,9 @@
+.shelfs {
+  display: flex;
+  flex-direction: column;
+}
+
+.print {
+  display: inline-grid;
+  margin: .25rem;
+}

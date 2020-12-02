@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+    <link rel="stylesheet" href="../assets/main.css">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+
+      <!-- Bootstrap CSS -->
+      <link rel="stylesheet" href="../assets/bootstrap/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+
+    <title>Document</title>
+</head>
+<body>
+    <%- include('navbar'); %>
+
+    <div class="container mt-3">
+        <table class="table mt-3">
+            <tbody>
+              <tr>
+                <th scope="row">Artikelnummer</th>
+                <td><%= item.id %></td>
+              </tr>
+              <tr>
+                <th scope="row">Name</th>
+                <td><%= item.name %></td>
+              </tr>
+              <tr>
+                <th scope="row">Kategorie</th>
+                <td><%= item.category %></td>
+              </tr>
+              <tr>
+                <th scope="row">Ort</th>
+                <td><%= item.location %></td>
+              </tr>
+              <tr>
+                <th scope="row">Anzahl</th>
+                <td id="Anzahl"><%= item.number %></td>
+              </tr>
+              <tr>
+                <th scope="row">Mindestanzahl</th>
+                <td><%= item.minimum_number %></td>
+              </tr>
+            </tbody>
+          </table>
+          
+    </div>
+
+    <div class="container h4 d-flex justify-content-center mt-1">
+        Auslagern/Einlagern
+    </div>
+    <div class="input-group mb-3 pl-5 pr-5">
+        <div class="input-group-prepend ml-5">
+            <span class="input-group-text" onclick='this.parentNode.parentNode.querySelector("input").stepDown()'>-</span>
+        </div>
+        <input type="number" class="form-control " value="0">
+        <div class="input-group-append mr-5">
+            <span class="input-group-text" onclick='this.parentNode.parentNode.querySelector("input").stepUp()'>+</span>
+        </div>
+        
+    </div>
+
+    <div class="container d-flex justify-content-center mt-3">
+        <button type="button" id="Speichern" class="btn btn-success btn-lg mt-5" disabled>Speichern</button>
+    </div>
+
+    <div id="ErrorMsg" class="container d-flex justify-content-center mt-2 text-danger h6">
+        
+    </div>
+    <footer>
+
+    </footer>
+
+
+    <%- include('scripts'); %>
+
+    <script>
+            $(function(){
+                $(".input-group-text").on("click", function(){
+                    checkValue();
+                });
+
+                $("input[type='number'").on("change keyup", function(){
+                    checkValue();
+                });
+
+                function checkValue(){
+                    let val = parseInt($("input[type='number']").val());
+                    let number = parseInt($("#Anzahl").text());
+                    
+                    if((number + val) < 0){
+                        $("#Speichern").prop("disabled", true);
+                        $("#ErrorMsg").html(`Sie können nur maximal ${number} Artikel entnehmen.`);
+                    }else if(val == 0){
+                        $("#Speichern").prop("disabled", true);
+                    }
+                    else{
+                        $("#ErrorMsg").html("");    
+                        $("#Speichern").prop("disabled", false);
+                    }
+                    
+                }
+            });
+            </script>
+</body>
+</html>

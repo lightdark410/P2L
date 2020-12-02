@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.css">
+    <link rel="stylesheet" href="assets/dataTables.semanticui.min.css">
+    <link rel="stylesheet" href="assets/main.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/8abfe07619.js" crossorigin="anonymous"></script>
+
+
+    <link rel="shortcut icon" href="../assets/favicon.jpg" />
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+
+    <title>Document</title>
+</head>
+
+<body>
+    <%- include('navbar'); %>
+    <div class="container-fluid mt-3 mb-3 d-flex justify-content-center">
+        <h1><u>Logs</u></h1>
+    </div>
+
+    <div id="logsDiv">
+
+        <table id="logsTable" class="ui celled table display" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Event</th>
+                    <th>Artikelnummer</th>
+                    <th>Akrtikelname</th>
+                    <th>Kategorie</th>
+                    <th>Stichwörter</th>
+                    <th>Ort</th>
+                    <th>Änderungsdatum</th>
+                    <th>Änderungsuhrzeit</th>
+                    <th>Erstellt von</th>
+                    <th>Zuletzt geändert von</th>
+                    <th>Anzahl</th>
+                    <th>Mindestanzahl</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% for(var i = result.length - 1; i >= 0; i--){ %>
+                <tr>
+                    <td style="word-break: keep-all">
+                        <%= result[i].event %>
+                    </td>
+                    <td>
+                        <%= result[i].artikelnummer %>
+                    </td>
+                    <td>
+                        <%= result[i].name %>
+                    </td>
+                    <td>
+                        <%= result[i].category %>
+                    </td>
+                    <td>
+                        <%= result[i].keywords %>
+                    </td>
+                    <td>
+                        <%= result[i].location %>
+                    </td>
+                    <td style="background-color: #f9fafb">
+                        <%= result[i].date %>
+                    </td>
+                    <td style="background-color: #f9fafb">
+                        <%= result[i].time %>
+                    </td>
+                    <td>
+                        <%= result[i].creator %>
+                    </td>
+                    <td>
+                        <%= result[i].change_by %>
+                    </td>
+                    <td>
+                        <%= result[i].number %>
+                    </td>
+                    <td>
+                        <%= result[i].minimum_number %>
+                    </td>
+                </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+
+    <footer>
+
+    </footer>
+
+    <%- include('scripts'); %>
+    <script src="../assets/js/logs.js"></script>
+
+</body>
+
+</html>

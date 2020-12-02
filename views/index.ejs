@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.css">
+    <link rel="stylesheet" href="assets/dataTables.semanticui.min.css">
+
+    <link rel="stylesheet" href="assets/main.css">
+    <link rel="stylesheet" href="assets/bundle.css">
+
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="assets/fontawesome/css/all.css">
+
+    <link rel="shortcut icon" href="assets/favicon.jpg" />
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+
+    <title>Document</title>
+</head>
+
+<body>
+    <%- include('navbar'); %>
+
+    <div class="row ml-0 mt-3 ml-3">
+        <div>
+            <button class="btn" id="New" title="Neuen Artikel hinzufügen">
+                    Neu
+                </button>
+                <button class="btn" id="Edit" disabled title="Wähle eine Zeile aus um sie bearbeiten zu können">
+                    Bearbeiten
+                </button>
+                <button class="btn" id="Delete" disabled title="Wähle mindestens eine Zeile aus um sie löschen zu können">
+                    Löschen
+                </button>
+        </div>
+  
+        <div class="w-100"></div>
+      
+        <div>
+
+            <label for="OnlyWarnRows">
+                <span>
+                    Nur Reihen mit Warnungen anzeigen
+                </span>
+            </label>
+        
+            <label for="OnlyWarnRows" class="switch">
+                <input id="OnlyWarnRows" type="checkbox">
+                <span class="slider round"></span>
+            </label>
+        </div>
+    </div>
+
+    <div id="tableDiv">
+
+        <table id="table" class="ui celled table display" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Artikelnummer</th>
+                    <th>Artikel</th>
+                    <th>Anzahl</th>
+                    <th>Mindestanzahl</th>
+                    <th>Einheit</th>
+                    <th>Lagerort</th>
+                    <th>Lagerplatz</th>
+                    <th>Kategorie</th>
+                    <th>Erstellt von</th>
+                    <th>Zuletzt geändert von</th>
+                    <th>Änderungsdatum</th>
+                    <th>Änderungsuhrzeit</th>
+                    <th>Stichwörter</th>
+                    <th>Logs</th>
+                </tr>
+            </thead>
+
+            <tfoot>
+                <tr id='inputTr'>
+                    <th><input type="text" placeholder="Suche Artikelnummer"></th>
+                    <th><input type="text" placeholder="Suche Artikel"></th>
+                    <th><input type="text" placeholder="Suche Anzahl"></th>
+                    <th><input type="text" placeholder="Suche Mindestanzahl"></th>
+                    <th><input type="text" placeholder="Suche Einheit"></th>
+                    <th><input type="text" placeholder="Suche Lagerort"></th>
+                    <th><input type="text" placeholder="Suche Lagerplatz"></th>
+                    <th><input type="text" placeholder="Suche Kategorie"></th>
+                    <th><input type="text" placeholder="Suche Erstellt von"></th>
+                    <th><input type="text" placeholder="Suche Zuletzt geändert von"></th>
+                    <th><input type="text" placeholder="Suche Änderungsdatum"></th>
+                    <th><input type="text" placeholder="Suche Änderungsuhrzeit"></th>
+                    <th><input type="text" placeholder="Suche Stichwörter"></th>
+                    <th></th>
+                </tr>
+            </tfoot>
+            </tbody>
+        </table>
+    </div>
+
+    <div id="PopUpDelete">
+        <form id="deleteForm" action="/entry">
+
+            <div class="PopUp_topBar">
+                Eintrag Löschen
+                <div id="mdiv"><div class="mdiv"><div class="md"></div></div></div>
+            </div>
+            <div class="PopUpDelete_middle">
+
+            </div>
+            <div class="PopUp_footer">
+                <button class="btn btn-danger" type="submit">Löschen</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="cover"></div>
+
+    <footer>
+
+    </footer>
+
+    <%- include('scripts'); %>
+
+</body>
+
+</html>

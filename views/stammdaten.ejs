@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.css">
+    <link rel="stylesheet" href="assets/dataTables.semanticui.min.css">
+    <link rel="stylesheet" href="assets/main.css">
+    <link rel="stylesheet" href="assets/css/stammdaten.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+
+
+    <link rel="shortcut icon" href="assets/favicon.jpg" />
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="assets/fontawesome/css/all.css">
+
+    <title>Document</title>
+</head>
+
+<body>
+    <%- include('navbar'); %>
+
+    <div class="container-fluid mt-3 mb-3 d-flex justify-content-center">
+            <h1><u>Stammdaten</u></h1>
+
+    </div>
+
+    <div class="row Stamm_container">
+        <div class="Stamm_div col">
+
+            <h2>Ort</h2>
+            <div style="height: 100%">
+                <ul id="myUL" class="border pl-5 pt-2 pb-5" style="font-size:1.2em;">
+                <button id="CreateNode" class="btn btn-success mb-3" style="color: black"><i class="fas fa-certificate"></i> Erstellen</button>
+                <button id="EditNode" class="btn btn-warning mb-3" disabled ><i class="fas fa-pen"></i> Bearbeiten</button>
+                <button id="DeleteNode" class="btn btn-danger mb-3" style="color: black" disabled><i class="fas fa-times"></i> Löschen</button>
+
+                </ul>
+            </div>
+
+   
+        </div>
+        <div class="Stamm_div col">
+            <form>
+                <table id="kategorieTable" class="ui celled table display" style="width:100%">
+                    <h2>Kategorie</h2>
+                    <thead>
+                        <tr>
+                            <th>Kategorie</th>
+                            <th>Aktuell von Artikeln genutzt</th>
+                        </tr>
+                    </thead>
+                    <tfoot>
+                        <tr>
+                            <td class="AddRow" colspan="2">
+                                Neuer Eintrag <i class="fas fa-chevron-down"></i>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </form>
+        </div>
+        <div class="Stamm_div col">
+            <form>
+                <table id="keywordsTable" class="ui celled table display" style="width:100%">
+                    <h2>Stichwort</h2>
+                    <thead>
+                        <tr>
+                            <th>Stichwörter</th>
+                            <th>Aktuell von Artikeln genutzt</th>
+                        </tr>
+                    </thead>
+                    <tfoot>
+                        <tr>
+                            <td class="AddRow" colspan="2">
+                                Neuer Eintrag <i class="fas fa-chevron-down"></i>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </form>
+        </div>
+        <div class="Stamm_div col">
+            <form>
+                <table id="unitTable" class="ui celled table display" style="width:100%">
+                    <h2>Einheit</h2>
+                    <thead>
+                        <tr>
+                            <th>Einheit</th>
+                            <th>Aktuell von Artikeln genutzt</th>
+                        </tr>
+                    </thead>
+                    <tfoot>
+                        <tr>
+                            <td class="AddRow" colspan="2">
+                                Neuer Eintrag <i class="fas fa-chevron-down"></i>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+
+    </footer>
+    <%- include('scripts'); %>
+    <script src="../assets/js/stammdaten.js"></script>
+
+</body>
+
+</html>
