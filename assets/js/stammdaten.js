@@ -2,24 +2,25 @@
 $(".AddRow").click(function () {
     $(this).parent().children().eq(1).find("i").toggleClass("fa-chevron-down fa-chevron-up");
     var th = $(this).parent().parent().parent().find("th:eq(0)").html();
-    console.log($(this).parent().siblings());
+    var label = $(this).closest("form").find("h2").text();
+    console.log(label);
     if ($(this).parent().siblings().length == 0) {
         //console.log($(this));
         $(this).parent().after(`
             <tr>
-            <td><input maxlength="20" class="StammInput" type="text" placeholder="${th}..."></td>
-            <td><input type="submit" value="Speichern" onclick="addStamm(this)" class="StammSave" /></td>
+            <td>
+                <input maxlength="20" class="StammInput" type="text" placeholder="${label}...">
+                <input type="submit" value="Speichern" onclick="addStamm(this)" class="StammSave" />
+            </td>
             </tr>
-    `);
+        `);
 
         $(function () {
-            var input = $(`input[placeholder="${th}..."`).get(0);
-            console.log(input);
+            var input = $(`input[placeholder="${label}..."`).get(0);
             input.focus();
         });
 
     } else {
-        console.log("fehler");
         $(this).parent().siblings().first().remove();
     }
 
@@ -93,7 +94,11 @@ function displayNodeFromParent(parent){
         
         if(dataFromSelectedEle.places != "0"){
             $(parent).parent().find("ul").first().prepend(
-                $("<span/>", {"text": `Lagerplätze: ${dataFromSelectedEle.places}`})
+                $("<span/>", {"text": `Freie Lagerplätze: ${dataFromSelectedEle.empty_places}`})
+            ).prepend(
+                $("<br/>")
+            ).prepend(
+                $("<span/>", {"text": `Lagerplätze: ${dataFromSelectedEle.places}`, "class": "places", "data-places": dataFromSelectedEle.places, "data-empty_places": dataFromSelectedEle.empty_places})
             )
         }
     }else{
@@ -104,13 +109,13 @@ function displayNodeFromParent(parent){
 
 function displayCreateNode(){
     let node = $("<li/>", {"class": "CreateNode"}).append(
-        $("<form/>", {"class": "lagerortForm", "action": "", "method": "POST"}).append(
+        $("<form/>", {"class": "createForm", "action": "", "method": "POST"}).append(
             $("<span/>", {"class": "caret create"}).append(
                 $("<input/>", {"type": "text", "placeholder": "Name...", "name": "name", "height": "32"})
                 ).append(
                     $("<input/>", {"type": "number", "value": 0, "name": "number", "height": "32", "width": "55", "min": "0", "max": "9999"})
                 ).append(
-                    $("<button/>", {"type": "submit", "class": "btn btn-outline-success mb-1", "text": "Speichern"})
+                    $("<button/>", {"type": "submit", "class": "btn btn-success mb-1", "text": "Speichern"})
                 )
         ).append(
             $("<ul/>", {"class": "nested"})
@@ -163,8 +168,10 @@ $("#myUL").on("keyup", "input[name='name']", function() {
 });
 
 $("#myUL").on("click", ".caret", function() {
-
+    
     $(".caret").removeClass("selectedNode");
+    $("#EditNode").prop("disabled", true);
+    $("#DeleteNode").prop("disabled", true);
 
     this.parentElement.querySelector(".nested").classList.toggle("active");
 
@@ -175,6 +182,8 @@ $("#myUL").on("click", ".caret", function() {
     if($(this).hasClass("caret-down")){
         if($(this).find("input").length == 0){
             $(this).addClass("selectedNode");
+            $("#EditNode").prop("disabled", false);
+            $("#DeleteNode").prop("disabled", false);
         }
 
         displayNodeFromParent($(this));
@@ -184,10 +193,11 @@ $("#myUL").on("click", ".caret", function() {
 });
 
 $("#CreateNode").click(function(){
+    $(".editForm").remove();
+
     let parentNode;
     if($(".selectedNode").length != 0){
         parentNode = $(".selectedNode").parent().find("ul").first();
-        console.log(parentNode);
     }else{
         parentNode = $("#myUL");
     }
@@ -200,11 +210,67 @@ $("#CreateNode").click(function(){
         )
     }
 
-    $(".lagerortForm").find("input[type='text']").focus();
-    $(".lagerortForm").find("input[type='text']").attr("required", "true");
+    $(".createForm").find("input[type='text']").focus();
+    $(".createForm").find("input[type='text']").attr("required", "true");
 });
 
-$("#myUL").on("submit", ".lagerortForm", function(e){
+$("#EditNode").click(function(){
+    $(".CreateNode").remove();
+
+    let selectedText = $(".selectedNode").text();
+    let selectedId = $(".selectedNode").data("id");
+    let selectedEmptyPlaces = $(".selectedNode").parent().find(".places").data("empty_places");
+    let places = $(".selectedNode").parent().find(".places").data("places");
+    places = places ? places : 0;
+
+    $(".selectedNode").after(
+        $("<form/>", {"class": "editForm", "style": "margin-top: -20px"}).append(
+            $("<br>")
+        ).append(
+            $("<input/>", {"type": "text", "value": selectedText, "name": "name", "data-id": selectedId, "height": "32"})
+        ).append(
+            $("<input/>", {"type": "number", "value": places, "name": "number", "height": "32", "width": "55", "min": "0", "max": "9999"})
+        ).append(
+            $("<button/>", {"type": "submit", "class": "btn btn-success mb-1", "text": "Speichern"})
+        )
+    )
+
+    $(".selectedNode").parent().find("input[type='text']").focus();
+    $(".selectedNode").parent().find("input[type='text']").attr("required", "true");
+    $(".selectedNode").parent().find("input").attr("autocomplete", "off");
+    
+    $(".selectedNode").parent().find("input[type='number']").on("input", function(){
+        let val = $(this).val();
+        if(val < (places - selectedEmptyPlaces)){
+            $(".selectedNode").parent().find("button").prop("disabled", true);
+        }else{
+            $(".selectedNode").parent().find("button").prop("disabled", false);
+
+        }
+    })
+})
+
+$("#myUL").on("submit", ".editForm", function(e){
+    e.preventDefault();
+
+    let id = $(this).find("*[data-id]").data("id");
+    let formdata = $(this).serialize();
+    formdata += "&id=" + id;
+
+    $.ajax({
+        type: 'PATCH',
+        url: "/lagerorte",
+        data: formdata,
+        processData: false,
+        contentType: 'application/x-www-form-urlencoded',
+        success: function () {
+          history.go(0);          
+        }
+        /* success and error handling omitted for brevity */
+      });
+})
+
+$("#myUL").on("submit", ".createForm", function(e){
     e.preventDefault();
 
     let span = $(this).find("span");
@@ -229,9 +295,6 @@ $("#myUL").on("submit", ".lagerortForm", function(e){
 
     }
 
-
-
-
 });
 
 $(".AddRow").hover(function () {
@@ -250,7 +313,7 @@ function addStamm(x) {
         case "Kategorie":
             placeholder = "category";
             break;
-        case "Stichwörter":
+        case "Stichwort":
             placeholder = "keyword";
             break;
         case "Einheit":
@@ -270,16 +333,18 @@ function addStamm(x) {
 $("table").on("click", ".fa-trash", function () {
 
     let table = $(this).closest("table").find("th").first().text();
-    let val = $(this).parent().prev().text();
-    let number = $(this).parent().text();
+    let val = $(this).parent().text();
+    let number = null;
 
-    console.log("~~~~~~");
-    console.log(table);
-    console.log(val);
-    console.log(number);
-    console.log("~~~~~~");
-    
-    // var id = $(this).parent().siblings().first().html().trim();
+    $.ajax({
+        'async': false,
+        'type': "GET",
+        'global': false,
+        'url': `/stammdaten/${table}/${val}`,
+        'success': function (data) {
+          number = data[0].number;
+        }
+      });
 
     let popUpMid = ``;
 
@@ -289,14 +354,14 @@ $("table").on("click", ".fa-trash", function () {
         <br>
         <span>von den Stammdaten löschen wollen?</span>
         <br>
-        <input type="button" value="Löschen" />
-        <input type="button" value="Abbrechen" />
+        <button class="btn btn-danger delete" type="button">Löschen</button>
+        <button class="btn btn-secondary cancel" type="button">Abbrechen</button>
         `;
     }else{
         popUpMid = `
         "${val}" Wird aktuell von ${number} Artikeln genutzt <br> und kann daher nicht gelöscht werden.
         <br>
-        <input type="button" value="Abbrechen" />
+        <button class="btn btn-secondary cancel" type="button">Abbrechen</button>
         `;
     }
 
@@ -317,16 +382,27 @@ $("table").on("click", ".fa-trash", function () {
 
     let cover = '<div class="cover"></div>';
 
-    console.log($(popUp));
     $(".Stamm_container").prepend($(cover + popUp).hide().fadeIn());
 
-    $(".cover, .popup_top > span, .popup_mid > input[value='Abbrechen']").click(function () {
-        $(".cover").remove();
-        $(".popup").remove();
+    $(".popup_mid > .cancel").click(function () {
+        $(".cover").fadeOut();
+        $(".popup").fadeOut();
     })
 
-    $(".popup_mid > input[value='Löschen']").click(function () {
-        console.log(val);
+    $(".popup_mid > .delete").click(function () {
+        switch (table) {
+            case "Kategorie":
+                table = "category"
+                break;
+            case "Stichwörter":
+                table = "keyword"
+                break;
+            case "Einheit":
+                table = "unit"
+                break;
+            default:
+                break;
+        }
         $.ajax({
             url: `/stammdaten/${table}/${val}`,
             type: "DELETE",
@@ -338,3 +414,8 @@ $("table").on("click", ".fa-trash", function () {
 
 
 });
+
+$("body").on("click", ".cover, #mdiv", function(){
+    $(".cover").fadeOut();
+    $(".popup").fadeOut();
+})

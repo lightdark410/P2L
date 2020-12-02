@@ -101,15 +101,10 @@ $(document).ready(function () {
       "type": "GET"
     },
     "columns":  [
-      { data: "category"}, 
-      { data: "number" ,
+      { data: "category",
       render : function(data, type, row) {
         return ''+data+'<i class="fas fa-trash"></i>'
     }  },
-    ],
-    "columnDefs": [
-      { "width": "50%", "targets": 0 },
-      { "width": "50%", "targets": 1 },
     ],
     language: {
       "url": "/assets/js/German.json",
@@ -123,15 +118,10 @@ $(document).ready(function () {
       "type": "GET"
     },
     "columns":  [
-      { data: "keyword"}, 
-      { data: "number" ,
+      { data: "keyword",
       render : function(data, type, row) {
         return ''+data+'<i class="fas fa-trash"></i>'
     }  },
-    ],
-    "columnDefs": [
-      { "width": "50%", "targets": 0 },
-      { "width": "50%", "targets": 1 },
     ],
     language: {
       "url": "/assets/js/German.json",
@@ -146,15 +136,10 @@ $(document).ready(function () {
       "type": "GET"
     },
     "columns":  [
-      { data: "unit"}, 
-      { data: "number" ,
+      { data: "unit",
       render : function(data, type, row) {
         return ''+data+'<i class="fas fa-trash"></i>'
     }  },
-    ],
-    "columnDefs": [
-      { "width": "50%", "targets": 0 },
-      { "width": "50%", "targets": 1 },
     ],
     language: {
       "url": "/assets/js/German.json",

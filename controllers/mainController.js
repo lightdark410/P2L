@@ -6,7 +6,6 @@ const session = require("express-session");
 
 var con = mysql.createConnection(config.get('dbConfig'));
 
-
 // var mqtt = require('mqtt');
 
 // var MQTT_TOPIC          = "esp-0001";
@@ -300,6 +299,8 @@ module.exports = function (app) {
   app.get("/lagerorte/:id", async (req, res) => {
     if (req.session.loggedin) {
       var results = await functions.getStorageLocationById(req.params.id);
+      var count = await functions.getEmptyStoragePlaces(results[0].id);
+      results[0].empty_places = count[0].empty_places;
       res.send(results);
     } else {
       req.session.redirectTo = `/lagerorte/${req.params.id}`;
@@ -322,7 +323,7 @@ module.exports = function (app) {
             }
           }
   
-          await functions.insertStoragePlaces(latest, req.body.places);
+          await functions.insertStoragePlaces(latest, req.body.places, 0);
   
           res.send(results);
         }else{
@@ -340,15 +341,41 @@ module.exports = function (app) {
     }
   });
 
+  app.patch("/lagerorte", async (req,res) => {
+    if(req.session.loggedin){
+      try {
+        console.log(req.body);
+        let oldStorageLocation = await functions.getStorageLocationById(req.body.id);
+        await functions.updateStorageLocation(req.body.id, req.body.name, req.body.number);
+        if(oldStorageLocation[0].places < req.body.number){
+          await functions.insertStoragePlaces(req.body.id, req.body.number, oldStorageLocation[0].places)
+        }else if(oldStorageLocation[0].places > req.body.number){
+          console.log("delete");
+          console.log(req.body.number, oldStorageLocation[0].places);
+          await functions.deleteStoragePlaces(req.body.id, req.body.number, oldStorageLocation[0].places);
+        }
+
+        res.send("updated");
+      } catch (error) {
+        res.status("500").send("Internal Server Error");
+        console.log(error);
+      }
+    }else{
+      req.session.redirectTo = `/`;
+      res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+    }
+  })
+
   app.post("/stammdaten/:table", async (req, res) => {
     if(req.session.loggedin){
       try {
         var exists = await functions.getMasterDataByName(req.params.table, req.body.value);
-
-        if(!exists){
+        
+        if(exists.length == 0){
           await functions.insertMasterData(req.params.table.toLowerCase(), req.body.value);
           res.send("Master Data Created");
         }else{
+
           res.send("Entry already exists");
 
         }
@@ -361,8 +388,45 @@ module.exports = function (app) {
       res.render("login", { err: req.query.err}); //redirect to login page if not logged in
     }
    
-
   });
+
+  app.get("/stammdaten/:table/:name", async (req, res) => {
+    if(req.session.loggedin){
+      try {
+        let table;
+   
+        switch (req.params.table) {
+          case "Kategorie":
+            table = "category";
+            break;
+          case "Einheit":
+            table = "unit";
+            break;
+          case "Stichwörter":
+            table = "keyword";
+            break;
+          default:
+            table = req.params.table;
+            break;
+        }
+  
+        var result = await functions.getMasterDataByName(table ,req.params.name);
+        var from = "article";
+        if(table == "keyword"){
+          from = "keyword_list"
+        }
+        var count = await functions.countMasterDataById(table, result[0].id, from);
+        result[0].number = count[0].number;
+        res.send(result);
+      } catch (error) {
+        res.status("500").send("Internal Server Error");
+        console.log(error);
+      }
+    }else{
+      req.session.redirectTo = `/stammdaten/${req.params.table}/${req.params.name}`;
+      res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+    }
+  })
 
   app.delete("/stammdaten/:table/:name", async (req, res) => {
     if(req.session.loggedin){
@@ -445,6 +509,7 @@ module.exports = function (app) {
     if (req.session.loggedin) {
       try {
         const result = await functions.markStockAsDeleted(req.params.id, req.session.username);
+        await functions.setStoragePlaceToNull(req.params.id);
         // const entry = await functions.getStockById(req.params.id);
 
 
@@ -475,11 +540,10 @@ module.exports = function (app) {
       try {
         console.log(req.body);
         let itemAlreadyExists = await functions.getArticleByName(req.body.name);
-        // console.log("ItemName: " + ItemName);
         if(!itemAlreadyExists){ 
           let category = await functions.getMasterDataByName("category", req.body.category);
           console.log(category);
-          await functions.insertArticle(req.body.name, 1, category.id);
+          await functions.insertArticle(req.body.name, 1, category[0].id);
         }
 
           const item = await functions.getArticleByName(req.body.name);
@@ -491,11 +555,15 @@ module.exports = function (app) {
           await functions.updateStoragePlace(emptyStorageSpace[0].id, latestStock.id);
 
           var keywords = req.body.keywords.split(",");
-          for(var i = 0; i < keywords.length; i++){
-            var fullKeyword = await functions.getMasterDataByName("keyword", keywords[i]);
-            await functions.insertKeywordList(latestStock.id, fullKeyword.id);
-
+     
+          if(req.body.keywords != 0){
+            for(var i = 0; i < keywords.length; i++){
+              var fullKeyword = await functions.getMasterDataByName("keyword", keywords[i]);
+              await functions.insertKeywordList(latestStock.id, fullKeyword.id);
+  
+            }
           }
+          
 
           // // var locationnum = await functions.incrementStammdatenNumber("ort", req.body.location); 
           // var kategorienum = await functions.incrementStammdatenNumber("kategorie", req.body.category);
@@ -527,47 +595,40 @@ module.exports = function (app) {
 
         console.log(req.body);
 
+        // let itemAlreadyExists = await functions.getArticleByName(req.body.name);
 
-        let itemAlreadyExists = await functions.getArticleByName(req.body.name);
-
-        if(!itemAlreadyExists || req.body.name == entry.name){
+        // if(!itemAlreadyExists || req.body.name == entry.name){
           let unit = await functions.getMasterDataByName("unit", req.body.unit);        
           let category = await functions.getMasterDataByName("category", req.body.category);
- 
-          await functions.updateArticle(entry.article_id, req.body.name, unit.id, category.id);
+          await functions.updateArticle(entry.article_id, req.body.name, unit[0].id, category[0].id);
           await functions.updateStock(req.body.number, req.body.minimum_number, req.session.username, req.body.id);
 
           //update keywords
-          var keywordArray = req.body.keywords.split(",");
           await functions.deleteKeywordList(entry.id); //delete old keywords
-          for(var i = 0; i < keywordArray.length; i++){
-            var keyword = await functions.getKeywordsByName(keywordArray[i]);
-            await functions.insertKeywordList(entry.id, keyword[0].id); //add new keywords
+          if(req.body.keywords.length > 0){
+            var keywordArray = req.body.keywords.split(",");
+            for(var i = 0; i < keywordArray.length; i++){
+              var keyword = await functions.getKeywordsByName(keywordArray[i]);
+              await functions.insertKeywordList(entry.id, keyword[0].id); //add new keywords
+            }
+  
           }
-
+   
           //update storage place
           let storagePlace = await functions.getStoragePlaceByStockId(entry.id);
-          console.log
           await functions.setStoragePlaceToNull(entry.id);
           // await functions.updateStoragePlace(storagePlace.id, req.body.id);
 
           var emptyStorageSpace = await functions.getEmptyStoragePlace(req.body.location);
           await functions.updateStoragePlace(emptyStorageSpace[0].id, req.body.id);
     
-
-          // var keyworddenum = await functions.decrementStammdatenNumber("stichwort", entry.keywords);
-          // var keywordnum = await functions.incrementStammdatenNumber("stichwort", req.body.keywords);
-          // var locationdenum = await functions.decrementStammdatenNumber("ort", entry.location);
-          // var locationnum = await functions.incrementStammdatenNumber("ort", req.body.location);
-          // var categorydenum = await functions.decrementStammdatenNumber("kategorie", entry.category);
-          // var categorynum = await functions.incrementStammdatenNumber("kategorie", req.body.category);
           // var log = await functions.log(req.body.id, "change");
 
           res.send("updated");
 
-        }else{
-          res.status("500").send("Article already exists");
-        }
+        // }else{
+        //   res.status("500").send("Article already exists");
+        // }
 
  
   

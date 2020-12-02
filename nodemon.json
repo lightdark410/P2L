@@ -1,6 +1,0 @@
-{
-    "ignore": [
-        "assets/**/*"
-    ],
-    "exec": "node server.js"
-}

@@ -183,7 +183,7 @@ function getLatestStock() {
 function insertArticle(name, unit_id, category_id) {
     return new Promise((resolve, reject) => {
         con.query(
-            "INSERT INTO article (name, unit_id, category_id) VALUES (?, ?, ?)",
+        "INSERT INTO article (name, unit_id, category_id) VALUES (?, ?, ?)",
             [
                 name,
                 unit_id,
@@ -300,8 +300,10 @@ function getMasterDataByName(table, name){
             `SELECT * FROM ${table} WHERE ${table} = ? LIMIT 1`,
             [name],
             function (err, result) {
-                if (err) reject(err);
-                resolve(result[0]);
+                if (err){
+                    reject(err)
+                } ;
+                resolve(result);
             }
         );
     }); 
@@ -437,6 +439,22 @@ function updateStoragePlace(id, stock_id){
     });
 }
 
+function updateStorageLocation(id, name, places){
+    return new Promise((resolve, reject) => {
+        con.query(
+            `UPDATE storage_location SET name = ?, places = ? WHERE id = ?`,
+            [name, places, id],
+            function (err, result){
+                if(err){
+                    console.log(err);
+                    reject(err);
+                }
+                resolve(result);
+            }
+        );
+    });
+}
+
 function getEmptyStoragePlaces(storage_location_id){
     return new Promise((resolve, reject) => {
         con.query(
@@ -453,10 +471,36 @@ function getEmptyStoragePlaces(storage_location_id){
     });
 }
 
-function insertStoragePlaces(storage_location_id, places){
+function deleteStoragePlaces(storage_location_id, places, start){
     return new Promise((resolve, reject) => {
         try{
-            for(var i = 0; i < places; i++){
+            for(var i = start; i > places; i--){
+                console.log(i);
+                con.query(
+                    `DELETE FROM storage_place WHERE storage_location_id = ${storage_location_id} AND place = ? AND stock_id IS NULL`,
+                    [i],
+                    function (err, result){
+                        if(err){
+                            console.log(err);
+                            reject(err);
+                        }
+                    }
+                );
+            };
+            resolve("done");
+
+        }catch(error){
+            reject(error);
+
+        }
+    
+    });
+}
+
+function insertStoragePlaces(storage_location_id, places, start){
+    return new Promise((resolve, reject) => {
+        try{
+            for(var i = start; i < places; i++){
                 con.query(
                     `INSERT INTO storage_place (storage_location_id, place) VALUES (?, ?)`,
                     [storage_location_id, i+1],
@@ -474,8 +518,7 @@ function insertStoragePlaces(storage_location_id, places){
             reject(error);
 
         }
-        
-      
+    
     });
 }
 
@@ -560,41 +603,31 @@ function insertMasterData(table, value) {
     });
 }
 
-// function incrementStammdatenNumber(table, name) {
-//     return new Promise((resolve, reject) => {
-//         name = name.split(",");
-//         for (var i = 0; i < name.length; i++) {
-//             con.query(`UPDATE ${table} SET number = number + 1 WHERE ${table} = ?`,
-//                 [name[i]],
-//                 function (err, result) {
-//                     if (err) {
-//                         reject(err);
-//                     }
-//                 });
-//         }
-//         resolve("incremented");
+function countMasterDataById(table, id, from){
 
+    return new Promise((resolve, reject) => {
+        con.query(
+            `
+            SELECT count(${table}_id) as number
+            FROM ${from}
+            WHERE ${table}_id = ?
+            `,
+            [id],
+            function (err, result) {
+                if (err) {
+                    reject(err)
+                    console.log(err);
 
-//     });
-// }
+                } else {
+                    resolve(result);
 
-// function decrementStammdatenNumber(table, name) {
-//     return new Promise((resolve, reject) => {
-//         name = name.split(",");
-//         for (var i = 0; i < name.length; i++) {
-//             con.query(`UPDATE ${table} SET number = number - 1 WHERE ${table} = ?`,
-//                 [name[i]],
-//                 function (err, result) {
-//                     if (err) {
-//                         reject(err);
-//                     }
-//                 });
-//         }
-//         resolve("decremented");
+                }
 
+            }
+        );
+    });
+}
 
-//     });
-// }
 
 function deleteMasterData(table, value) {
     return new Promise((resolve, reject) => {
@@ -684,6 +717,7 @@ function getLogByStockId(stock_id) {
 
 function updateArticle(article_id, name, unit_id, category_id) {
     return new Promise((resolve, reject) => {
+        console.log(unit_id, category_id);
         con.query(`UPDATE article SET name="${name}", unit_id="${unit_id}", category_id="${category_id}" WHERE id = ?`,
             [article_id],
             function (err, result) {
@@ -740,6 +774,8 @@ function getStoragePlaceByStockId(stock_id){
     });
 }
 
+
+
 module.exports = {
     getAll,
     getStockById,
@@ -761,8 +797,6 @@ module.exports = {
     getLogByStockId,
     updateArticle,
     updateStock,
-    // incrementStammdatenNumber,
-    // decrementStammdatenNumber,
     getKeywordsByName,
     autoFill,
     getEntryByName,
@@ -778,8 +812,11 @@ module.exports = {
     getStorageLocationByNameAndParent,
     getEmptyStoragePlace,
     updateStoragePlace,
+    updateStorageLocation,
     getStorageByStockId,
     deleteKeywordList,
     setStoragePlaceToNull,
-    getStoragePlaceByStockId
+    getStoragePlaceByStockId,
+    countMasterDataById,
+    deleteStoragePlaces
 }

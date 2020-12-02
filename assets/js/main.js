@@ -54,34 +54,40 @@ $(document).ready(function () {
       keywordArr.push($(this).first().text());
     })
 
-    var formdata = `id=${id}&name=${name}&location=${location}&number=${number}&minimum_number=${minimum_number}&category=${category}&keywords=${keywordArr}&unit=${unit}`;
+    if(location > 0){
+      var formdata = `id=${id}&name=${name}&location=${location}&number=${number}&minimum_number=${minimum_number}&category=${category}&keywords=${keywordArr}&unit=${unit}`;
     
-    switch (post_url) {
-      case "/create":
-        $.post(post_url, formdata, function (response) {
-          //post data to server after submit
-          // console.log("response: " + response);
-          $('#table').DataTable().ajax.reload();
-          closePopup();
-          // history.go(0);
-        });
-        break;
-      case "/entry":
-        $.ajax({
-          type: 'PATCH',
-          url: post_url,
-          data: formdata,
-          processData: false,
-          contentType: 'application/x-www-form-urlencoded',
-          success: function () {
-            history.go(0);          
-          }
-          /* success and error handling omitted for brevity */
-        });
-        break;
-      default:
-        break;
+      switch (post_url) {
+        case "/create":
+          $.post(post_url, formdata, function (response) {
+            //post data to server after submit
+            // console.log("response: " + response);
+            $('#table').DataTable().ajax.reload();
+            closePopup();
+            // history.go(0);
+          });
+          break;
+        case "/entry":
+          $.ajax({
+            type: 'PATCH',
+            url: post_url,
+            data: formdata,
+            processData: false,
+            contentType: 'application/x-www-form-urlencoded',
+            success: function () {
+              history.go(0);          
+            }
+            /* success and error handling omitted for brevity */
+          });
+          break;
+        default:
+          break;
+      }
+    }else{
+      console.log($("#location span").first());
+      $("#location span").first().attr("style", "color: red !important");
     }
+
 
   });
 

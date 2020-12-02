@@ -176,7 +176,7 @@ $(function () {
         });
 
       }else{
-        // removeEndNode(parentId);
+        removeEndNode(parentId);
       }
       
     })
@@ -342,7 +342,7 @@ $(function () {
         id = id.replace(/\r?\n|\r/g, "");
       };
     });
-    var result;
+    var result = "";
     $.ajax({
       "async": false,
       "type": "GET",
@@ -378,7 +378,7 @@ $(function () {
           }
           KeywordsAutocomplete = new SelectPure(".autocomplete-select", {
             options: optionsArr,
-            value: result.keywords.split(","),
+            value: result.keywords ? result.keywords.split(",") : "",
             multiple: true,
             autocomplete: true,
             icon: "fa fa-times",
@@ -426,7 +426,11 @@ $(function () {
 
   function toCreatePopup(popup){
     popup.find(".PopUp_topBar").text("Neuen Artikel anlegen");
-    popup.find(".PopUp_topBar").append('<div id="mdiv"><div class="mdiv"><div class="md"></div></div></div>')
+    popup.find(".PopUp_topBar").append('<div id="mdiv"><div class="mdiv"><div class="md"></div></div></div>');
+    popup.find("#location span").first().text("Wähle einen Ort aus");
+    popup.find("#location span").first().attr("data-id", 0);
+    popup.find("#location span").first().data("parent", 0);
+    console.log(popup.find("#location span").first().data("id"));
     popup.find("form").prop("action", "/create");
     popup.find(".numberButton").remove();
     $(popup.find("#minimum_number")).css("margin-bottom", "0");

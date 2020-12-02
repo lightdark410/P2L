@@ -219,7 +219,7 @@ input[type="search"]{
 }
 
 .StammInput{
-  width: 100%;
+  width: 70%;
   line-height: 25px;
   padding-left: 5px;
 }
