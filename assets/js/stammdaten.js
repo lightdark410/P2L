@@ -178,6 +178,8 @@ $("#myUL").on("click", ".caret", function() {
     if($(this).find("input").length == 0){
         this.classList.toggle("caret-down");
         $(".CreateNode").remove();
+        $(".editForm").remove();
+
     }
     if($(this).hasClass("caret-down")){
         if($(this).find("input").length == 0){
@@ -216,6 +218,7 @@ $("#CreateNode").click(function(){
 
 $("#EditNode").click(function(){
     $(".CreateNode").remove();
+    $(".editForm").remove();
 
     let selectedText = $(".selectedNode").text();
     let selectedId = $(".selectedNode").data("id");
@@ -379,6 +382,8 @@ $("table").on("click", ".fa-trash", function () {
             </form>
         </div>
     `;
+
+    // $("<div/>", {"class": "popup"})
 
     let cover = '<div class="cover"></div>';
 

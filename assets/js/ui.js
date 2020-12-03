@@ -131,8 +131,22 @@ $(function () {
   popup.find("#unit").prop("required", "true");
 
   let ul = popup.find("#location").find("ul");
+
+  const emptyPlaceIsZero = (currentValue) => currentValue.empty_places === 0;
+
+  $("body").on("click", "#location span", function(){
+    if(stammdaten.storage_location.every(emptyPlaceIsZero)){
+      $("#location").parent().append(
+        $("<span/>", {"id": "LocationNotification", "text": "Alle Lagerplätze sind belegt."})
+      );
+    };
+  })
+
+
   $.each(stammdaten.storage_location, function(i, p){
     if(p.parent == 0){
+      $(ul).empty();
+
       $(ul).append(
         $('<li/>').append(
           $('<span/>', {'class': 'dropdown-item', 'text': p.name, 'data-id': p.id, 'data-parent': p.parent, 'data-places': p.places, 'data-empty_places': p.empty_places})
@@ -142,6 +156,8 @@ $(function () {
       appendChild(p.id);
     }
   });
+  
+
 
   $.each(stammdaten.category, function(i, p) {
     popup.find('#category').append($('<option></option>').val(p.category).html(p.category));
@@ -206,7 +222,6 @@ $(function () {
 
   
   $("body").on("click", "#location ul li span", function(e){
-    console.log("klick");
     let empty_places = $(this).data("empty_places");
 
     if(empty_places > 0){
@@ -227,7 +242,6 @@ $(function () {
   //~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   //check if new Item already exists
-  //Need to be updated!
   $("body").on("change, keyup", "#name", function () {
     var artikel = $("#name").val();
   
@@ -242,10 +256,6 @@ $(function () {
               );
           }
           $(".ui-autocomplete").css("z-index", "0");
-          $("#PopUpSubmit").prop("disabled", true);
-
-          $("#PopUpSubmit").css('cursor','no-drop !important');
-
 
         }else{
           $("#notificationBreak").remove();
@@ -363,7 +373,6 @@ $(function () {
         };
       }
     })
-    console.log(result);
     popup = toUpdatePopup(popup);
     $('#tableDiv').after(popup);
     popup.fadeIn();

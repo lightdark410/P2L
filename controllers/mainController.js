@@ -147,7 +147,6 @@ module.exports = function (app) {
       try {
         const result = await functions.getEntryByName(req.params.name);
         res.send(result);
-        console.log(result);
       } catch (err) {
         res.status(404).send("Internal Server Error");
       }
@@ -156,7 +155,6 @@ module.exports = function (app) {
       res.render("login", { err: req.query.err }); //redirect to login page if not logged in
 
     }
-      // console.log(req.query);
 
   });
 
@@ -319,7 +317,6 @@ module.exports = function (app) {
           for(var i = 0; i < parent.length; i++){
             if(parent[i].id > latest){
               latest = parent[i].id;
-              // console.log(latest);
             }
           }
   
@@ -344,14 +341,11 @@ module.exports = function (app) {
   app.patch("/lagerorte", async (req,res) => {
     if(req.session.loggedin){
       try {
-        console.log(req.body);
         let oldStorageLocation = await functions.getStorageLocationById(req.body.id);
         await functions.updateStorageLocation(req.body.id, req.body.name, req.body.number);
         if(oldStorageLocation[0].places < req.body.number){
           await functions.insertStoragePlaces(req.body.id, req.body.number, oldStorageLocation[0].places)
         }else if(oldStorageLocation[0].places > req.body.number){
-          console.log("delete");
-          console.log(req.body.number, oldStorageLocation[0].places);
           await functions.deleteStoragePlaces(req.body.id, req.body.number, oldStorageLocation[0].places);
         }
 
@@ -411,11 +405,13 @@ module.exports = function (app) {
         }
   
         var result = await functions.getMasterDataByName(table ,req.params.name);
-        var from = "article";
+
         if(table == "keyword"){
-          from = "keyword_list"
+          var count = await functions.countKeywordlistById(table, result[0].id);
+          
+        }else{
+          var count = await functions.countMasterDataById(table, result[0].id);
         }
-        var count = await functions.countMasterDataById(table, result[0].id, from);
         result[0].number = count[0].number;
         res.send(result);
       } catch (error) {
@@ -508,16 +504,12 @@ module.exports = function (app) {
   app.delete("/entry/:id", async (req, res) => {
     if (req.session.loggedin) {
       try {
+        await functions.log(req.params.id, "delete");
+
         const result = await functions.markStockAsDeleted(req.params.id, req.session.username);
         await functions.setStoragePlaceToNull(req.params.id);
         // const entry = await functions.getStockById(req.params.id);
 
-
-        // var denumCategory = await functions.decrementStammdatenNumber("kategorie", entry.category);
-        // var denumLocation = await functions.decrementStammdatenNumber('ort', entry.location);
-        // var denumKeyword = await functions.decrementStammdatenNumber('stichwort', entry.keywords);
-
-        // await functions.log(req.params.id, "delete");
 
         res.send(result);
       } catch (err) {
@@ -538,15 +530,11 @@ module.exports = function (app) {
       var time = functions.getTime();
   
       try {
-        console.log(req.body);
-        let itemAlreadyExists = await functions.getArticleByName(req.body.name);
-        if(!itemAlreadyExists){ 
-          let category = await functions.getMasterDataByName("category", req.body.category);
-          console.log(category);
-          await functions.insertArticle(req.body.name, 1, category[0].id);
-        }
 
-          const item = await functions.getArticleByName(req.body.name);
+          let category = await functions.getMasterDataByName("category", req.body.category);
+          await functions.insertArticle(req.body.name, 1, category[0].id);
+
+          const item = await functions.getLatestArticle();
           await functions.insertStock(item.id, req.body.number, req.body.minimum_number, username, username, fulldate, time);
 
           var latestStock = await functions.getLatestStock();
@@ -555,21 +543,18 @@ module.exports = function (app) {
           await functions.updateStoragePlace(emptyStorageSpace[0].id, latestStock.id);
 
           var keywords = req.body.keywords.split(",");
-     
+          console.log(keywords);
           if(req.body.keywords != 0){
             for(var i = 0; i < keywords.length; i++){
+              console.log("keyword[i]: " + keywords[i]);
               var fullKeyword = await functions.getMasterDataByName("keyword", keywords[i]);
-              await functions.insertKeywordList(latestStock.id, fullKeyword.id);
+              console.log(fullKeyword);
+              await functions.insertKeywordList(latestStock.id, fullKeyword[0].id);
   
             }
-          }
-          
+          } 
 
-          // // var locationnum = await functions.incrementStammdatenNumber("ort", req.body.location); 
-          // var kategorienum = await functions.incrementStammdatenNumber("kategorie", req.body.category);
-          // var keywordnum = await functions.incrementStammdatenNumber("stichwort", req.body.keywords);
-  
-          // var log = await functions.log(x.id, "create");
+          var log = await functions.log(latestStock.id, "create");
           res.send("Entry Created");
     
       } catch (err) {
@@ -593,11 +578,6 @@ module.exports = function (app) {
 
         let entry = await functions.getStockById(req.body.id);
 
-        console.log(req.body);
-
-        // let itemAlreadyExists = await functions.getArticleByName(req.body.name);
-
-        // if(!itemAlreadyExists || req.body.name == entry.name){
           let unit = await functions.getMasterDataByName("unit", req.body.unit);        
           let category = await functions.getMasterDataByName("category", req.body.category);
           await functions.updateArticle(entry.article_id, req.body.name, unit[0].id, category[0].id);
@@ -622,15 +602,9 @@ module.exports = function (app) {
           var emptyStorageSpace = await functions.getEmptyStoragePlace(req.body.location);
           await functions.updateStoragePlace(emptyStorageSpace[0].id, req.body.id);
     
-          // var log = await functions.log(req.body.id, "change");
+          var log = await functions.log(req.body.id, "change");
 
           res.send("updated");
-
-        // }else{
-        //   res.status("500").send("Article already exists");
-        // }
-
- 
   
       } catch (e) {
         res.status(404).send(e);

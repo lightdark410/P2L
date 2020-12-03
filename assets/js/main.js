@@ -1,7 +1,6 @@
 $(document).ready(function () {
 
   function closePopup(){
-    //when grey background or x button is clicked
     if($(".select-pure__select--opened").length == 0){
 
       $("#PopUp").fadeOut();
@@ -26,7 +25,7 @@ $(document).ready(function () {
       $("#keywords , #minimum_number").val("");
   }
 
-  }
+}
 
   $("#Logout").click(function () {
     $.get("/logout", function (data) {
@@ -60,11 +59,9 @@ $(document).ready(function () {
       switch (post_url) {
         case "/create":
           $.post(post_url, formdata, function (response) {
-            //post data to server after submit
-            // console.log("response: " + response);
-            $('#table').DataTable().ajax.reload();
-            closePopup();
-            // history.go(0);
+            // $('#table').DataTable().ajax.reload();
+            // closePopup();
+            history.go(0);
           });
           break;
         case "/entry":
@@ -83,8 +80,9 @@ $(document).ready(function () {
         default:
           break;
       }
+
+      fillLoactionDropdown();
     }else{
-      console.log($("#location span").first());
       $("#location span").first().attr("style", "color: red !important");
     }
 

@@ -38,7 +38,7 @@ function getAllById(id) {
             LEFT JOIN article ON article.id = stock.article_id
             LEFT JOIN category ON category.id = article.category_id
             LEFT JOIN unit ON unit.id = article.unit_id
-            WHERE artikelliste.id = ${id}`,
+            WHERE stock.id = ${id}`,
             function (err, result) {
                 //send results
                 if (err) reject(err);
@@ -89,20 +89,6 @@ function getEntryByName(Name){
              LEFT JOIN stock ON stock.article_id = article.id
              WHERE article.name = ? 
              AND stock.deleted = 0  LIMIT 1`,
-            [Name],
-            function (err, result) {
-                console.log(err);
-                if (err) reject(err);
-                resolve(result[0]);
-            }
-        );
-    });
-}
-
-function getArticleByName(Name) {
-    return new Promise((resolve, reject) => {
-        con.query(
-            "SELECT * FROM article WHERE name = ? LIMIT 1",
             [Name],
             function (err, result) {
                 if (err) reject(err);
@@ -160,6 +146,21 @@ function insertStock(article_id, number, minimum_number, creator, change_by, dat
 
                 } 
                 resolve(result);
+            }
+        );
+    });
+}
+
+function getLatestArticle(){
+    return new Promise((resolve, reject) => {
+        con.query(
+            "SELECT * FROM `article` ORDER BY id DESC LIMIT 1",
+            function (err, result) {
+                if (err) {
+                    reject(err)
+                    console.log(err);
+                };
+                resolve(result[0]);
             }
         );
     });
@@ -295,7 +296,6 @@ function getMasterData(table) {
 
 function getMasterDataByName(table, name){
     return new Promise((resolve, reject) => {
-        console.log(table, name);
         con.query(
             `SELECT * FROM ${table} WHERE ${table} = ? LIMIT 1`,
             [name],
@@ -424,7 +424,6 @@ function insertStorageLocation(name, parent, places){
 
 function updateStoragePlace(id, stock_id){
     return new Promise((resolve, reject) => {
-        console.log("id: " + id);
         con.query(
             `UPDATE storage_place SET stock_id = ? WHERE id = ?`,
             [stock_id, id],
@@ -475,7 +474,6 @@ function deleteStoragePlaces(storage_location_id, places, start){
     return new Promise((resolve, reject) => {
         try{
             for(var i = start; i > places; i--){
-                console.log(i);
                 con.query(
                     `DELETE FROM storage_place WHERE storage_location_id = ${storage_location_id} AND place = ? AND stock_id IS NULL`,
                     [i],
@@ -603,14 +601,40 @@ function insertMasterData(table, value) {
     });
 }
 
-function countMasterDataById(table, id, from){
+function countMasterDataById(table, id){
 
     return new Promise((resolve, reject) => {
         con.query(
             `
             SELECT count(${table}_id) as number
-            FROM ${from}
-            WHERE ${table}_id = ?
+            FROM article
+            LEFT JOIN stock on article_id = article.id 
+            WHERE ${table}_id = ? AND stock.deleted = 0
+            `,
+            [id],
+            function (err, result) {
+                if (err) {
+                    reject(err)
+                    console.log(err);
+
+                } else {
+                    resolve(result);
+
+                }
+
+            }
+        );
+    });
+}
+
+function countKeywordlistById(table, id){
+    return new Promise((resolve, reject) => {
+        con.query(
+            `
+            SELECT count(${table}_id) as number
+            FROM keyword_list
+            LEFT JOIN stock on stock.id = stock_id 
+            WHERE ${table}_id = ? AND stock.deleted = 0
             `,
             [id],
             function (err, result) {
@@ -667,10 +691,25 @@ function UserSearch(client, base, search_options) {
 async function log(id, event) {
     var data = await getAllById(id);
 
+    //add keywords
+    var keywordlist = await getKeywordlistByStockid(data[0].id);
+    if(keywordlist[0].keyword != null){
+        data[0].keyword = keywordlist[0].keyword;        
+    }else{
+        data[0].keyword = "";
+    }
+
+    //add storage place
+    var storage_place = await getStorageByStockId(data[0].id);
+    data[0].storage_location = storage_place[0].name;
+    data[0].storage_place = storage_place[0].place;
+    console.log("Data: ");
+    console.log(data);
+    console.log("~~~~~~~~");
     return new Promise((resolve, reject) => {
         con.query(
-            "INSERT INTO `log`(`event`, `stock_id`, `name`, `category`, `keywords`, `location`, `date`, `time`, `creator`, `change_by`, `number`, `minimum_number`, `deleted`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-            [event, data[0].id, data[0].name, data[0].category, data[0].keywords, data[0].location, data[0].date, data[0].time, data[0].creator, data[0].change_by, data[0].number, data[0].minimum_number, data[0].deleted],
+            "INSERT INTO `log`(`event`, `stock_id`, `name`, `category`, `keywords`, `location_id`, `location`, `date`, `time`, `creator`, `change_by`, `number`, `minimum_number`, `deleted`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            [event, data[0].id, data[0].name, data[0].category, data[0].keyword, storage_place[0].storage_location_id, data[0].storage_location, data[0].date, data[0].time, data[0].creator, data[0].change_by, data[0].number, data[0].minimum_number, data[0].deleted],
             function (err, result) {
                 //send results
                 if (err) {
@@ -717,7 +756,6 @@ function getLogByStockId(stock_id) {
 
 function updateArticle(article_id, name, unit_id, category_id) {
     return new Promise((resolve, reject) => {
-        console.log(unit_id, category_id);
         con.query(`UPDATE article SET name="${name}", unit_id="${unit_id}", category_id="${category_id}" WHERE id = ?`,
             [article_id],
             function (err, result) {
@@ -740,7 +778,6 @@ function updateStock(number, minimum_number, username, id) {
                     console.log(err);
                 }
                 resolve(result);
-                console.log("result");
             });
     });
 }
@@ -755,7 +792,6 @@ function setStoragePlaceToNull(stock_id){
                     console.log(err);
                 }
                 resolve(result);
-                console.log(result);
             });
     });
 }
@@ -780,7 +816,6 @@ module.exports = {
     getAll,
     getStockById,
     getItemById,
-    getArticleByName,
     markStockAsDeleted,
     insertStock,
     insertArticle,
@@ -791,7 +826,7 @@ module.exports = {
     insertMasterData,
     deleteMasterData,
     log,
-    // getAllById,
+    getAllById,
     getLog,
     getLatestStock,
     getLogByStockId,
@@ -818,5 +853,7 @@ module.exports = {
     setStoragePlaceToNull,
     getStoragePlaceByStockId,
     countMasterDataById,
-    deleteStoragePlaces
+    deleteStoragePlaces,
+    getLatestArticle,
+    countKeywordlistById
 }
