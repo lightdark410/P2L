@@ -495,6 +495,24 @@ function deleteStoragePlaces(storage_location_id, places, start){
     });
 }
 
+function deleteStorageLocation(storage_location_id){
+    return new Promise((resolve, reject) => {
+        con.query(
+            `DELETE FROM storage_location WHERE id = ?`,
+            [storage_location_id],
+            function (err, result) {
+                if (err) {
+                    reject(err)
+                    console.log(err);
+                } else {
+                    resolve(result);
+                }
+
+            }
+        );
+    });
+}
+
 function insertStoragePlaces(storage_location_id, places, start){
     return new Promise((resolve, reject) => {
         try{
@@ -854,6 +872,7 @@ module.exports = {
     getStoragePlaceByStockId,
     countMasterDataById,
     deleteStoragePlaces,
+    deleteStorageLocation,
     getLatestArticle,
     countKeywordlistById
 }

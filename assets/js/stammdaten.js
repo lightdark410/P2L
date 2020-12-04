@@ -253,6 +253,86 @@ $("#EditNode").click(function(){
     })
 })
 
+$("#DeleteNode").click(function(){
+    $(".CreateNode").remove();
+    $(".editForm").remove();
+
+    let selectedText = $(".selectedNode").text();
+    let selectedId = $(".selectedNode").data("id");
+    let selectedEmptyPlaces = $(".selectedNode").parent().find(".places").data("empty_places");
+    let places = $(".selectedNode").parent().find(".places").data("places");
+
+    selectedEmptyPlaces = selectedEmptyPlaces ? selectedEmptyPlaces : 0;
+    places = places ? places : 0;
+
+    let numberOfChildren = $(".selectedNode").parent().find("ul").find("*[data-id]").length;
+    
+    if(numberOfChildren == 0 && places == selectedEmptyPlaces){
+        console.log("kann gelöscht werden");
+    }else{
+        console.log("Kann nicht gelöscht werden du fotze");
+    }
+
+    let popUpMid = ``;
+
+    if(numberOfChildren == 0 && places == selectedEmptyPlaces){
+        popUpMid = `
+        <span>Sicher, dass Sie "${selectedText}" <b><u>unwiderruflich</u></b></span>
+        <br>
+        <span>von den Stammdaten löschen wollen?</span>
+        <br>
+        <button class="btn btn-danger delete" type="button">Löschen</button>
+        <button class="btn btn-secondary cancel" type="button">Abbrechen</button>
+        `;
+    }else{
+        popUpMid = `
+        "${selectedText}" Wird aktuell von Artikeln genutzt, oder enthällt weiter Lagerorte und kann daher nicht gelöscht werden.
+        <br>
+        <button class="btn btn-secondary cancel" type="button">Abbrechen</button>
+        `;
+    }
+
+    let popUp = `
+        <div class="popup">
+            <form>
+            <div class="popup_top">
+                Stammdatum von Ort löschen
+                <div id="mdiv">
+                    <div class="mdiv">
+                        <div class="md"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="popup_mid">
+            `+popUpMid+`
+            </div>
+            <div class="popup_foot"></div>
+            </form>
+        </div>
+    `;
+
+    let cover = '<div class="cover"></div>';
+
+    $(".Stamm_container").prepend($(cover + popUp).hide().fadeIn());
+
+    $(".popup_mid > .cancel").click(function () {
+        $(".cover").fadeOut();
+        $(".popup").fadeOut();
+    })
+
+    $(".popup_mid > .delete").click(function () {        
+        $.ajax({
+            url: `/stammdaten/storageLocation/${selectedId}`,
+            type: "DELETE",
+            success: function (result) {
+                location.reload();
+            }
+        });
+
+    });
+
+})
+
 $("#myUL").on("submit", ".editForm", function(e){
     e.preventDefault();
 
@@ -373,7 +453,11 @@ $("table").on("click", ".fa-trash", function () {
             <form>
             <div class="popup_top">
                 Stammdatum von "${table}" löschen
-                <div id="mdiv"><div class="mdiv"><div class="md"></div></div></div>
+                <div id="mdiv">
+                    <div class="mdiv">
+                        <div class="md"></div>
+                    </div>
+                </div>
             </div>
             <div class="popup_mid">
             `+popUpMid+`
@@ -382,8 +466,6 @@ $("table").on("click", ".fa-trash", function () {
             </form>
         </div>
     `;
-
-    // $("<div/>", {"class": "popup"})
 
     let cover = '<div class="cover"></div>';
 

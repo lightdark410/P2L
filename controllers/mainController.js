@@ -428,9 +428,26 @@ module.exports = function (app) {
     if(req.session.loggedin){
       try {
         var table = req.params.table;
-    
-        var results = await functions.deleteMasterData(table, req.params.name);
-        res.send(results);
+        if(table == "storageLocation"){
+          var storage_location_id = req.params.name;
+
+          var storage_location = await functions.getStorageLocationById(storage_location_id);
+          var children = await functions.getStorageLocationByParent(storage_location_id);
+          var emptyPlaces = await functions.getEmptyStoragePlaces(storage_location_id);
+          emptyPlaces = emptyPlaces[0].empty_places;
+          places = storage_location[0].places;
+
+          if(children.length == 0 && emptyPlaces == places){
+              //delete all places
+              await functions.deleteStoragePlaces(storage_location_id, 0, places);
+              //delete location
+              await functions.deleteStorageLocation(storage_location_id);
+          }
+          
+        }else{
+          await functions.deleteMasterData(table, req.params.name);
+        }
+        res.send(req.params.name + " deleted");
       } catch (error) {
         res.status("500").send("Internal Server Error");
         console.log(error);
