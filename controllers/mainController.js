@@ -209,26 +209,45 @@ module.exports = function (app) {
     }
   });
 
-  app.get("/data/:id", async (req, res) => {
+  app.get("/storagePlace/:id", async (req, res) => {
     if (req.session.loggedin) {
 
       var id = req.params.id;
       var num = /\d/.test(id);
       if(num){
-        const result = await functions.getStockById(id);
+        const result = await functions.getStockByStoragePlace(id);
+        
+        if(!result){
+          res.status("404").send("Item Not Found");
+        }
+        //add storage place
+        var storage_place = await functions.getStorageByStockId(result.id);
+        result.storage_location = storage_place[0].name;
+        result.storage_place = storage_place[0].place;
+  
         if(result.deleted == 0){
           res.render("item", { session: req.session, item: result});
         }else{
           res.status("404").send("Item Not Found");
         }
 
-
       }else{
         res.status("404").send("404 Not Found");
       }
 
     }else{
-      req.session.redirectTo = `/data/${req.params.id}`;
+      req.session.redirectTo = `/storagePlace/${req.params.id}`;
+      res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+    }
+  })
+
+  app.patch("/storagePlace", async (req, res) => {
+    if (req.session.loggedin) {
+        console.log(req.body);
+        await functions.updateStockNumber(req.body.id, req.body.number, req.session.username);
+        res.send("updated");
+    } else {
+      req.session.redirectTo = `/storagePlace/${storagePlaceId}`;
       res.render("login", { err: req.query.err}); //redirect to login page if not logged in
     }
   })
@@ -525,8 +544,6 @@ module.exports = function (app) {
 
         const result = await functions.markStockAsDeleted(req.params.id, req.session.username);
         await functions.setStoragePlaceToNull(req.params.id);
-        // const entry = await functions.getStockById(req.params.id);
-
 
         res.send(result);
       } catch (err) {
@@ -595,33 +612,33 @@ module.exports = function (app) {
 
         let entry = await functions.getStockById(req.body.id);
 
-          let unit = await functions.getMasterDataByName("unit", req.body.unit);        
-          let category = await functions.getMasterDataByName("category", req.body.category);
-          await functions.updateArticle(entry.article_id, req.body.name, unit[0].id, category[0].id);
-          await functions.updateStock(req.body.number, req.body.minimum_number, req.session.username, req.body.id);
+        let unit = await functions.getMasterDataByName("unit", req.body.unit);        
+        let category = await functions.getMasterDataByName("category", req.body.category);
+        await functions.updateArticle(entry.article_id, req.body.name, unit[0].id, category[0].id);
+        await functions.updateStock(req.body.number, req.body.minimum_number, req.session.username, req.body.id);
 
-          //update keywords
-          await functions.deleteKeywordList(entry.id); //delete old keywords
-          if(req.body.keywords.length > 0){
-            var keywordArray = req.body.keywords.split(",");
-            for(var i = 0; i < keywordArray.length; i++){
-              var keyword = await functions.getKeywordsByName(keywordArray[i]);
-              await functions.insertKeywordList(entry.id, keyword[0].id); //add new keywords
-            }
-  
+        //update keywords
+        await functions.deleteKeywordList(entry.id); //delete old keywords
+        if(req.body.keywords.length > 0){
+          var keywordArray = req.body.keywords.split(",");
+          for(var i = 0; i < keywordArray.length; i++){
+            var keyword = await functions.getKeywordsByName(keywordArray[i]);
+            await functions.insertKeywordList(entry.id, keyword[0].id); //add new keywords
           }
-   
-          //update storage place
-          let storagePlace = await functions.getStoragePlaceByStockId(entry.id);
-          await functions.setStoragePlaceToNull(entry.id);
-          // await functions.updateStoragePlace(storagePlace.id, req.body.id);
 
-          var emptyStorageSpace = await functions.getEmptyStoragePlace(req.body.location);
-          await functions.updateStoragePlace(emptyStorageSpace[0].id, req.body.id);
-    
-          var log = await functions.log(req.body.id, "change");
+        }
+  
+        //update storage place
+        let storagePlace = await functions.getStoragePlaceByStockId(entry.id);
+        await functions.setStoragePlaceToNull(entry.id);
+        // await functions.updateStoragePlace(storagePlace.id, req.body.id);
 
-          res.send("updated");
+        var emptyStorageSpace = await functions.getEmptyStoragePlace(req.body.location);
+        await functions.updateStoragePlace(emptyStorageSpace[0].id, req.body.id);
+  
+        var log = await functions.log(req.body.id, "change");
+
+        res.send("updated");
   
       } catch (e) {
         res.status(404).send(e);

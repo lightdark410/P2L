@@ -68,6 +68,26 @@ function getStockById(id) {
     });
 }
 
+function getStockByStoragePlace(storage_place_id){
+    return new Promise((resolve, reject) => {
+        con.query(
+            `
+            SELECT article.name, category.category, stock.*
+            FROM stock
+            LEFT JOIN article ON article.id = stock.article_id
+            LEFT JOIN category ON category.id = article.category_id
+            LEFT JOIN storage_place ON storage_place.stock_id = stock.id
+            WHERE storage_place.id = ? LIMIT 1
+          `,
+            [storage_place_id],
+            function (err, result) {
+                if (err) reject(err);
+                resolve(result[0]);
+            }
+        );
+    });
+}
+
 function getItemById(id) {
     return new Promise((resolve, reject) => {
         con.query("SELECT * FROM article WHERE id = ? LIMIT 1", [id], function (
@@ -800,6 +820,20 @@ function updateStock(number, minimum_number, username, id) {
     });
 }
 
+function updateStockNumber(stock_id, number, username){
+    return new Promise((resolve, reject) => {
+        con.query("UPDATE stock SET number = ?, change_by = ?, date = ?, time = ?, deleted = 0 WHERE id = ?",
+            [number, username, getDate(), getTime(), stock_id],
+            function (err, result) {
+                if (err) {
+                    reject(err);
+                    console.log(err);
+                }
+                resolve(result);
+            });
+    });
+}
+
 function setStoragePlaceToNull(stock_id){
     return new Promise((resolve, reject) => {
         con.query("UPDATE storage_place SET stock_id = NULL WHERE stock_id = ?",
@@ -874,5 +908,7 @@ module.exports = {
     deleteStoragePlaces,
     deleteStorageLocation,
     getLatestArticle,
-    countKeywordlistById
+    countKeywordlistById,
+    getStockByStoragePlace,
+    updateStockNumber
 }

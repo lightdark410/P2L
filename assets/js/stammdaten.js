@@ -10,7 +10,7 @@ $(".AddRow").click(function () {
             <tr>
             <td>
                 <input maxlength="20" class="StammInput" type="text" placeholder="${label}...">
-                <input type="submit" value="Speichern" onclick="addStamm(this)" class="StammSave" />
+                <input type="button" value="Speichern" onclick="addStamm(this)" class="StammSave" />
             </td>
             </tr>
         `);
@@ -385,9 +385,10 @@ $(".AddRow").hover(function () {
 });
 
 function addStamm(x) {
-    var input = $(x).parent().siblings(1).children();
 
-    var placeholder = input.attr('placeholder');
+    var input = $(".StammInput");
+
+    var placeholder = $(".StammInput").attr("placeholder");
     placeholder = placeholder.slice(0, placeholder.length - 3);
 
     var text = input.val();

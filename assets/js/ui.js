@@ -142,10 +142,8 @@ $(function () {
     };
   })
 
-
   $.each(stammdaten.storage_location, function(i, p){
     if(p.parent == 0){
-      $(ul).empty();
 
       $(ul).append(
         $('<li/>').append(
@@ -157,8 +155,6 @@ $(function () {
     }
   });
   
-
-
   $.each(stammdaten.category, function(i, p) {
     popup.find('#category').append($('<option></option>').val(p.category).html(p.category));
   });

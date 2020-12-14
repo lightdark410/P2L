@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Erstellungszeit: 27. Nov 2020 um 07:53
+-- Erstellungszeit: 14. Dez 2020 um 08:15
 -- Server-Version: 10.1.33-MariaDB
 -- PHP-Version: 7.2.6
 
@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS `article` (
   PRIMARY KEY (`id`),
   KEY `einheit_id` (`unit_id`),
   KEY `kategorieId` (`category_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
 --
 -- Tabellenstruktur für Tabelle `category`
@@ -47,9 +47,8 @@ CREATE TABLE IF NOT EXISTS `article` (
 CREATE TABLE IF NOT EXISTS `category` (
   `id` int(255) NOT NULL AUTO_INCREMENT,
   `category` varchar(150) NOT NULL,
-  `number` int(255) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
 --
 -- Tabellenstruktur für Tabelle `keyword`
@@ -58,9 +57,8 @@ CREATE TABLE IF NOT EXISTS `category` (
 CREATE TABLE IF NOT EXISTS `keyword` (
   `id` int(255) NOT NULL AUTO_INCREMENT,
   `keyword` varchar(150) NOT NULL,
-  `number` int(255) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
 --
 -- Tabellenstruktur für Tabelle `keyword_list`
@@ -73,7 +71,7 @@ CREATE TABLE IF NOT EXISTS `keyword_list` (
   PRIMARY KEY (`id`),
   KEY `stichwort_id` (`keyword_id`),
   KEY `stichwortliste_ibfk_1` (`stock_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
 --
 -- Tabellenstruktur für Tabelle `log`
@@ -86,6 +84,7 @@ CREATE TABLE IF NOT EXISTS `log` (
   `name` varchar(255) NOT NULL,
   `category` varchar(255) NOT NULL,
   `keywords` varchar(255) NOT NULL,
+  `location_id` int(11) NOT NULL,
   `location` varchar(255) NOT NULL,
   `date` varchar(255) NOT NULL,
   `time` varchar(255) NOT NULL,
@@ -95,9 +94,7 @@ CREATE TABLE IF NOT EXISTS `log` (
   `minimum_number` int(255) NOT NULL,
   `deleted` tinyint(1) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- --------------------------------------------------------
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
 --
 -- Tabellenstruktur für Tabelle `stock`
@@ -115,7 +112,7 @@ CREATE TABLE IF NOT EXISTS `stock` (
   `deleted` tinyint(1) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `artikelid` (`article_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
 --
 -- Tabellenstruktur für Tabelle `storage_location`
@@ -127,7 +124,7 @@ CREATE TABLE IF NOT EXISTS `storage_location` (
   `parent` int(255) NOT NULL,
   `places` int(255) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=64 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
 --
 -- Tabellenstruktur für Tabelle `storage_place`
@@ -142,7 +139,7 @@ CREATE TABLE IF NOT EXISTS `storage_place` (
   UNIQUE KEY `artikelliste_id` (`stock_id`),
   KEY `lagerort_id` (`storage_location_id`),
   KEY `lagerplatz_ibfk_1` (`stock_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=71 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
 --
 -- Tabellenstruktur für Tabelle `unit`
@@ -152,8 +149,11 @@ CREATE TABLE IF NOT EXISTS `unit` (
   `id` int(255) NOT NULL AUTO_INCREMENT,
   `unit` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
 
+--
+-- Constraints der exportierten Tabellen
+--
 
 --
 -- Constraints der Tabelle `article`

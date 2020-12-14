@@ -23,7 +23,7 @@
             <tbody>
               <tr>
                 <th scope="row">Artikelnummer</th>
-                <td><%= item.id %></td>
+                <td id="id"><%= item.id %></td>
               </tr>
               <tr>
                 <th scope="row">Name</th>
@@ -35,7 +35,7 @@
               </tr>
               <tr>
                 <th scope="row">Ort</th>
-                <td><%= item.location %></td>
+                <td><%= item.storage_location %></td>
               </tr>
               <tr>
                 <th scope="row">Anzahl</th>
@@ -77,34 +77,7 @@
 
 
     <%- include('scripts'); %>
+    <script src="../assets/js/item.js"></script>
 
-    <script>
-            $(function(){
-                $(".input-group-text").on("click", function(){
-                    checkValue();
-                });
-
-                $("input[type='number'").on("change keyup", function(){
-                    checkValue();
-                });
-
-                function checkValue(){
-                    let val = parseInt($("input[type='number']").val());
-                    let number = parseInt($("#Anzahl").text());
-                    
-                    if((number + val) < 0){
-                        $("#Speichern").prop("disabled", true);
-                        $("#ErrorMsg").html(`Sie können nur maximal ${number} Artikel entnehmen.`);
-                    }else if(val == 0){
-                        $("#Speichern").prop("disabled", true);
-                    }
-                    else{
-                        $("#ErrorMsg").html("");    
-                        $("#Speichern").prop("disabled", false);
-                    }
-                    
-                }
-            });
-            </script>
 </body>
 </html>
