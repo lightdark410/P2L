@@ -741,9 +741,7 @@ async function log(id, event) {
     var storage_place = await getStorageByStockId(data[0].id);
     data[0].storage_location = storage_place[0].name;
     data[0].storage_place = storage_place[0].place;
-    console.log("Data: ");
-    console.log(data);
-    console.log("~~~~~~~~");
+
     return new Promise((resolve, reject) => {
         con.query(
             "INSERT INTO `log`(`event`, `stock_id`, `name`, `category`, `keywords`, `location_id`, `location`, `date`, `time`, `creator`, `change_by`, `number`, `minimum_number`, `deleted`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
