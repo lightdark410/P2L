@@ -266,12 +266,6 @@ $("#DeleteNode").click(function(){
     places = places ? places : 0;
 
     let numberOfChildren = $(".selectedNode").parent().find("ul").find("*[data-id]").length;
-    
-    if(numberOfChildren == 0 && places == selectedEmptyPlaces){
-        console.log("kann gelöscht werden");
-    }else{
-        console.log("Kann nicht gelöscht werden du fotze");
-    }
 
     let popUpMid = ``;
 

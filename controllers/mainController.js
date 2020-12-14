@@ -226,6 +226,7 @@ module.exports = function (app) {
         result.storage_place = storage_place[0].place;
   
         if(result.deleted == 0){
+          await functions.log(result.id, "change");
           res.render("item", { session: req.session, item: result});
         }else{
           res.status("404").send("Item Not Found");
