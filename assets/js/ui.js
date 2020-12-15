@@ -183,7 +183,6 @@ $(function () {
     
               )
             )
-            console.log(p.id);
             appendChild(p.id);   
         });
 
@@ -435,7 +434,6 @@ $(function () {
     popup.find("#location span").first().text("Wähle einen Ort aus");
     popup.find("#location span").first().attr("data-id", 0);
     popup.find("#location span").first().data("parent", 0);
-    console.log(popup.find("#location span").first().data("id"));
     popup.find("form").prop("action", "/create");
     popup.find(".numberButton").remove();
     $(popup.find("#minimum_number")).css("margin-bottom", "0");

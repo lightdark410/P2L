@@ -226,7 +226,6 @@ module.exports = function (app) {
         result.storage_place = storage_place[0].place;
   
         if(result.deleted == 0){
-          await functions.log(result.id, "change");
           res.render("item", { session: req.session, item: result});
         }else{
           res.status("404").send("Item Not Found");
@@ -244,8 +243,9 @@ module.exports = function (app) {
 
   app.patch("/storagePlace", async (req, res) => {
     if (req.session.loggedin) {
-        console.log(req.body);
         await functions.updateStockNumber(req.body.id, req.body.number, req.session.username);
+        await functions.log(result.id, "change");
+
         res.send("updated");
     } else {
       req.session.redirectTo = `/storagePlace/${storagePlaceId}`;
