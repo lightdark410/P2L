@@ -352,7 +352,7 @@ $(function () {
       "async": false,
       "type": "GET",
       "global": false,
-      "url": `/entry/${id}`,
+      "url": `/data/${id}`,
       "success": function(data){
         result = {
           "name": data.name,

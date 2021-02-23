@@ -558,32 +558,6 @@ function insertStoragePlaces(storage_location_id, places, start){
     });
 }
 
-function autoFill(title, table, value){
-    return new Promise((resolve, reject) => {
-        con.query(
-            `SELECT DISTINCT ${title} FROM ${table}`,
-            function (err, result) {
-                if (err) {
-                    reject(err);
-                    console.log(err);
-                } else {
-                    var autoFillResults = [];
-                    for (var i = 0; i < result.length; i++) {
-                      var sqlRes = result[i][title].toUpperCase();
-                      var val = value.toUpperCase();
-            
-                      if (sqlRes.startsWith(val)) {
-                        //if a location starts with the user input
-                        autoFillResults.push(result[i][title]); //add location to autoFillResults
-                      }
-                    }
-                    resolve(autoFillResults);
-                }
-            }
-        );
-    });
-}
-
 function getKeywordsByName(name) {
     return new Promise((resolve, reject) => {
         con.query(
@@ -883,7 +857,6 @@ module.exports = {
     updateArticle,
     updateStock,
     getKeywordsByName,
-    autoFill,
     getEntryByName,
     getMasterDataByName,
     getStorageLocation,
