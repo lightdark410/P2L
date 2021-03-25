@@ -1,9 +1,9 @@
 
-ul, #myUL {
+ul, #locationUL {
     list-style-type: none;
   }
   
-  #myUL {
+  #locationUL {
     margin: 0;
     padding: 0;
   }

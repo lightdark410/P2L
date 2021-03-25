@@ -3,8 +3,6 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "test": "nightwatch",
-    "start": "nodemon server.js"
   },
   "author": "",
   "license": "ISC",
@@ -22,16 +20,6 @@
     "mqtt": "^4.2.6",
     "mysql": "^2.18.1",
     "mysql2": "^2.1.0"
-  },
-  "devDependencies": {
-    "@wdio/cli": "^6.5.0",
-    "@wdio/local-runner": "^6.5.0",
-    "@wdio/mocha-framework": "^6.5.0",
-    "@wdio/spec-reporter": "^6.4.7",
-    "@wdio/sync": "^6.5.0",
-    "chromedriver": "^85.0.1",
-    "nodemon": "^2.0.6",
-    "wdio-chromedriver-service": "^6.0.4"
   },
   "repository": {
     "type": "git",

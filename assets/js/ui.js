@@ -134,7 +134,9 @@ $(function () {
 
   const emptyPlaceIsZero = (currentValue) => currentValue.empty_places === 0;
 
+  //handles clicks on the location tab in the popup
   $("body").on("click", "#location span", function(){
+    //checks if there every 'emptyPlaces' property is 0 
     if(stammdaten.storage_location.every(emptyPlaceIsZero)){
       $("#location").parent().append(
         $("<span/>", {"id": "LocationNotification", "text": "Alle Lagerplätze sind belegt."})
@@ -142,19 +144,19 @@ $(function () {
     };
   })
 
+  //displays all root locations in the popup
   $.each(stammdaten.storage_location, function(i, p){
     if(p.parent == 0){
-
       $(ul).append(
         $('<li/>').append(
           $('<span/>', {'class': 'dropdown-item', 'text': p.name, 'data-id': p.id, 'data-parent': p.parent, 'data-places': p.places, 'data-empty_places': p.empty_places})
         )
       );
-      
       appendChild(p.id);
     }
   });
   
+  //apply option tags for selection
   $.each(stammdaten.category, function(i, p) {
     popup.find('#category').append($('<option></option>').val(p.category).html(p.category));
   });
@@ -163,13 +165,12 @@ $(function () {
     popup.find('#unit').append($('<option></option>').val(p.unit).html(p.unit));
   });
 
+  //append children locations in the popup
   function appendChild(parentId){
     $.get(`/lagerorte/parent/${parentId}`, function(data){
 
       if(data.length > 0){
         let parentSpan = $(ul).find(`*[data-id=${parentId}]`);
-
-
         $(parentSpan).addClass("submenuIcon");
         
         $(parentSpan).parent().append(
@@ -185,14 +186,13 @@ $(function () {
             )
             appendChild(p.id);   
         });
-
       }else{
         removeEndNode(parentId);
       }
-      
     })
   }
 
+  //remove child nodes without free storage places
   function removeEndNode(nodeDataId){
 
     let endNode = popup.find(`[data-id='${nodeDataId}']`);
@@ -202,8 +202,6 @@ $(function () {
     if($(endNode).data("empty_places") == 0){
       $(endNode).parent().remove();
 
-
-      // console.log(parentUl);
       if(parentUl.children().length == 0){
         $(parentUl).remove();
 
@@ -211,39 +209,35 @@ $(function () {
         $(parentNode).removeClass("submenuIcon");
         removeEndNode(endNodeParent);
       }
-
     }
   }
 
-  
+  //apply selected location to popup
   $("body").on("click", "#location ul li span", function(e){
-    let empty_places = $(this).data("empty_places");
-
-    if(empty_places > 0){
+    let locationHasFreeStoragePlaces = $(this).data("empty_places") > 0;
+    if(locationHasFreeStoragePlaces){
       let name = $(this).text();
       let dataId = $(this).data("id");
       let dataParent = $(this).data("parent");
-  
-      // console.log($("#location li span").first());
       let selectedItem = $("#location li span").first()[0];
   
       $(selectedItem).text(name);
       $(selectedItem).attr("data-id", dataId);
       $(selectedItem).attr("data-parent", dataParent);
-    }
-
-    
+    }    
   })
-  //~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   //check if new Item already exists
   $("body").on("change, keyup", "#name", function () {
-    var artikel = $("#name").val();
-  
-    if (artikel !== "" && $("#createForm").attr("action") == "/create") {
-      $.get(`entry/name/${artikel}`, function (data) {
+    let name = $("#name").val();
+    let nameIsNotEmpty = /([^\s])/.test(name);
+    let formAction = $("#createForm").attr("action");
+
+    if (nameIsNotEmpty && formAction == "/create") {
+      $.get(`entry/name/${name}`, function (data) {
         if (data) {
-          if (!$("#notification").length) {
+          let noErrMsgExists = $("#notification").length == 0;
+          if (noErrMsgExists) {
             $("#name")
               .parent()
               .append(
@@ -251,14 +245,10 @@ $(function () {
               );
           }
           $(".ui-autocomplete").css("z-index", "0");
-
         }else{
           $("#notificationBreak").remove();
           $("#notification").remove();
-          checkError();
-          
         }
-
       });
     }
   });
@@ -275,17 +265,9 @@ $(function () {
 
   });
 
-  function checkError(){
-    if($(".ErrMsg").length == 0 && $(".ErrMsg2").length == 0 && !$("#notification").length){
-      $("#PopUpSubmit").prop("disabled", false);
-    }
-  }
-
   var KeywordsAutocomplete;
 
   $("#New").click(function () {
-    //var NewPopUp = createPopUp();
-    //$('body').append(NewPopUp);
     popup = toCreatePopup(popup);
     $('#tableDiv').after(popup);
     popup.fadeIn();
@@ -305,8 +287,6 @@ $(function () {
             autocomplete: true,
             icon: "fa fa-times",
             onChange: value => {
-                  //var element = document.getElementsByClassName('.select-pure__label')[0];
-                  //element.scrollTop = element.scrollHeight;
                   var element = $(".select-pure__label");
                   $(element[0]).scrollTop(element[0].scrollHeight);
               },
@@ -331,7 +311,6 @@ $(function () {
         }
     });
 
-    //$("#PopUp").fadeIn();
     $("#name").focus();
     $("#cover").fadeIn();
   });

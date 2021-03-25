@@ -4,7 +4,6 @@ $(document).ready(function () {
   var table = $("#table").DataTable({
     "processing": true,
     "ajax": {
-      // "url": "/assets/js/data.json",
       "url": "/data",
       "type": "GET"
     },
@@ -75,7 +74,7 @@ $(document).ready(function () {
 
   }
 
-  var logsTable = $('#logsTable').DataTable({
+  $('#logsTable').DataTable({
     "ordering": false,
     language: {
       "url": "/assets/js/datatables/German.json",
@@ -83,7 +82,7 @@ $(document).ready(function () {
     },
   });
 
-  var kategorieTable = $('#kategorieTable').DataTable({
+  $('#kategorieTable').DataTable({
     "processing": true,
     "ajax":{
       "url": "/stammdaten/category",
@@ -100,7 +99,8 @@ $(document).ready(function () {
       "searchPlaceholder": "Suchen..."
     }
   });
-  var keywordsTable = $('#keywordsTable').DataTable({
+  
+  $('#keywordsTable').DataTable({
     "processing": true,
     "ajax":{
       "url": "/stammdaten/keyword",
@@ -118,7 +118,7 @@ $(document).ready(function () {
     }
   });
 
-  var keywordsTable = $('#unitTable').DataTable({
+  $('#unitTable').DataTable({
     "processing": true,
     "ajax":{
       "url": "/stammdaten/unit",
@@ -165,8 +165,6 @@ $(document).ready(function () {
     table.draw();
   });
 
-  
-
   $('#table tbody').on('dblclick', 'tr', function (e) {
     var that = $(this);
 
@@ -184,7 +182,6 @@ $(document).ready(function () {
     var that = $(this);
     selectRows(that, e);
   });
-
 
   //selects row(s)
   function selectRows(that, e) {
