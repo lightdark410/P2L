@@ -1,2 +1,4 @@
 /node_modules/*
-/pseudoCode/*
+/ESP8266_Firmware/.vscode/*
+/ESP8266_Firmware/.pio
+
