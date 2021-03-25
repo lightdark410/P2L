@@ -88,20 +88,7 @@ function getStockByStoragePlace(storage_place_id){
     });
 }
 
-function getItemById(id) {
-    return new Promise((resolve, reject) => {
-        con.query("SELECT * FROM article WHERE id = ? LIMIT 1", [id], function (
-            err,
-            result
-        ) {
-            if (err) reject(err);
-            resolve(result[0]);
-        });
-    });
-}
-
-//Needs to be updated (?)
-function getEntryByName(Name){
+function getArticleByName(Name){
     return new Promise((resolve, reject) => {
         con.query(
             `SELECT article.name
@@ -839,7 +826,6 @@ function getStoragePlaceByStockId(stock_id){
 module.exports = {
     getAll,
     getStockById,
-    getItemById,
     markStockAsDeleted,
     insertStock,
     insertArticle,
@@ -857,7 +843,7 @@ module.exports = {
     updateArticle,
     updateStock,
     getKeywordsByName,
-    getEntryByName,
+    getArticleByName,
     getMasterDataByName,
     getStorageLocation,
     getStorageLocationByParent,

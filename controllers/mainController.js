@@ -31,7 +31,7 @@ var con = mysql.createConnection(config.get('dbConfig'));
 //     client.end()
 // })
 
-//check if required Database exists and creates if not exist
+//checks if required Database exists and if not creates it
 fs.readFile('./config/schema.sql', 'utf8', function (err, data) {
   // data = data.replace(/\r|\n/g, ' ');
 
@@ -45,58 +45,59 @@ fs.readFile('./config/schema.sql', 'utf8', function (err, data) {
 });
 
 module.exports = function (app) {
-  //Page Routing
-    app.post("/auth", async (req, res) => {
-      //authentication
-      var ldap = require("ldapjs");
 
-      var client = ldap.createClient({ url: config.get('ldap.url') });
+  //ldap authentication
+  app.post("/auth", async (req, res) => {
+    var ldap = require("ldapjs");
+
+    var client = ldap.createClient({ url: config.get('ldap.url') });
 
 
-      client.on("error", function (err) {
-        console.warn(
-          "LDAP connection failed, but fear not, it will reconnect OK",
-          err,
-        );
-      });
-
-      var username = req.body.username; //get params
-      var password = req.body.password;
-
-      var name = "ABBW" + "\\" + username;
-
-      if (username && password) {
-        client.bind(name, password, async (err) => {
-          if (err == null) {
-            //if no error occurs
-
-            var base = config.get('ldap.domain');
-            var search_options = {
-              scope: 'sub',
-              filter: '(&(objectClass=user)(sAMAccountName=' + username + '))',
-              attrs: 'memberOf'
-            };
-
-            var searchRes = await functions.UserSearch(client, base, search_options);
-
-            req.session.loggedin = true; //set session
-            req.session.title = searchRes.title;
-            req.session.username = searchRes.sAMAccountName;
-
-            var redirectTo = req.session.redirectTo || '/';
-            res.redirect(redirectTo); //redirect to home
-
-          } else {
-            res.redirect("/?err=FalseCred"); //Error message if username or password is incorrect
-          }
-          res.end();
-        });
-      } else {
-        //if no username/passwort exists
-        res.end();
-      }
+    client.on("error", function (err) {
+      console.warn(
+        "LDAP connection failed, but fear not, it will reconnect OK",
+        err,
+      );
     });
 
+    var username = req.body.username; //get params
+    var password = req.body.password;
+
+    var name = "ABBW" + "\\" + username;
+
+    if (username && password) {
+      client.bind(name, password, async (err) => {
+        if (err == null) {
+          //if no error occurs
+
+          var base = config.get('ldap.domain');
+          var search_options = {
+            scope: 'sub',
+            filter: '(&(objectClass=user)(sAMAccountName=' + username + '))',
+            attrs: 'memberOf'
+          };
+
+          var searchRes = await functions.UserSearch(client, base, search_options);
+
+          req.session.loggedin = true; //set session
+          req.session.title = searchRes.title;
+          req.session.username = searchRes.sAMAccountName;
+
+          var redirectTo = req.session.redirectTo || '/';
+          res.redirect(redirectTo); //redirect to home
+
+        } else {
+          res.redirect("/?err=FalseCred"); //Error message if username or password is incorrect
+        }
+        res.end();
+      });
+    } else {
+      //if no username/passwort exists
+      res.end();
+    }
+  });
+  
+  //Page Routing
     app.get("/", async (req, res) => {
       if (req.session.loggedin) {
         res.render("index", { session: req.session }); //load index
@@ -135,6 +136,21 @@ module.exports = function (app) {
         res.render("login", { err: req.query.err}); //redirect to login page if not logged in
       }
   
+    });
+
+    app.get("/logs/:stockId", async (req, res) => {
+      if(req.session.loggedin){
+        try {
+          var logs = await functions.getLogByStockId(req.params.stockId);
+          res.render("logs", { result: logs, session: req.session });
+        } catch (error) {
+          res.status("500").send("Internal Server Error");
+          console.log(error);
+        }
+      }else{
+        req.session.redirectTo = `/logs/${req.params.stockId}`;
+        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+      }
     });
 
     app.get("/qr", async (req, res) => {
@@ -315,7 +331,7 @@ module.exports = function (app) {
     app.get("/entry/name/:name", async (req, res) => {
     if(req.session.loggedin){
       try {
-        const result = await functions.getEntryByName(req.params.name);
+        const result = await functions.getArticleByName(req.params.name);
         res.send(result);
       } catch (err) {
         res.status(404).send("Internal Server Error");
@@ -591,21 +607,6 @@ module.exports = function (app) {
         res.render("login", { err: req.query.err}); //redirect to login page if not logged in
       }
     })
-
-    app.get("/logs/:stockId", async (req, res) => {
-      if(req.session.loggedin){
-        try {
-          var logs = await functions.getLogByStockId(req.params.stockId);
-          res.render("logs", { result: logs, session: req.session });
-        } catch (error) {
-          res.status("500").send("Internal Server Error");
-          console.log(error);
-        }
-      }else{
-        req.session.redirectTo = `/logs/${req.params.stockId}`;
-        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
-      }
-    });
   //
   
 }
