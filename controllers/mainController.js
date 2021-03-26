@@ -39,7 +39,7 @@ fs.readFile('./config/schema.sql', 'utf8', function (err, data) {
     if (err) {
       console.log(err.sqlMessage);
     }
-    var con = mysql.createConnection(config.get('dbConfig'));
+    con = mysql.createConnection(config.get('dbConfig'));
   }
   );
 });
@@ -166,7 +166,7 @@ module.exports = function (app) {
   //stock related data
     app.get("/data", async (req, res) => {
       if (req.session.loggedin) {
-        var result = await functions.getAll(); // get db data
+        var result = await functions.getStock(); // get db data
         for(var i = 0; i < result.data.length; i++){
 
           //add keywords
@@ -175,8 +175,11 @@ module.exports = function (app) {
 
           //add storage place
           var storage_place = await functions.getStorageByStockId(result.data[i].id);
-          result.data[i].storage_location = storage_place[0].name;
-          result.data[i].storage_place = storage_place[0].place;
+          console.log(result.data[i].id);
+          console.log(storage_place);
+
+          result.data[i].storage_location = storage_place.name;
+          result.data[i].storage_place = storage_place.place;
 
         }
 
@@ -201,10 +204,10 @@ module.exports = function (app) {
 
           //add storage place
           var storage_place = await functions.getStorageByStockId(result.id);
-          result.storage_location = storage_place[0].name;
-          result.storage_place = storage_place[0].place;
-          result.storage_location_id = storage_place[0].storage_location_id;
-          result.storage_parent = storage_place[0].parent;
+          result.storage_location = storage_place.name;
+          result.storage_place = storage_place.place;
+          result.storage_location_id = storage_place.storage_location_id;
+          result.storage_parent = storage_place.parent;
 
           res.send(result);
         }else{
@@ -239,6 +242,7 @@ module.exports = function (app) {
             await functions.updateStoragePlace(emptyStorageSpace[0].id, latestStock.id);
 
             var keywords = req.body.keywords.split(",");
+            console.log(keywords);
             if(req.body.keywords != 0){
               for(var i = 0; i < keywords.length; i++){
                 var fullKeyword = await functions.getMasterDataByName("keyword", keywords[i]);
@@ -313,7 +317,13 @@ module.exports = function (app) {
         try {
           await functions.log(req.params.id, "delete");
 
-          const result = await functions.markStockAsDeleted(req.params.id, req.session.username);
+          await functions.deleteKeywordList(req.params.id);
+          await functions.setStoragePlaceToNull(req.params.id);
+          let stock = await functions.getStockById(req.params.id);
+          let result = await functions.deleteStock(req.params.id);
+          console.log("stock: " + stock);
+          await functions.deleteArticle(stock.id);
+
           await functions.setStoragePlaceToNull(req.params.id);
 
           res.send(result);
@@ -436,9 +446,9 @@ module.exports = function (app) {
   
             var storage_location = await functions.getStorageLocationById(storage_location_id);
             var children = await functions.getStorageLocationByParent(storage_location_id);
-            var emptyPlaces = await functions.getEmptyStoragePlaces(storage_location_id);
-            emptyPlaces = emptyPlaces[0].empty_places;
-            places = storage_location[0].places;
+            var emptyPlaces = await functions.countEmptyStoragePlacesByLocationId(storage_location_id);
+            emptyPlaces = emptyPlaces.empty_places;
+            places = storage_location.places;
   
             if(children.length == 0 && emptyPlaces == places){
                 //delete all places
@@ -469,15 +479,16 @@ module.exports = function (app) {
         var id = req.params.id;
         var num = /\d/.test(id);
         if(num){
-          const result = await functions.getStockByStoragePlace(id);
-          
-          if(!result){
+          const result = await functions.getStockByStoragePlaceId(id);
+
+          if(result.length == 0){
             res.status("404").send("Item Not Found");
+            return;
           }
           //add storage place
           var storage_place = await functions.getStorageByStockId(result.id);
-          result.storage_location = storage_place[0].name;
-          result.storage_place = storage_place[0].place;
+          result.storage_location = storage_place.name;
+          result.storage_place = storage_place.place;
     
           if(result.deleted == 0){
             res.render("item", { session: req.session, item: result});
@@ -498,7 +509,7 @@ module.exports = function (app) {
     app.patch("/storagePlace", async (req, res) => {
       if (req.session.loggedin) {
           await functions.updateStockNumber(req.body.id, req.body.number, req.session.username);
-          await functions.log(result.id, "change");
+          await functions.log(req.body.id, "change");
 
           res.send("updated");
       } else {
@@ -512,8 +523,8 @@ module.exports = function (app) {
         try {
           var results = await functions.getStorageLocation();
           for(var i = 0; i < results.length; i++){
-            var count = await functions.getEmptyStoragePlaces(results[i].id);
-            results[i].empty_places = count[0].empty_places;
+            var count = await functions.countEmptyStoragePlacesByLocationId(results[i].id);
+            results[i].empty_places = count.empty_places;
           }
           res.send(results);
         } catch (e) {
@@ -530,10 +541,15 @@ module.exports = function (app) {
     
     app.get("/lagerorte/:id", async (req, res) => {
       if (req.session.loggedin) {
-        var results = await functions.getStorageLocationById(req.params.id);
-        var count = await functions.getEmptyStoragePlaces(results[0].id);
-        results[0].empty_places = count[0].empty_places;
-        res.send(results);
+        var storage_location = await functions.getStorageLocationById(req.params.id);
+        if(!storage_location){
+          console.log("Not Found");
+          res.status("404").send("Not Found");
+          return;
+        }
+        var count = await functions.countEmptyStoragePlacesByLocationId(storage_location.id);
+        storage_location.empty_places = count.empty_places;
+        res.send(storage_location);
       } else {
         req.session.redirectTo = `/lagerorte/${req.params.id}`;
         res.render("login", { err: req.query.err}); //redirect to login page if not logged in
@@ -544,8 +560,8 @@ module.exports = function (app) {
       if (req.session.loggedin) {
         var results = await functions.getStorageLocationByParent(req.params.id);
         for(var i = 0; i < results.length; i++){
-          var count = await functions.getEmptyStoragePlaces(results[i].id);
-          results[i].empty_places = count[0].empty_places;
+          var count = await functions.countEmptyStoragePlacesByLocationId(results[i].id);
+          results[i].empty_places = count.empty_places;
         }
         res.send(results);
       } else {
@@ -591,10 +607,10 @@ module.exports = function (app) {
         try {
           let oldStorageLocation = await functions.getStorageLocationById(req.body.id);
           await functions.updateStorageLocation(req.body.id, req.body.name, req.body.number);
-          if(oldStorageLocation[0].places < req.body.number){
-            await functions.insertStoragePlaces(req.body.id, req.body.number, oldStorageLocation[0].places)
-          }else if(oldStorageLocation[0].places > req.body.number){
-            await functions.deleteStoragePlaces(req.body.id, req.body.number, oldStorageLocation[0].places);
+          if(oldStorageLocation.places < req.body.number){
+            await functions.insertStoragePlaces(req.body.id, req.body.number, oldStorageLocation.places)
+          }else if(oldStorageLocation.places > req.body.number){
+            await functions.deleteStoragePlaces(req.body.id, req.body.number, oldStorageLocation.places);
           }
 
           res.send("updated");

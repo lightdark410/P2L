@@ -51,8 +51,6 @@ $(document).ready(function () {
         default:
           break;
       }
-
-      fillLoactionDropdown();
     }else{
       $("#location span").first().attr("style", "color: red !important");
     }

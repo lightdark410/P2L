@@ -63,7 +63,6 @@ function displayChildNodes(parent){
     let parentExists = parent.length > 0 ? true : false;
     if(parentExists){
         let dataFromSelectedEle = getLocationById(parentId);
-        dataFromSelectedEle = dataFromSelectedEle[0];
         
         if(dataFromSelectedEle.places != "0"){
             $(parent).parent().find("ul").first().prepend(

@@ -392,6 +392,10 @@ button:hover:disabled {
   height: 35px;
 }
 
+#Delete{
+  background-color: #ff5252;
+}
+
 #New:disabled,
 #Edit:disabled,
 #Delete:disabled {

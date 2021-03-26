@@ -20,8 +20,8 @@ $(document).ready(function () {
       { data: "change_by" }, 
       { data: "date" }, 
       { data: "time" }, 
-      { data: "keyword" }, 
-      { data: "deleted" }
+      { data: "keyword" },
+      { data: "id"}
     ],
     "rowCallback": function (row, data, index) {
       $(row).find("td").last().html('<img class="log" src="assets/iconfinder_link.svg" alt="" title="Zu den Logs..">');
@@ -252,10 +252,10 @@ $(document).ready(function () {
     $("#PopUpDelete").show();
     $("#cover").show();
     if (counter > 1) {
-      $(".PopUpDelete_middle").html(`<span>Sind Sie sicher, dass Sie ${counter} Einträge löschen möchten?<span>`);
+      $(".PopUpDelete_middle").html(`<span>Sind Sie sicher, dass Sie ${counter} Einträge <u><b>unwiderruflich</b></u> löschen möchten?<span>`);
     } else {
       var artikel = table.rows(".selected").data()[0].name;
-      $(".PopUpDelete_middle").html(`<span>Sind Sie sicher, dass Sie "${artikel}" löschen möchten?<span>`);
+      $(".PopUpDelete_middle").html(`<span>Sind Sie sicher, dass Sie "${artikel}" <u><b>unwiderruflich</b></u> löschen möchten?<span>`);
     }
     
     $(document).keypress(function(event){
