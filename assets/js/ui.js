@@ -49,10 +49,8 @@ $(function () {
 
   //create Popup
   var popup = $('<div/>', {'id':'PopUp'}).append(
-    $('<form/>', {'id': 'createForm', 'action': '/create', 'method': 'post'}).append(
-      $('<div/>', {'class': 'PopUp_topBar', 'text': 'Neuen Artikel anlegen'}).append(
-        $('<span/>', {'text': 'x'})
-      )
+    $('<form/>', {'action': '/stock'}).append(
+      $('<div/>', {'class': 'PopUp_topBar'})
     ).append(
       $('<div/>', {'class': 'PopUp_middle'}).append(
         $('<table/>').append(
@@ -66,7 +64,6 @@ $(function () {
             $('<td/>', {'text': 'Ort:'})
           ).append(
             $('<td/>').append(
-              // $('<select/>', {'name': 'location', 'id': 'location', 'oninvalid': 'this.setCustomValidity(`Wählen Sie bitte einen Ort aus.\n Sie müssen diese vorher in den Stammdaten eintragen`)'})
               $('<ul/>', {'id': 'location', 'class': 'navbar-nav border'}).append(
                 $('<li/>', {'class': 'nav-item dropdown'}).append(
                   $('<span/>', {'class': 'nav-link dropdown-toggle', 'data-toggle': 'dropdown', 'text': 'Wähle einen Ort aus'})
@@ -231,10 +228,21 @@ $(function () {
   $("body").on("change, keyup", "#name", function () {
     let name = $("#name").val();
     let nameIsNotEmpty = /([^\s])/.test(name);
-    let formAction = $("#createForm").attr("action");
 
-    if (nameIsNotEmpty && formAction == "/create") {
-      $.get(`entry/name/${name}`, function (data) {
+    let selectedName;
+    $("#table tbody tr").each(function () {
+      //get selected line
+      if ($(this).hasClass("selected")) {
+        //get name from selected row
+        selectedName = ($(this).children().eq(1).html());
+      };
+    });
+
+    let nameIsNotEqualToSelectedName = selectedName != name.replace(/\s/g, '');
+
+    //Only check for a match if the input is not empty and not the same as in the selected row
+    if (nameIsNotEmpty && nameIsNotEqualToSelectedName) {
+      $.get(`/stock/name/${name}`, function (data) {
         if (data) {
           let noErrMsgExists = $("#notification").length == 0;
           if (noErrMsgExists) {
@@ -269,9 +277,12 @@ $(function () {
 
   $("#New").click(function () {
     popup = toCreatePopup(popup);
+    $(".selected").removeClass('selected');
     $('#tableDiv').after(popup);
     popup.fadeIn();
 
+
+    //apply multi dropdown field for keywords
     $('.select-pure__select').remove();
     $.ajax({
       url: 'stammdaten/keyword',
@@ -331,7 +342,7 @@ $(function () {
       "async": false,
       "type": "GET",
       "global": false,
-      "url": `/data/${id}`,
+      "url": `/stock/${id}`,
       "success": function(data){
         result = {
           "name": data.name,
@@ -351,6 +362,7 @@ $(function () {
     $('#tableDiv').after(popup);
     popup.fadeIn();
 
+    //apply multi dropdown field for keywords
     $('.select-pure__select').remove();
     $.ajax({
       url: 'stammdaten/keyword',
@@ -413,7 +425,7 @@ $(function () {
     popup.find("#location span").first().text("Wähle einen Ort aus");
     popup.find("#location span").first().attr("data-id", 0);
     popup.find("#location span").first().data("parent", 0);
-    popup.find("form").prop("action", "/create");
+    popup.find("form").prop("action", "/stock");
     popup.find(".numberButton").remove();
     $(popup.find("#minimum_number")).css("margin-bottom", "0");
     

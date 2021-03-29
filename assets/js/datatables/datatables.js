@@ -4,7 +4,7 @@ $(document).ready(function () {
   var table = $("#table").DataTable({
     "processing": true,
     "ajax": {
-      "url": "/data",
+      "url": "/stock",
       "type": "GET"
     },
     "columns": [
@@ -257,15 +257,6 @@ $(document).ready(function () {
       var artikel = table.rows(".selected").data()[0].name;
       $(".PopUpDelete_middle").html(`<span>Sind Sie sicher, dass Sie "${artikel}" <u><b>unwiderruflich</b></u> löschen möchten?<span>`);
     }
-    
-    $(document).keypress(function(event){
-
-      var keycode = (event.keyCode ? event.keyCode : event.which);
-      if(keycode == '13'){
-        $("#deleteForm").submit();
-      }
-    
-    });
   });
 
   $("#deleteForm").submit(function (event) {

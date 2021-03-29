@@ -287,7 +287,6 @@ function getMasterData(table) {
             function (err, result) {
                 if (err) {
                     reject(err);
-                    console.log(err);
                 } else {
                     res.data = result;
                     resolve(res);
@@ -305,9 +304,10 @@ function getMasterDataByName(table, name){
             [name],
             function (err, result) {
                 if (err){
-                    reject(err)
-                } ;
-                resolve(result);
+                    reject(err);
+                }else{
+                    resolve(result);
+                }
             }
         );
     }); 
@@ -468,7 +468,7 @@ function countEmptyStoragePlacesByLocationId(storage_location_id){
                     console.log(err);
                     reject(err);
                 }
-                resolve(result[0]);
+                resolve(result[0].empty_places);
             }
         );
     });

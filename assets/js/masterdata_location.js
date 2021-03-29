@@ -82,9 +82,9 @@ function getCreateNode(){
     let node = $("<li/>", {"class": "CreateNode"}).append(
         $("<form/>", {"class": "createForm", "action": "", "method": "POST"}).append(
             $("<span/>", {"class": "caret create"}).append(
-                $("<input/>", {"type": "text", "placeholder": "Name...", "name": "name", "height": "32"})
+                $("<input/>", {"type": "text", "placeholder": "Name...", "name": "name", "height": "32", "maxlength": "15"})
                 ).append(
-                    $("<input/>", {"type": "number", "value": 0, "name": "number", "height": "32", "width": "55", "min": "0", "max": "9999"})
+                    $("<input/>", {"type": "number", "value": 0, "name": "number", "height": "32", "width": "55", "min": "0", "max": "100"})
                 ).append(
                     $("<button/>", {"type": "submit", "class": "btn btn-success mb-1", "text": "Speichern"})
                 )
@@ -188,9 +188,9 @@ $("#EditNode").click(function(){
         $("<form/>", {"class": "editForm", "style": "margin-top: -20px"}).append(
             $("<br>")
         ).append(
-            $("<input/>", {"type": "text", "value": selectedText, "name": "name", "data-id": selectedId, "height": "32"})
+            $("<input/>", {"type": "text", "value": selectedText, "name": "name", "data-id": selectedId, "height": "32", "maxlength": "15"})
         ).append(
-            $("<input/>", {"type": "number", "value": places, "name": "number", "height": "32", "width": "55", "min": "0", "max": "9999"})
+            $("<input/>", {"type": "number", "value": places, "name": "number", "height": "32", "width": "55", "min": "0", "max": "100"})
         ).append(
             $("<button/>", {"type": "submit", "class": "btn btn-success mb-1", "text": "Speichern"})
         )

@@ -47,55 +47,54 @@ fs.readFile('./config/schema.sql', 'utf8', function (err, data) {
 module.exports = function (app) {
 
   //ldap authentication
-  app.post("/auth", async (req, res) => {
-    var ldap = require("ldapjs");
+    app.post("/auth", async (req, res) => {
+      var ldap = require("ldapjs");
 
-    var client = ldap.createClient({ url: config.get('ldap.url') });
+      var client = ldap.createClient({ url: config.get('ldap.url') });
 
-
-    client.on("error", function (err) {
-      console.warn(
-        "LDAP connection failed, but fear not, it will reconnect OK",
-        err,
-      );
-    });
-
-    var username = req.body.username; //get params
-    var password = req.body.password;
-
-    var name = "ABBW" + "\\" + username;
-
-    if (username && password) {
-      client.bind(name, password, async (err) => {
-        if (err == null) {
-          //if no error occurs
-
-          var base = config.get('ldap.domain');
-          var search_options = {
-            scope: 'sub',
-            filter: '(&(objectClass=user)(sAMAccountName=' + username + '))',
-            attrs: 'memberOf'
-          };
-
-          var searchRes = await functions.UserSearch(client, base, search_options);
-
-          req.session.loggedin = true; //set session
-          req.session.title = searchRes.title;
-          req.session.username = searchRes.sAMAccountName;
-
-          var redirectTo = req.session.redirectTo || '/';
-          res.redirect(redirectTo); //redirect to home
-
-        } else {
-          res.redirect("/?err=FalseCred"); //Error message if username or password is incorrect
-        }
-        res.end();
+      client.on("error", function (err) {
+        console.warn(
+          "LDAP connection failed, but fear not, it will reconnect OK",
+          err,
+        );
       });
-    } else {
-      //if no username/passwort exists
-      res.end();
-    }
-  });
+
+      var username = req.body.username; //get params
+      var password = req.body.password;
+
+      var name = "ABBW" + "\\" + username;
+
+      if (username && password) {
+        client.bind(name, password, async (err) => {
+          if (err == null) {
+            //if no error occurs
+
+            var base = config.get('ldap.domain');
+            var search_options = {
+              scope: 'sub',
+              filter: '(&(objectClass=user)(sAMAccountName=' + username + '))',
+              attrs: 'memberOf'
+            };
+
+            var searchRes = await functions.UserSearch(client, base, search_options);
+
+            req.session.loggedin = true; //set session
+            req.session.title = searchRes.title;
+            req.session.username = searchRes.sAMAccountName;
+
+            var redirectTo = req.session.redirectTo || '/';
+            res.redirect(redirectTo); //redirect to home
+
+          } else {
+            res.redirect("/?err=FalseCred"); //Error message if username or password is incorrect
+          }
+          res.end();
+        });
+      } else {
+        //if no username/passwort exists
+        res.end();
+      }
+    })
   
   //Page Routing
     app.get("/", async (req, res) => {
@@ -104,7 +103,7 @@ module.exports = function (app) {
       } else {
         res.render("login", { err: req.query.err}); //redirect to login page if not logged in
       }
-    });
+    })
 
     app.get("/stammdaten", async (req, res) => {
       if (req.session.loggedin) {
@@ -113,13 +112,13 @@ module.exports = function (app) {
         req.session.redirectTo = `/stammdaten`;
         res.render("login", { err: req.query.err}); //redirect to login page if not logged in
       }
-    });
+    })
 
     app.get("/logout", function (req, res) {
       //destroy current session
       req.session.destroy();
       res.send("Logged Out");
-    });
+    })
 
     app.get("/logs", async (req, res) => {
       if (req.session.loggedin) {
@@ -136,7 +135,7 @@ module.exports = function (app) {
         res.render("login", { err: req.query.err}); //redirect to login page if not logged in
       }
   
-    });
+    })
 
     app.get("/logs/:stockId", async (req, res) => {
       if(req.session.loggedin){
@@ -151,7 +150,7 @@ module.exports = function (app) {
         req.session.redirectTo = `/logs/${req.params.stockId}`;
         res.render("login", { err: req.query.err}); //redirect to login page if not logged in
       }
-    });
+    })
 
     app.get("/qr", async (req, res) => {
       if (req.session.loggedin) {
@@ -160,11 +159,37 @@ module.exports = function (app) {
        req.session.redirectTo = `/qr`;
        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
       }
-    });
+    })
+
+    //Mobile Seite zum Ein-/Auslagern
+    app.get("/storagePlace/:id", async (req, res) => {
+      if (req.session.loggedin) {
+        var id = req.params.id;
+        var num = /\d/.test(id);
+        if(num){
+          const result = await functions.getStockByStoragePlaceId(id);
+          if(typeof result === 'undefined'){
+            res.status("404").send("Item Not Found");
+            return;
+          }
+          //add storage place
+          var storage_place = await functions.getStorageByStockId(result.id);
+          result.storage_location = storage_place.name;
+          result.storage_place = storage_place.place;
+    
+          res.render("item", { session: req.session, item: result});
+        }else{
+          res.status("404").send("404 Not Found");
+        }
+      }else{
+        req.session.redirectTo = `/storagePlace/${req.params.id}`;
+        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+      }
+    })
   // 
 
-  //stock related data
-    app.get("/data", async (req, res) => {
+  //stock related data/routes for the home page
+    app.get("/stock", async (req, res) => {
       if (req.session.loggedin) {
         var result = await functions.getStock(); // get db data
         for(var i = 0; i < result.data.length; i++){
@@ -175,29 +200,29 @@ module.exports = function (app) {
 
           //add storage place
           var storage_place = await functions.getStorageByStockId(result.data[i].id);
-          console.log(result.data[i].id);
-          console.log(storage_place);
 
           result.data[i].storage_location = storage_place.name;
           result.data[i].storage_place = storage_place.place;
-
         }
 
         res.send(result);
       } else {
-        req.session.redirectTo = `/data`;
+        req.session.redirectTo = `/stock`;
         res.render("login", { err: req.query.err}); //redirect to login page if not logged in
       }
     });
 
-    app.get("/data/:id", async (req, res) => {
+    app.get("/stock/:id", async (req, res) => {
       if(req.session.loggedin){
         var id = req.params.id;
         var num = /\d/.test(id);
     
         if(num){
           const result = await functions.getStockById(id);
-
+          if(!result){
+            res.status("404").send("404 Not Found");
+            return;
+          }
           //add keywords
           var keywordlist = await functions.getKeywordlistByStockid(result.id);
           result.keyword = keywordlist[0].keyword;
@@ -214,14 +239,14 @@ module.exports = function (app) {
           res.status("404").send("404 Not Found");
         }
       }else{
-        req.session.redirectTo = `/entry/${req.params.id}`;
+        req.session.redirectTo = `/stock/${req.params.id}`;
         res.render("login", { err: req.query.err }); //redirect to login page if not logged in
 
       }
         
     });
 
-    app.post("/create", async (req, res) => {
+    app.post("/stock", async (req, res) => {
       //create entry in db
       if(req.session.loggedin){
         var username = req.session.username;
@@ -242,7 +267,6 @@ module.exports = function (app) {
             await functions.updateStoragePlace(emptyStorageSpace[0].id, latestStock.id);
 
             var keywords = req.body.keywords.split(",");
-            console.log(keywords);
             if(req.body.keywords != 0){
               for(var i = 0; i < keywords.length; i++){
                 var fullKeyword = await functions.getMasterDataByName("keyword", keywords[i]);
@@ -267,7 +291,7 @@ module.exports = function (app) {
 
     });
 
-    app.patch("/entry", async (req, res) => {
+    app.patch("/stock", async (req, res) => {
 
       if(req.session.loggedin){
         try {
@@ -312,7 +336,7 @@ module.exports = function (app) {
       
     });
 
-    app.delete("/data/:id", async (req, res) => {
+    app.delete("/stock/:id", async (req, res) => {
       if (req.session.loggedin) {
         try {
           await functions.log(req.params.id, "delete");
@@ -321,11 +345,8 @@ module.exports = function (app) {
           await functions.setStoragePlaceToNull(req.params.id);
           let stock = await functions.getStockById(req.params.id);
           let result = await functions.deleteStock(req.params.id);
-          console.log("stock: " + stock);
+
           await functions.deleteArticle(stock.id);
-
-          await functions.setStoragePlaceToNull(req.params.id);
-
           res.send(result);
         } catch (err) {
           console.log(err);
@@ -335,23 +356,17 @@ module.exports = function (app) {
         res.redirect("/");  //redirect to login page if not logged in
       }
     });
-  //
+//
 
-  //Article name auto complete
-    app.get("/entry/name/:name", async (req, res) => {
-    if(req.session.loggedin){
-      try {
-        const result = await functions.getArticleByName(req.params.name);
-        res.send(result);
-      } catch (err) {
-        res.status(404).send("Internal Server Error");
+  //stock name auto complete
+    app.get("/stock/name/:name", async (req, res) => {
+      if(req.session.loggedin){
+          const result = await functions.getArticleByName(req.params.name);
+          res.send(result);
+      }else{
+        req.session.redirectTo = `/stock/name/${req.params.name}`;
+        res.render("login", { err: req.query.err }); //redirect to login page if not logged in
       }
-    }else{
-      req.session.redirectTo = `/entry/name/${req.params.name}`;
-      res.render("login", { err: req.query.err }); //redirect to login page if not logged in
-
-    }
-
     });
   //
 
@@ -363,19 +378,15 @@ module.exports = function (app) {
           res.send(results);
         } catch (e) {
           res.status(404).send("404 Not Found");
-          console.log(e);
         }
       }else{
         req.session.redirectTo = `/stammdaten/${req.params.table}`;
         res.render("login", { err: req.query.err}); //redirect to login page if not logged in
       }
-
-
-    });
+    })
 
     app.get("/stammdaten/:table/:name", async (req, res) => {
       if(req.session.loggedin){
-        try {
           let table;
      
           switch (req.params.table) {
@@ -393,8 +404,17 @@ module.exports = function (app) {
               break;
           }
     
-          var result = await functions.getMasterDataByName(table ,req.params.name);
-  
+          try{
+            var result = await functions.getMasterDataByName(table ,req.params.name);
+          }catch(e){
+            res.status('404').send("404 Not Found");
+            return;
+          }
+          
+          if(result.length == 0){
+            res.status('404').send("404 Not Found");
+            return;
+          }
           if(table == "keyword"){
             var count = await functions.countKeywordlistById(table, result[0].id);
             
@@ -403,10 +423,6 @@ module.exports = function (app) {
           }
           result[0].number = count[0].number;
           res.send(result);
-        } catch (error) {
-          res.status("500").send("Internal Server Error");
-          console.log(error);
-        }
       }else{
         req.session.redirectTo = `/stammdaten/${req.params.table}/${req.params.name}`;
         res.render("login", { err: req.query.err}); //redirect to login page if not logged in
@@ -422,9 +438,7 @@ module.exports = function (app) {
             await functions.insertMasterData(req.params.table.toLowerCase(), req.body.value);
             res.send("Master Data Created");
           }else{
-  
             res.send("Entry already exists");
-  
           }
         } catch (error) {
           res.status("500").send("Internal Server Error");
@@ -435,7 +449,7 @@ module.exports = function (app) {
         res.render("login", { err: req.query.err}); //redirect to login page if not logged in
       }
      
-    });
+    })
   
     app.delete("/stammdaten/:table/:name", async (req, res) => {
       if(req.session.loggedin){
@@ -447,7 +461,7 @@ module.exports = function (app) {
             var storage_location = await functions.getStorageLocationById(storage_location_id);
             var children = await functions.getStorageLocationByParent(storage_location_id);
             var emptyPlaces = await functions.countEmptyStoragePlacesByLocationId(storage_location_id);
-            emptyPlaces = emptyPlaces.empty_places;
+            emptyPlaces = emptyPlaces;
             places = storage_location.places;
   
             if(children.length == 0 && emptyPlaces == places){
@@ -471,51 +485,6 @@ module.exports = function (app) {
       }
   
   
-    });
-
-    app.get("/storagePlace/:id", async (req, res) => {
-      if (req.session.loggedin) {
-
-        var id = req.params.id;
-        var num = /\d/.test(id);
-        if(num){
-          const result = await functions.getStockByStoragePlaceId(id);
-
-          if(result.length == 0){
-            res.status("404").send("Item Not Found");
-            return;
-          }
-          //add storage place
-          var storage_place = await functions.getStorageByStockId(result.id);
-          result.storage_location = storage_place.name;
-          result.storage_place = storage_place.place;
-    
-          if(result.deleted == 0){
-            res.render("item", { session: req.session, item: result});
-          }else{
-            res.status("404").send("Item Not Found");
-          }
-
-        }else{
-          res.status("404").send("404 Not Found");
-        }
-
-      }else{
-        req.session.redirectTo = `/storagePlace/${req.params.id}`;
-        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
-      }
-    })
-
-    app.patch("/storagePlace", async (req, res) => {
-      if (req.session.loggedin) {
-          await functions.updateStockNumber(req.body.id, req.body.number, req.session.username);
-          await functions.log(req.body.id, "change");
-
-          res.send("updated");
-      } else {
-        req.session.redirectTo = `/storagePlace/${storagePlaceId}`;
-        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
-      }
     })  
 
     app.get("/lagerorte", async (req, res) => {
@@ -523,13 +492,12 @@ module.exports = function (app) {
         try {
           var results = await functions.getStorageLocation();
           for(var i = 0; i < results.length; i++){
-            var count = await functions.countEmptyStoragePlacesByLocationId(results[i].id);
-            results[i].empty_places = count.empty_places;
+            var empty_places = await functions.countEmptyStoragePlacesByLocationId(results[i].id);
+            results[i].empty_places = empty_places;
           }
           res.send(results);
         } catch (e) {
           res.status(404).send("404 Not Found");
-          console.log(e);
         }
       }else{
         req.session.redirectTo = `/lagerorte`;
@@ -541,14 +509,13 @@ module.exports = function (app) {
     
     app.get("/lagerorte/:id", async (req, res) => {
       if (req.session.loggedin) {
-        var storage_location = await functions.getStorageLocationById(req.params.id);
+        let storage_location = await functions.getStorageLocationById(req.params.id);
         if(!storage_location){
-          console.log("Not Found");
           res.status("404").send("Not Found");
           return;
         }
-        var count = await functions.countEmptyStoragePlacesByLocationId(storage_location.id);
-        storage_location.empty_places = count.empty_places;
+        let empty_places = await functions.countEmptyStoragePlacesByLocationId(storage_location.id);
+        storage_location.empty_places = empty_places;
         res.send(storage_location);
       } else {
         req.session.redirectTo = `/lagerorte/${req.params.id}`;
@@ -560,8 +527,8 @@ module.exports = function (app) {
       if (req.session.loggedin) {
         var results = await functions.getStorageLocationByParent(req.params.id);
         for(var i = 0; i < results.length; i++){
-          var count = await functions.countEmptyStoragePlacesByLocationId(results[i].id);
-          results[i].empty_places = count.empty_places;
+          var empty_places = await functions.countEmptyStoragePlacesByLocationId(results[i].id);
+          results[i].empty_places = empty_places;
         }
         res.send(results);
       } else {
@@ -573,28 +540,28 @@ module.exports = function (app) {
     app.post("/lagerorte", async (req, res) => {
       if (req.session.loggedin){
         try{
-          var doubleEntry = await functions.getStorageLocationByNameAndParent(req.body.name, req.body.parent);
-          if(doubleEntry.length == 0){
-            var results = await functions.insertStorageLocation(req.body.name, req.body.parent, req.body.places);
-            var parent = await functions.getStorageLocationByParent(req.body.parent);
-            var latest = 0;
-            for(var i = 0; i < parent.length; i++){
+          let dbEntry = await functions.getStorageLocationByNameAndParent(req.body.name, req.body.parent);
+          let entryDoesNotExists = dbEntry.length == 0;
+
+          if(entryDoesNotExists){
+            let results = await functions.insertStorageLocation(req.body.name, req.body.parent, req.body.places);
+            let parent = await functions.getStorageLocationByParent(req.body.parent);
+            let latest = 0;
+
+            for(let i = 0; i < parent.length; i++){
               if(parent[i].id > latest){
                 latest = parent[i].id;
               }
             }
-    
+
             await functions.insertStoragePlaces(latest, req.body.places, 0);
-    
             res.send(results);
           }else{
             res.status("500").send("Internal Server Error {Entry already exists}");
-
           }
 
         }catch(error){
-          res.status("500").send("Internal Server Error");
-          console.log(error);
+          res.status("404").send("Not Found");
         }
       }else{
         req.session.redirectTo = `/`;
@@ -623,6 +590,23 @@ module.exports = function (app) {
         res.render("login", { err: req.query.err}); //redirect to login page if not logged in
       }
     })
+  //
+
+  //Updates the stock number after the submit on the mobile page
+  app.patch("/storagePlace", async (req, res) => {
+    if (req.session.loggedin) {
+      try{
+        await functions.updateStockNumber(req.body.id, req.body.number, req.session.username);
+        await functions.log(req.body.id, "change");
+        res.send("updated");
+      }catch(e){
+        res.send(e);
+      }
+    } else {
+      req.session.redirectTo = `/storagePlace`;
+      res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+    }
+  })
   //
   
 }

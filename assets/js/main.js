@@ -8,12 +8,13 @@ $(document).ready(function () {
 
   $("body").on("submit", "#PopUp form", function(event){
     event.preventDefault();
-    var post_url = $(this).attr("action"); //get form action url 
-
-    if(post_url == "/entry"){
-      var id = $(".selected").find("td")[0].innerHTML;
-
+    let id;
+    //only define id if a row is selected
+    if($(".selected").length > 0){
+      id = $(".selected").find("td")[0].innerHTML;
     }
+
+    //get all values from popup
     var name = $("#name").val();
     var location = $("#location li span").first()[0].dataset.id;
     var number = $("#number").val();
@@ -26,36 +27,29 @@ $(document).ready(function () {
       keywordArr.push($(this).first().text());
     })
 
+    //only submit if a location was selected
     if(location > 0){
       var formdata = `id=${id}&name=${name}&location=${location}&number=${number}&minimum_number=${minimum_number}&category=${category}&keywords=${keywordArr}&unit=${unit}`;
     
-      switch (post_url) {
-        case "/create":
-          $.post(post_url, formdata, function (response) {
-            history.go(0);
-          });
-          break;
-        case "/entry":
-          $.ajax({
-            type: 'PATCH',
-            url: post_url,
-            data: formdata,
-            processData: false,
-            contentType: 'application/x-www-form-urlencoded',
-            success: function () {
-              history.go(0);          
-            }
-            /* success and error handling omitted for brevity */
-          });
-          break;
-        default:
-          break;
+      if(typeof id === 'undefined'){ 
+        $.post('/stock', formdata, function (response) {
+          history.go(0);
+        });
+      }else{
+        $.ajax({
+          type: 'PATCH',
+          url: '/stock',
+          data: formdata,
+          processData: false,
+          contentType: 'application/x-www-form-urlencoded',
+          success: function () {
+            history.go(0);          
+          }
+        });
       }
     }else{
       $("#location span").first().attr("style", "color: red !important");
     }
-
-
   });
 
   $("body").on("mouseenter", "#location ul li span", function(e){
@@ -63,6 +57,5 @@ $(document).ready(function () {
       $(this).css("cursor", "no-drop");
     }
   })
-
 
 });
