@@ -16,10 +16,11 @@ function displayRootNodes(){
       });
 }
 
-function getChildrenByParentId(parent){
+//gets all children storage location with a specific parent
+function getChildrenByParentId(parentId){
     var result = null;
     $.ajax({
-        url: `/lagerorte/parent/${parent}`,
+        url: `/lagerorte/parent/${parentId}`,
         type: 'get',
         async: false,
         success: function(data) {
@@ -29,6 +30,7 @@ function getChildrenByParentId(parent){
     return result;
 }
 
+//gets one specific storage location by it´s id
 function getLocationById(id){
     var result = null;
     $.ajax({
@@ -284,6 +286,7 @@ $("#DeleteNode").click(function(){
     });
 })
 
+//submits a new storage location
 $("#locationUL").on("submit", ".createForm", function(e){
     e.preventDefault();
 
@@ -305,11 +308,10 @@ $("#locationUL").on("submit", ".createForm", function(e){
                 displayChildNodes(parentEle);
             })
         }
-
     }
-
 });
 
+//submits a change to a storage location
 $("#locationUL").on("submit", ".editForm", function(e){
     e.preventDefault();
 

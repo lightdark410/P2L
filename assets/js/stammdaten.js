@@ -66,13 +66,14 @@ $("table").on("click", ".fa-trash", function () {
         'type': "GET",
         'global': false,
         'url': `/stammdaten/${table}/${val}`,
-        'success': function (data) {
-          number = data[0].number;
+        'success': function (data) {+
+            console.log(data);
+          number = data.number;
         }
       });
 
     let popUpMid = ``;
-
+    console.log("number: " + number);
     if(number == 0){
         popUpMid = `
         <span>Sicher, dass Sie "${val}" <b><u>unwiderruflich</u></b></span>

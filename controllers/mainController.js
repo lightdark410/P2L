@@ -1,8 +1,9 @@
-var mysql = require("mysql2");
-var functions = require("./functions.js");
-var fs = require('fs');
-var config = require('config');
-const session = require("express-session");
+let mysql = require("mysql2");
+let functions = require("./functions.js");
+let masterdataDB = require("./masterdataDB"); //import sql functions for handling masterdata database changes
+let logDB = require("./logDB");
+let fs = require('fs');
+let config = require('config'); 
 
 var con = mysql.createConnection(config.get('dbConfig'));
 
@@ -34,11 +35,7 @@ var con = mysql.createConnection(config.get('dbConfig'));
 //checks if required Database exists and if not creates it
 fs.readFile('./config/schema.sql', 'utf8', function (err, data) {
   // data = data.replace(/\r|\n/g, ' ');
-
   con.query(data, function (err, result) {
-    if (err) {
-      console.log(err.sqlMessage);
-    }
     con = mysql.createConnection(config.get('dbConfig'));
   }
   );
@@ -123,7 +120,7 @@ module.exports = function (app) {
     app.get("/logs", async (req, res) => {
       if (req.session.loggedin) {
         try {
-          var logs = await functions.getLog();
+          var logs = await logDB.getLog();
           res.render("logs", { result: logs, session: req.session });
         } catch (error) {
           res.status("500").send("Internal Server Error");
@@ -140,7 +137,7 @@ module.exports = function (app) {
     app.get("/logs/:stockId", async (req, res) => {
       if(req.session.loggedin){
         try {
-          var logs = await functions.getLogByStockId(req.params.stockId);
+          var logs = await logDB.getLogByStockId(req.params.stockId);
           res.render("logs", { result: logs, session: req.session });
         } catch (error) {
           res.status("500").send("Internal Server Error");
@@ -173,7 +170,7 @@ module.exports = function (app) {
             return;
           }
           //add storage place
-          var storage_place = await functions.getStorageByStockId(result.id);
+          let storage_place = await masterdataDB.getStorageByStockId(result.id);
           result.storage_location = storage_place.name;
           result.storage_place = storage_place.place;
     
@@ -195,12 +192,11 @@ module.exports = function (app) {
         for(var i = 0; i < result.data.length; i++){
 
           //add keywords
-          var keywordlist = await functions.getKeywordlistByStockid(result.data[i].id);
-          result.data[i].keyword = keywordlist[0].keyword;
+          var keywordlist = await masterdataDB.getKeywordlistByStockid(result.data[i].id);
+          result.data[i].keyword = keywordlist.keyword;
 
           //add storage place
-          var storage_place = await functions.getStorageByStockId(result.data[i].id);
-
+          let storage_place = await masterdataDB.getStorageByStockId(result.data[i].id);
           result.data[i].storage_location = storage_place.name;
           result.data[i].storage_place = storage_place.place;
         }
@@ -224,11 +220,11 @@ module.exports = function (app) {
             return;
           }
           //add keywords
-          var keywordlist = await functions.getKeywordlistByStockid(result.id);
-          result.keyword = keywordlist[0].keyword;
+          var keywordlist = await masterdataDB.getKeywordlistByStockid(result.id);
+          result.keyword = keywordlist.keyword;
 
           //add storage place
-          var storage_place = await functions.getStorageByStockId(result.id);
+          let storage_place = await masterdataDB.getStorageByStockId(result.id);
           result.storage_location = storage_place.name;
           result.storage_place = storage_place.place;
           result.storage_location_id = storage_place.storage_location_id;
@@ -255,33 +251,30 @@ module.exports = function (app) {
     
         try {
 
-            let category = await functions.getMasterDataByName("category", req.body.category);
-            await functions.insertArticle(req.body.name, 1, category[0].id);
+            let category = await masterdataDB.getMasterdataByName("category", req.body.category);
+            await functions.insertArticle(req.body.name, 1, category.id);
 
             const item = await functions.getLatestArticle();
             await functions.insertStock(item.id, req.body.number, req.body.minimum_number, username, username, fulldate, time);
 
             var latestStock = await functions.getLatestStock();
       
-            var emptyStorageSpace = await functions.getEmptyStoragePlace(req.body.location);
-            await functions.updateStoragePlace(emptyStorageSpace[0].id, latestStock.id);
+            var emptyStorageSpace = await masterdataDB.getEmptyStoragePlace(req.body.location);
+            await masterdataDB.updateStoragePlace(emptyStorageSpace.id, latestStock.id);
 
             var keywords = req.body.keywords.split(",");
             if(req.body.keywords != 0){
               for(var i = 0; i < keywords.length; i++){
-                var fullKeyword = await functions.getMasterDataByName("keyword", keywords[i]);
-                await functions.insertKeywordList(latestStock.id, fullKeyword[0].id);
+                var fullKeyword = await masterdataDB.getMasterdataByName("keyword", keywords[i]);
+                await masterdataDB.insertKeywordList(latestStock.id, fullKeyword.id);
     
               }
             } 
 
-            var log = await functions.log(latestStock.id, "create");
+            await logDB.log(latestStock.id, "create");
             res.send("Entry Created");
-      
         } catch (err) {
-          console.log(err);
-          console.log("entry error");
-          res.status(500).send("Internal Server Error");
+          res.status(400).send("Bad Request");
         }
       }else{
         req.session.redirectTo = `/`;
@@ -295,38 +288,37 @@ module.exports = function (app) {
 
       if(req.session.loggedin){
         try {
-
+          console.log(req.body);
           let entry = await functions.getStockById(req.body.id);
 
-          let unit = await functions.getMasterDataByName("unit", req.body.unit);        
-          let category = await functions.getMasterDataByName("category", req.body.category);
-          await functions.updateArticle(entry.article_id, req.body.name, unit[0].id, category[0].id);
+          let unit = await masterdataDB.getMasterdataByName("unit", req.body.unit);        
+          let category = await masterdataDB.getMasterdataByName("category", req.body.category);
+          await functions.updateArticle(entry.article_id, req.body.name, unit.id, category.id);
           await functions.updateStock(req.body.number, req.body.minimum_number, req.session.username, req.body.id);
 
           //update keywords
-          await functions.deleteKeywordList(entry.id); //delete old keywords
+          await masterdataDB.deleteKeywordList(entry.id); //delete old keywords
           if(req.body.keywords.length > 0){
-            var keywordArray = req.body.keywords.split(",");
-            for(var i = 0; i < keywordArray.length; i++){
-              var keyword = await functions.getKeywordsByName(keywordArray[i]);
-              await functions.insertKeywordList(entry.id, keyword[0].id); //add new keywords
+            let keywordArray = req.body.keywords.split(",");
+            for(let i = 0; i < keywordArray.length; i++){
+              let keyword = await masterdataDB.getKeywordsByName(keywordArray[i]);
+              await masterdataDB.insertKeywordList(entry.id, keyword[0].id); //add new keywords
             }
 
           }
     
           //update storage place
-          let storagePlace = await functions.getStoragePlaceByStockId(entry.id);
-          await functions.setStoragePlaceToNull(entry.id);
-          // await functions.updateStoragePlace(storagePlace.id, req.body.id);
-
-          var emptyStorageSpace = await functions.getEmptyStoragePlace(req.body.location);
-          await functions.updateStoragePlace(emptyStorageSpace[0].id, req.body.id);
+          await masterdataDB.setStoragePlaceToNull(entry.id);
+     
+          var emptyStorageSpace = await masterdataDB.getEmptyStoragePlace(req.body.location);
+          await masterdataDB.updateStoragePlace(emptyStorageSpace.id, req.body.id);
     
-          var log = await functions.log(req.body.id, "change");
+          await logDB.log(req.body.id, "change");
 
           res.send("updated");
     
         } catch (e) {
+          console.log(e);
           res.status(404).send(e);
         }
       }else{
@@ -339,10 +331,10 @@ module.exports = function (app) {
     app.delete("/stock/:id", async (req, res) => {
       if (req.session.loggedin) {
         try {
-          await functions.log(req.params.id, "delete");
+          await logDB.log(req.params.id, "delete");
 
-          await functions.deleteKeywordList(req.params.id);
-          await functions.setStoragePlaceToNull(req.params.id);
+          await masterdataDB.deleteKeywordList(req.params.id);
+          await masterdataDB.setStoragePlaceToNull(req.params.id);
           let stock = await functions.getStockById(req.params.id);
           let result = await functions.deleteStock(req.params.id);
 
@@ -374,7 +366,7 @@ module.exports = function (app) {
     app.get("/stammdaten/:table", async (req, res) => {
       if(req.session.loggedin){
         try {
-          var results = await functions.getMasterData(req.params.table);
+          let results = await masterdataDB.getMasterdata(req.params.table);
           res.send(results);
         } catch (e) {
           res.status(404).send("404 Not Found");
@@ -405,23 +397,23 @@ module.exports = function (app) {
           }
     
           try{
-            var result = await functions.getMasterDataByName(table ,req.params.name);
+            var result = await masterdataDB.getMasterdataByName(table ,req.params.name);
           }catch(e){
             res.status('404').send("404 Not Found");
             return;
           }
-          
-          if(result.length == 0){
+
+          if(typeof result === 'undefined'){
             res.status('404').send("404 Not Found");
             return;
           }
           if(table == "keyword"){
-            var count = await functions.countKeywordlistById(table, result[0].id);
+            var count = await masterdataDB.countKeywordlistById(table, result.id);
             
           }else{
-            var count = await functions.countMasterDataById(table, result[0].id);
+            var count = await masterdataDB.countMasterdataById(table, result.id);
           }
-          result[0].number = count[0].number;
+          result.number = count[0].number;
           res.send(result);
       }else{
         req.session.redirectTo = `/stammdaten/${req.params.table}/${req.params.name}`;
@@ -432,16 +424,15 @@ module.exports = function (app) {
     app.post("/stammdaten/:table", async (req, res) => {
       if(req.session.loggedin){
         try {
-          var exists = await functions.getMasterDataByName(req.params.table, req.body.value);
-          
-          if(exists.length == 0){
-            await functions.insertMasterData(req.params.table.toLowerCase(), req.body.value);
+          let dataDoesNotExistsInDB = typeof await masterdataDB.getMasterdataByName(req.params.table, req.body.value) === 'undefined';
+          if(dataDoesNotExistsInDB){
+            await masterdataDB.insertMasterdata(req.params.table.toLowerCase(), req.body.value);
             res.send("Master Data Created");
           }else{
             res.send("Entry already exists");
           }
         } catch (error) {
-          res.status("500").send("Internal Server Error");
+          res.status("400").send("Bad Request");
           console.log(error);
         }
       }else{
@@ -458,21 +449,20 @@ module.exports = function (app) {
           if(table == "storageLocation"){
             var storage_location_id = req.params.name;
   
-            var storage_location = await functions.getStorageLocationById(storage_location_id);
-            var children = await functions.getStorageLocationByParent(storage_location_id);
-            var emptyPlaces = await functions.countEmptyStoragePlacesByLocationId(storage_location_id);
-            emptyPlaces = emptyPlaces;
+            var storage_location = await masterdataDB.getStorageLocationById(storage_location_id);
+            var children = await masterdataDB.getStorageLocationByParentId(storage_location_id);
+            var emptyPlaces = await masterdataDB.countEmptyStoragePlacesByLocationId(storage_location_id);
             places = storage_location.places;
   
             if(children.length == 0 && emptyPlaces == places){
                 //delete all places
-                await functions.deleteStoragePlaces(storage_location_id, 0, places);
+                await masterdataDB.deleteStoragePlaces(storage_location_id, 0, places);
                 //delete location
-                await functions.deleteStorageLocation(storage_location_id);
+                await masterdataDB.deleteStorageLocation(storage_location_id);
             }
             
           }else{
-            await functions.deleteMasterData(table, req.params.name);
+            await masterdataDB.deleteMasterdata(table, req.params.name);
           }
           res.send(req.params.name + " deleted");
         } catch (error) {
@@ -490,9 +480,9 @@ module.exports = function (app) {
     app.get("/lagerorte", async (req, res) => {
       if(req.session.loggedin){
         try {
-          var results = await functions.getStorageLocation();
+          var results = await masterdataDB.getStorageLocation();
           for(var i = 0; i < results.length; i++){
-            var empty_places = await functions.countEmptyStoragePlacesByLocationId(results[i].id);
+            var empty_places = await masterdataDB.countEmptyStoragePlacesByLocationId(results[i].id);
             results[i].empty_places = empty_places;
           }
           res.send(results);
@@ -509,12 +499,12 @@ module.exports = function (app) {
     
     app.get("/lagerorte/:id", async (req, res) => {
       if (req.session.loggedin) {
-        let storage_location = await functions.getStorageLocationById(req.params.id);
+        let storage_location = await masterdataDB.getStorageLocationById(req.params.id);
         if(!storage_location){
           res.status("404").send("Not Found");
           return;
         }
-        let empty_places = await functions.countEmptyStoragePlacesByLocationId(storage_location.id);
+        let empty_places = await masterdataDB.countEmptyStoragePlacesByLocationId(storage_location.id);
         storage_location.empty_places = empty_places;
         res.send(storage_location);
       } else {
@@ -525,9 +515,9 @@ module.exports = function (app) {
 
     app.get("/lagerorte/parent/:id", async (req,res) => {
       if (req.session.loggedin) {
-        var results = await functions.getStorageLocationByParent(req.params.id);
+        var results = await masterdataDB.getStorageLocationByParentId(req.params.id);
         for(var i = 0; i < results.length; i++){
-          var empty_places = await functions.countEmptyStoragePlacesByLocationId(results[i].id);
+          var empty_places = await masterdataDB.countEmptyStoragePlacesByLocationId(results[i].id);
           results[i].empty_places = empty_places;
         }
         res.send(results);
@@ -540,12 +530,12 @@ module.exports = function (app) {
     app.post("/lagerorte", async (req, res) => {
       if (req.session.loggedin){
         try{
-          let dbEntry = await functions.getStorageLocationByNameAndParent(req.body.name, req.body.parent);
+          let dbEntry = await masterdataDB.getStorageLocationByNameAndParent(req.body.name, req.body.parent);
           let entryDoesNotExists = dbEntry.length == 0;
 
           if(entryDoesNotExists){
-            let results = await functions.insertStorageLocation(req.body.name, req.body.parent, req.body.places);
-            let parent = await functions.getStorageLocationByParent(req.body.parent);
+            let results = await masterdataDB.insertStorageLocation(req.body.name, req.body.parent, req.body.places);
+            let parent = await masterdataDB.getStorageLocationByParentId(req.body.parent);
             let latest = 0;
 
             for(let i = 0; i < parent.length; i++){
@@ -554,7 +544,7 @@ module.exports = function (app) {
               }
             }
 
-            await functions.insertStoragePlaces(latest, req.body.places, 0);
+            await masterdataDB.insertStoragePlaces(latest, req.body.places, 0);
             res.send(results);
           }else{
             res.status("500").send("Internal Server Error {Entry already exists}");
@@ -572,12 +562,12 @@ module.exports = function (app) {
     app.patch("/lagerorte", async (req,res) => {
       if(req.session.loggedin){
         try {
-          let oldStorageLocation = await functions.getStorageLocationById(req.body.id);
-          await functions.updateStorageLocation(req.body.id, req.body.name, req.body.number);
+          let oldStorageLocation = await masterdataDB.getStorageLocationById(req.body.id);
+          await masterdataDB.updateStorageLocation(req.body.id, req.body.name, req.body.number);
           if(oldStorageLocation.places < req.body.number){
-            await functions.insertStoragePlaces(req.body.id, req.body.number, oldStorageLocation.places)
+            await masterdataDB.insertStoragePlaces(req.body.id, req.body.number, oldStorageLocation.places)
           }else if(oldStorageLocation.places > req.body.number){
-            await functions.deleteStoragePlaces(req.body.id, req.body.number, oldStorageLocation.places);
+            await masterdataDB.deleteStoragePlaces(req.body.id, req.body.number, oldStorageLocation.places);
           }
 
           res.send("updated");
@@ -597,7 +587,7 @@ module.exports = function (app) {
     if (req.session.loggedin) {
       try{
         await functions.updateStockNumber(req.body.id, req.body.number, req.session.username);
-        await functions.log(req.body.id, "change");
+        await logDB.log(req.body.id, "change");
         res.send("updated");
       }catch(e){
         res.send(e);
