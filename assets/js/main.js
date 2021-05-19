@@ -6,12 +6,53 @@ $(document).ready(function () {
     });
   });
 
+  //redirect if log icon was clicked
+  $("#table").on("click", ".log", function (e) {
+    //gets id of clicked row
+    let id = $(this).parent().parent().children().eq(1).html().trim();
+    window.location.href = `/logs/${id}`;
+  });
+
+  //hanlde list popup submit
+  $("body").on("submit", ".list_popup form", function(event){
+    event.preventDefault();
+    let id = $(this).data("id");
+    let change = $(this).serializeArray()[0].value;
+
+    //check if the toggle was checked
+    if($(this).serializeArray().length == 2){
+      change = (change * -1).toString();      
+    }
+
+    //create list entry to store in cookies 
+    let newEntry = {"id": id, "change": change};
+    addToList(newEntry);
+    
+  });
+
+  //stores on list entry in cookies
+  function addToList(entry){
+    let list = sessionStorage.getItem("list");
+    let newList = [];
+
+    if(list == null){
+      newList[0] = entry;
+    }else{
+      newList = JSON.parse(list);
+      //delete duplicate entries
+      newList = newList.filter(obj => obj.id != entry.id);
+      newList.push(entry);
+    }
+    sessionStorage.setItem("list", JSON.stringify(newList));
+  }
+
+  //handle stock popup submit
   $("body").on("submit", "#PopUp form", function(event){
     event.preventDefault();
     let id;
     //only define id if a row is selected
     if($(".selected").length > 0){
-      id = $(".selected").find("td")[0].innerHTML;
+      id = $(".selected").find("td")[1].innerHTML;
     }
 
     //get all values from popup

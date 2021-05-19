@@ -1,5 +1,5 @@
 $(function () {
-  var stammdaten = function () {
+  let stammdaten = function () {
     var location = null;
     var category = null;
     var unit = null;
@@ -47,7 +47,49 @@ $(function () {
     return {"category": category.data, "keyword": keyword.data, "unit": unit.data, "storage_location": location};
   }();
 
-  //create Popup
+  let tpopup = $(`
+    <div id="PopUp>
+      <form action="/stock">
+        <div class="PopUp_topBar">
+          Neuen Artikel anlegen
+          <div id="mdiv">
+            <div class="mdiv">
+              <div class="md"></div>
+            </div>
+          </div>
+        </div>
+        <div class="PopUp_middle">
+          <table>
+            <tr>
+              <td>Artikel:</td>
+              <td>
+                <input type="text" id="name" maxlength="20" required autocomplete="off">
+              </td>
+              <td>Ort:</td>
+              <td>
+                <ul id="location" class="navbar-nav border">
+                  <li class="nav-item dropdown">
+                    <span class="nav-link dropdown-toggle" data-toggle="dropdown">
+                      Wähle einen Ort aus
+                    </span>
+                    <ul class="dropdown-menu">
+                    </ul>
+                  </li>
+                </ul>
+              </td>
+            </tr>
+            <tr>
+              <td>Anzahl:</td>
+              <td style="text-align:center">
+                <input type="number" id="number" name="number" min="0" maxLength="10" required>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </form>
+    </div>
+  `);
+  //create stock Popup
   var popup = $('<div/>', {'id':'PopUp'}).append(
     $('<form/>', {'action': '/stock'}).append(
       $('<div/>', {'class': 'PopUp_topBar'})
@@ -332,7 +374,7 @@ $(function () {
     $("#table tbody tr").each(function () {
       if ($(this).hasClass("selected")) {
         //get marked line
-        id = $(this).children().html(); //get id from line
+        id = $(this).children().eq(1).html(); //get id from line
         id = id.replace(/ /g, ""); //cut spaces
         id = id.replace(/\r?\n|\r/g, "");
       };
@@ -413,7 +455,7 @@ $(function () {
     $("#number").val(result.number);
     $("#minimum_number").val(result.minimum_number);
     $("#category").val(result.category);
-
+    $("#unit").val(result.unit);
 
     $("#cover").fadeIn();
 
@@ -456,7 +498,8 @@ $(function () {
       $("#PopUp").fadeOut();
       $("#PopUpUpdate").fadeOut();
       $("#PopUpDelete").fadeOut();
-      // $(document).unbind("keypress");
+      $(".list_popup").fadeOut();
+
       $("#cover").fadeOut();
       $("#notification").fadeOut();
 
@@ -476,4 +519,47 @@ $(function () {
   }
 
   });
+
+
+   //redirect if save icon was clicked
+   $("#table").on("click", ".save", function (e) {
+    //gets id of clicked row
+    let id = $(this).parent().parent().children().eq(1).html().trim();
+    let name = $(this).parent().parent().children().eq(2).html().trim();
+
+    let list_popup = $(`
+      <div class="list_popup">
+        <form data-id="${id}">
+          <div class="PopUp_topBar">${name} in Liste speichern<div id="mdiv"><div class="mdiv"><div class="md"></div></div></div></div>
+          <div class="PopUp_middle">
+            <br/>
+            <input type="number" name="value" min="0" value="0"/>
+            <br/>
+            <div>
+              <span>Einlagern</span>
+              <label for="ein_auslagern" class="switch_list">
+                <input id="ein_auslagern" name="auslagern" unchecked type="checkbox">
+                <span class="slider_list round"></span>
+              </label>
+              <span>Auslagern</span>
+            </div>
+            <br/>
+          </div>
+          <div class="PopUp_footer">
+            <button type="submit">
+              Speichern
+            </button>
+          </div>
+        </form>
+      </div>
+    `);
+
+    $('#tableDiv').after(list_popup);
+    list_popup.fadeIn();
+    $("#cover").fadeIn();
+
+  
+  });
+
+ 
 });

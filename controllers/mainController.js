@@ -288,9 +288,44 @@ module.exports = function (app) {
 
       if(req.session.loggedin){
         try {
-          console.log(req.body);
           let entry = await functions.getStockById(req.body.id);
 
+          //check if nothing has changed
+            let storage = await masterdataDB.getStorageByStockId(req.body.id);
+            let keywords = await masterdataDB.getKeywordlistByStockid(req.body.id);
+            let compare_json = {
+              "id": entry.id,
+              "name": entry.name,
+              "location": storage.storage_location_id,
+              "number": entry.number,
+              "minimum_number": entry.minimum_number,
+              "category": entry.category,
+              "keywords": (keywords.keyword == null ? '' : keywords.keyword),
+              "unit": entry.unit
+            };
+
+            let flag=true;
+            if(Object.keys(req.body).length==Object.keys(compare_json).length){
+                for(key in req.body) { 
+                    if(req.body[key] == compare_json[key]) {
+                        continue;
+                    }
+                    else {
+                        flag=false;
+                        break;
+                    }
+                }
+            }
+            else {
+                flag=false;
+            }
+
+            if(flag){
+              res.send("updated");
+              return;
+            }
+          //
+          //update article and stock
           let unit = await masterdataDB.getMasterdataByName("unit", req.body.unit);        
           let category = await masterdataDB.getMasterdataByName("category", req.body.category);
           await functions.updateArticle(entry.article_id, req.body.name, unit.id, category.id);

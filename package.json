@@ -2,8 +2,7 @@
   "name": "inventurproject",
   "version": "1.0.0",
   "main": "server.js",
-  "scripts": {
-  },
+  "scripts": {},
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -25,5 +24,8 @@
     "type": "git",
     "url": "https://git.bbw-it.de/wmacher/P2L.git"
   },
-  "description": ""
+  "description": "",
+  "devDependencies": {
+    "nodemon": "^2.0.7"
+  }
 }

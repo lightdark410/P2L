@@ -80,6 +80,7 @@ function displayChildNodes(parent){
     }
 }
 
+//return input fields to add a new location
 function getCreateNode(){
     let node = $("<li/>", {"class": "CreateNode"}).append(
         $("<form/>", {"class": "createForm", "action": "", "method": "POST"}).append(

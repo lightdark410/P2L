@@ -8,6 +8,7 @@ $(document).ready(function () {
       "type": "GET"
     },
     "columns": [
+      { data: "id" }, //mock data for saveIcon
       { data: "id" }, 
       { data: "name" }, 
       { data: "number" },
@@ -21,23 +22,27 @@ $(document).ready(function () {
       { data: "date" }, 
       { data: "time" }, 
       { data: "keyword" },
-      { data: "id"}
+      { data: "id"} //mock data for logs
     ],
     "rowCallback": function (row, data, index) {
+      //add icons at the first and last column
+      $(row).find("td").first().html('<img class="save" src="assets/iconfinder_add.png" alt="" title="Artikel speichern">');
       $(row).find("td").last().html('<img class="log" src="assets/iconfinder_link.svg" alt="" title="Zu den Logs..">');
 
+      //add backgroudn colors if number is less that the minimum number
       if (parseInt(data.number) < parseInt(data.minimum_number)) {
         if (parseInt(data.number) > 0) {
-          $(row).find("td:nth-child(3)").addClass("notEnough_left");
-          $(row).find("td:nth-child(4)").addClass("notEnough_right");
+          $(row).find("td:nth-child(4)").addClass("notEnough_left");
+          $(row).find("td:nth-child(5)").addClass("notEnough_right");
         } else {
-          $(row).find("td:nth-child(3)").addClass("notEnough2_left");
-          $(row).find("td:nth-child(4)").addClass("notEnough2_right");
+          $(row).find("td:nth-child(4)").addClass("notEnough2_left");
+          $(row).find("td:nth-child(5)").addClass("notEnough2_right");
         }
 
       }
     },
-    "columnDefs": [{ "targets": 11, "orderable": false }],
+    "order": [[1, "asc"]],
+    "columnDefs": [{ "targets": [0, 14], "orderable": false }],
     "initComplete": function () {
       // Apply the search
       this.api().columns().every(function () {
@@ -195,7 +200,6 @@ $(document).ready(function () {
 
       });
       if (!thisClass) {
-        // console.log(that);
         that.toggleClass("selected");
       }
     }
@@ -205,7 +209,6 @@ $(document).ready(function () {
 
   function selectHandler() {
     var rowsSelected = table.rows(".selected").data().length;
-    //console.log(rowsSelected);
 
     $("#rows").remove();
     $(`<span id="rows">${rowsSelected} Zeile(n) ausgewählt</span>`).insertAfter(
@@ -230,21 +233,6 @@ $(document).ready(function () {
     }
   }
 
-  $("#table").on("click", ".log", function (e) {
-    var id = $(this).parent().parent().children().first().html().trim();
-    window.location.href = `/logs/${id}`;
-  });
-
-  $(document).on("keypress", function (e) {
-    if ($("#ortInput").is(":focus")) {
-      if (e.which == 13) {
-        alert($("#ortInput").val());
-      };
-    }
-
-  });
-
-  //------------------------------------
   //----------Delete Entry---------------
 
   $("#Delete").click(function () {

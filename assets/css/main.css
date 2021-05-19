@@ -347,9 +347,13 @@ input[type="search"]{
   font-size: 20px;
 }
 
-.log, .warn, .error {
+.log, .save {
   width: 24px;
   height: auto;
+}
+
+.log:hover, .save:hover {
+  cursor: pointer;
 }
 
 .linkStammdaten{
@@ -364,9 +368,7 @@ select{
   height: 30px;
 }
 
-.log:hover {
-  cursor: pointer;
-}
+
 
 button {
   padding: 5px;
@@ -517,6 +519,34 @@ thead input {
   color: black;
 }
 
+.list_popup{
+  display: none;
+  width: 30%;
+  min-width: 300px;
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  transform: translate(-50%, -50%);
+  border-radius: 10px;
+  text-align: center;
+  z-index: 2;
+  background-color: #efefef;
+  font-weight: bold;
+  color: black;
+}
+
+.list_popup{
+  font-size: 1.2rem;
+}
+
+.list_popup .PopUp_middle{
+  width: 100%;
+}
+
+.list_popup .PopUp_middle input{
+  width: auto !important;
+}
+
 .ui-autocomplete {
   z-index: 100;
   background-color: rgb(236, 228, 228);
@@ -530,6 +560,14 @@ thead input {
   display: inline-block;
   width: 40px;
   height: 20px;
+}
+
+.switch_list {
+  position: relative;
+  display: inline-block;
+  top: 7px;
+  width: 55px;
+  height: 25px;
 }
 
 /* Hide default HTML checkbox */
@@ -564,9 +602,29 @@ thead input {
   transition: .4s;
 }
 
-/* .Stamm_div{
-  background-color: #dadada;
-} */
+.slider_list {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.slider_list:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 4px;
+  bottom: 3px;
+  background-color: #5172ff;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
 
 label:hover{
   cursor: pointer;
@@ -580,10 +638,24 @@ input:focus + .slider {
   box-shadow: 0 0 1px #2196F3;
 }
 
+input:checked + .slider_list {
+  background-color: #ccc;
+}
+
+input:focus + .slider_list {
+  box-shadow: 0 0 1px #ccc;
+}
+
 input:checked + .slider:before {
   -webkit-transform: translateX(18px);
   -ms-transform: translateX(18px);
   transform: translateX(18px);
+}
+
+input:checked + .slider_list:before {
+  -webkit-transform: translateX(27px);
+  -ms-transform: translateX(27px);
+  transform: translateX(27px);
 }
 
 /* Rounded sliders */
@@ -594,6 +666,15 @@ input:checked + .slider:before {
 .slider.round:before {
   border-radius: 50%;
 }
+
+.slider_list.round {
+  border-radius: 34px;
+}
+
+.slider_list.round:before {
+  border-radius: 50%;
+}
+
 .ui-menu{
   z-index: 3 !important;
   margin-left: 25px;

@@ -348,6 +348,24 @@ function updateStoragePlace(id, stock_id){
     });
 }
 
+function getKeywordsByStockId(id) {
+    return new Promise((resolve, reject) => {
+        con.query(
+            `SELECT GROUP_CONCAT(keyword.keyword) FROM keyword INNER JOIN keyword_list ON keyword_list.keyword_id = keyword.id WHERE keyword_list.stock_id = ?`,
+            [id],
+            function (err, result) {
+                if (err) {
+                    reject(err)
+                    console.log(err);
+                } else {
+                    resolve(result);
+                }
+
+            }
+        );
+    });
+}
+
 function getKeywordsByName(name) {
     return new Promise((resolve, reject) => {
         con.query(
@@ -466,6 +484,7 @@ module.exports = {
     getStorageLocationByNameAndParent,
     insertStoragePlaces,
     updateStoragePlace,
+    getKeywordsByStockId,
     getKeywordsByName,
     getKeywordlistByStockid,
     insertKeywordList,
