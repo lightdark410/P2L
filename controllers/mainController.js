@@ -1,6 +1,7 @@
 let mysql = require("mysql2");
 let functions = require("./functions.js");
 let masterdataDB = require("./masterdataDB"); //import sql functions for handling masterdata database changes
+let mobileListDB = require("./mobileListDB");
 let logDB = require("./logDB");
 let fs = require('fs');
 let config = require('config'); 
@@ -120,8 +121,7 @@ module.exports = function (app) {
     app.get("/logs", async (req, res) => {
       if (req.session.loggedin) {
         try {
-          var logs = await logDB.getLog();
-          res.render("logs", { result: logs, session: req.session });
+          res.render("logs", { session: req.session });
         } catch (error) {
           res.status("500").send("Internal Server Error");
           console.log(error);
@@ -132,6 +132,23 @@ module.exports = function (app) {
         res.render("login", { err: req.query.err}); //redirect to login page if not logged in
       }
   
+    })
+
+    app.get("/logData", async (req, res) => {
+      if (req.session.loggedin) {
+        try {
+          var logs = await logDB.getLog();
+
+          res.send(logs);
+        } catch (error) {
+          res.status("500").send("Internal Server Error");
+          console.log(error);
+        }
+  
+      } else {
+        req.session.redirectTo = `/logs`;
+        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+      }
     })
 
     app.get("/logs/:stockId", async (req, res) => {
@@ -158,7 +175,7 @@ module.exports = function (app) {
       }
     })
 
-    //Mobile Seite zum Ein-/Auslagern
+    //Mobile Seite zum Ein-/Auslagern vor Ort
     app.get("/storagePlace/:id", async (req, res) => {
       if (req.session.loggedin) {
         var id = req.params.id;
@@ -183,7 +200,45 @@ module.exports = function (app) {
         res.render("login", { err: req.query.err}); //redirect to login page if not logged in
       }
     })
+
+    //mobile list view
+    app.get("/mobileList/:id", async (req, res) => {
+      if (req.session.loggedin) {
+        let data = await mobileListDB.get_mobile_list(req.params.id);
+        for(let i = 0; i < data.length; i++){
+          let stock_data = await functions.getStockById(data[i].stock_id);
+          data[i].articleName = stock_data.name;
+          let storage_data = await masterdataDB.getStorageByStockId(data[i].stock_id);
+          data[i].storage = storage_data.name;
+          data[i].storage_place = storage_data.place;
+        }
+       
+        res.render("mobileList", { session: req.session, data: JSON.stringify(data) });
+      } else {
+       req.session.redirectTo = `/mobileList/${req.params.id}`;
+        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+      }
+    })
   // 
+
+  //save list for mobile view
+    app.post("/mobileList", async (req, res) => {
+      if (req.session.loggedin) {
+        let username = req.session.username;
+        let data = JSON.parse(req.body.list);
+        await mobileListDB.insert_mobile_list(username);
+        let list_id = await mobileListDB.get_latest_mobile_list_id();
+        data.forEach(async obj => {
+          await mobileListDB.insert_mobile_list_entries(list_id, obj.stock_id, obj.lay_in, obj.amount);
+        })
+
+        res.send(`localhost/mobileList/${list_id}`);
+      } else {
+       req.session.redirectTo = `/`;
+        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+      }      
+    })
+  //
 
   //stock related data/routes for the home page
     app.get("/stock", async (req, res) => {
@@ -617,7 +672,7 @@ module.exports = function (app) {
     })
   //
 
-  //Updates the stock number after the submit on the mobile page
+  //Updates the stock number after the submit on the mobile item page
   app.patch("/storagePlace", async (req, res) => {
     if (req.session.loggedin) {
       try{

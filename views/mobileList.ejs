@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+    <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+    <link rel="stylesheet" href="../assets/css/mobileList.css">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="../assets/bootstrap/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+
+    <title>Document</title>
+</head>
+<body>
+
+ <div class="ml-3 mt-3 mr-3 p-3 border border-dark border-2">
+        <div class="row">
+            <div class="col-6">
+                <b>Lagerort</b>
+            </div>
+            <div class="col-6 text-right">
+                <b id="storage"></b>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-6 ">
+                <b>Lagerplatz</b>
+            </div>
+            <div class="col-3">
+
+            </div>
+            <div class="col-3 text-right">
+                <b id="storage_place"></b>
+            </div>
+        </div>
+    </div>
+ 
+
+    <div id="table_div" class="container-fluid">
+        <table class="table table-borderless" data-index="0">
+            <tbody> 
+                <tr>
+                    <th scope="row border-0">Artikelnummer</th>
+                    <td id="id" class="text-right pr-3"></td>
+                </tr>
+                <tr class="d-flex">
+                    <th scope="row" class="col-6">Name</th>
+                    <td id="name" class="text-right pr-3 col-10"></td>
+                </tr>
+                <tr id="amountTr">
+                    <th scope="row" id="amountTh"></th>
+                    <td id="amount" class="text-right pr-3"></td>
+                </tr>
+            </tbody>
+        </table> 
+    </div>
+
+    <div id="switch" class="d-flex justify-content-center">
+        <img class="" src="../assets/svg/cross.svg">
+    </div>
+
+    <div class="fixed-bottom mb-4">
+        <div id="page_div" class="row mb-2">
+            <div class="col-1"></div>
+            <div id="arrow_back" class="col-3 text-center" onclick="renderTableData($('table').attr(`data-index`) - 1)"> <img src="../assets/svg/arrow_left.svg" alt=""> </div>
+            <div id="view_all" class="col-4 text-center">Alle</div>
+            <div id="arrow_forward" class="col-3 text-center" onclick="renderTableData(parseInt($('table').attr(`data-index`)) + 1)"> <img src="../assets/svg/arrow_right.svg" alt=""> </div>         
+        </div>
+        <div class="row">
+            <div class="col text-center">
+                Artikel <span id="curr_page"></span> von <span id="total_pages"></span>
+            </div>
+        </div>
+    </div>
+    
+    <footer></footer>
+
+    <%- include('scripts'); %>
+    <script>
+        let data = JSON.parse(`<%- data %>`); //get all data from the server
+        let index = $("table").data("index"); 
+
+        $("#total_pages").text(data.length);
+        renderTableData(index);
+
+        //render all data in the table
+        function renderTableData(index){
+            if(typeof data[index] !== 'undefined'){
+                $("table").attr("data-index", index); //updates the data property of the table
+                $("#curr_page").text(index + 1);      //updates page number
+
+                let obj = data[index];
+                $("#id").text(obj.stock_id);
+                $("#name").text(obj.articleName);
+                $("#amount").text(obj.amount);
+                if(obj.lay_in == 1){
+                    $("#amountTh").text("Einlagern");
+                    $("#amountTr").css("background-color", "rgba(131,255,131,0.6)");
+                }else{
+                    $("#amountTh").text("Auslagern");
+                    $("#amountTr").css("background-color", "rgba(131,195,255,0.6)");
+                }
+                $("#storage").text(data[index].storage);
+                $("#storage_place").text(data[index].storage_place);
+            }
+        }
+
+        //save all svg´s
+        let svg_paths = ["../assets/svg/cross.svg", "../assets/svg/check.svg", "../assets/svg/warning.svg"];
+        $("#switch img").click(function(){
+            let curr_path = $(this).attr("src");
+            let curr_index = svg_paths.findIndex(ele => ele == curr_path);
+            let next_index;
+            //set index to 0 if the end of the array is reached 
+            curr_index == svg_paths.length - 1 ? next_index = 0 : next_index = curr_index + 1;
+            //set new svg
+            $(this).attr("src", svg_paths[next_index]);
+        });
+    </script>
+</body>
+</html>

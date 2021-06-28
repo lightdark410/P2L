@@ -46,6 +46,7 @@ async function log(id, event) {
 
 function getLog() {
     return new Promise((resolve, reject) => {
+        var res = {"data":[]};
         con.query(
             "SELECT * FROM `log`",
             function (err, result) {
@@ -54,7 +55,8 @@ function getLog() {
                     reject(err);
                     console.log(err);
                 }
-                resolve(result);
+                res.data = result;
+                resolve(res);
             }
         );
     });

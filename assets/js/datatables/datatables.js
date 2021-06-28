@@ -1,5 +1,3 @@
-$(document).ready(function () {
-
   // DataTable
   var table = $("#table").DataTable({
     "processing": true,
@@ -7,6 +5,7 @@ $(document).ready(function () {
       "url": "/stock",
       "type": "GET"
     },
+    responsive: false,
     "columns": [
       { data: "id" }, //mock data for saveIcon
       { data: "id" }, 
@@ -85,6 +84,26 @@ $(document).ready(function () {
       "url": "/assets/js/datatables/German.json",
       "searchPlaceholder": "Suchen..."
     },
+    "processing": true,
+    "ajax": {
+      "url": "/logData",
+      "type": "GET"
+    },
+    "columns": [
+      { data: "event" }, 
+      { data: "stock_id" }, 
+      { data: "name" },
+      { data: "category" },
+      { data: "keywords"},
+      { data: "location_id"},
+      { data: "location" }, 
+      { data: "date" }, 
+      { data: "time" }, 
+      { data: "creator" }, 
+      { data: "change_by" }, 
+      { data: "number" }, 
+      { data: "minimum_number" },
+    ],
   });
 
   $('#kategorieTable').DataTable({
@@ -150,7 +169,7 @@ $(document).ready(function () {
 
         var warnArr = [];
     
-        if (parseInt(data[2]) < parseInt(data[3])) {
+        if (parseInt(data[3]) < parseInt(data[4])) {
           warnArr.push($($('table.dataTable').DataTable().row(dataIndex).node()));
         }
         for (var i = 0; i < warnArr.length; i++) {
@@ -267,4 +286,3 @@ $(document).ready(function () {
   });
 
   //------------------------------------
-});

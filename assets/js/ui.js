@@ -1,4 +1,4 @@
-$(function () {
+// $(function () {
   let stammdaten = function () {
     var location = null;
     var category = null;
@@ -47,48 +47,6 @@ $(function () {
     return {"category": category.data, "keyword": keyword.data, "unit": unit.data, "storage_location": location};
   }();
 
-  let tpopup = $(`
-    <div id="PopUp>
-      <form action="/stock">
-        <div class="PopUp_topBar">
-          Neuen Artikel anlegen
-          <div id="mdiv">
-            <div class="mdiv">
-              <div class="md"></div>
-            </div>
-          </div>
-        </div>
-        <div class="PopUp_middle">
-          <table>
-            <tr>
-              <td>Artikel:</td>
-              <td>
-                <input type="text" id="name" maxlength="20" required autocomplete="off">
-              </td>
-              <td>Ort:</td>
-              <td>
-                <ul id="location" class="navbar-nav border">
-                  <li class="nav-item dropdown">
-                    <span class="nav-link dropdown-toggle" data-toggle="dropdown">
-                      Wähle einen Ort aus
-                    </span>
-                    <ul class="dropdown-menu">
-                    </ul>
-                  </li>
-                </ul>
-              </td>
-            </tr>
-            <tr>
-              <td>Anzahl:</td>
-              <td style="text-align:center">
-                <input type="number" id="number" name="number" min="0" maxLength="10" required>
-              </td>
-            </tr>
-          </table>
-        </div>
-      </form>
-    </div>
-  `);
   //create stock Popup
   var popup = $('<div/>', {'id':'PopUp'}).append(
     $('<form/>', {'action': '/stock'}).append(
@@ -320,6 +278,7 @@ $(function () {
   $("#New").click(function () {
     popup = toCreatePopup(popup);
     $(".selected").removeClass('selected');
+    selectHandler();
     $('#tableDiv').after(popup);
     popup.fadeIn();
 
@@ -491,59 +450,63 @@ $(function () {
     return popup;
   }
 
+  //triggers when click on the cover, navbar or close button on popup
   $("body").on("click", "#cover, .navbar, #mdiv",function () {
-    //when grey background or x button is clicked
+    //only do smth if the keyword dropdown in the stock popup is closed 
     if($(".select-pure__select--opened").length == 0){
 
-      $("#PopUp").fadeOut();
-      $("#PopUpUpdate").fadeOut();
-      $("#PopUpDelete").fadeOut();
-      $(".list_popup").fadeOut();
-
+      //closes all popups
+      $("#PopUp").fadeOut(300, () => $("#PopUp").remove());
+      $("#PopUpDelete").fadeOut(300, () => $("PopUpDelete").remove());
+      $("#list_number_popup").fadeOut(300, () => $("#list_number_popup").remove());
+      $("#list_popup").fadeOut(300, () => $("#list_popup").remove());
+      //closes cover 
       $("#cover").fadeOut();
       $("#notification").fadeOut();
 
-      $(".Tags").remove();
+      //remove 
+      // $(".Tags").remove();
 
+      //clears all input field
       $("#PopUp input").each(function (i) {
         $(this).val("");
       });
 
+      //clears the number buttons in edit popup
       $("#number, #minimum_number").parent().find("span").remove();
       $("#number , #minimum_number").parent().find("br").remove();
 
       $("#number , #minimum_number").css("border", "none");
-      $("#number , #minimum_number").css("border-bottom", "1px solid rgb(0,60,121");
+      $("#number , #minimum_number").css("border-bottom", "1px solid rgb(0,60,121)");
 
       $("#keywords , #minimum_number").val("");
   }
 
   });
 
-
-   //redirect if save icon was clicked
+   //show popup if save icon was clicked
    $("#table").on("click", ".save", function (e) {
     //gets id of clicked row
     let id = $(this).parent().parent().children().eq(1).html().trim();
     let name = $(this).parent().parent().children().eq(2).html().trim();
+    let num = $(this).parent().parent().children().eq(3).html().trim();
 
-    let list_popup = $(`
-      <div class="list_popup">
+    let list_number_popup = $(`
+      <div id="list_number_popup">
         <form data-id="${id}">
           <div class="PopUp_topBar">${name} in Liste speichern<div id="mdiv"><div class="mdiv"><div class="md"></div></div></div></div>
           <div class="PopUp_middle">
-            <br/>
-            <input type="number" name="value" min="0" value="0"/>
+            <br>
+            <input type="number" name="value" min="0" max="9999"/>
             <br/>
             <div>
               <span>Einlagern</span>
               <label for="ein_auslagern" class="switch_list">
-                <input id="ein_auslagern" name="auslagern" unchecked type="checkbox">
+                <input id="ein_auslagern" onchange="updateMaxval(this, ${num})" name="auslagern" type="checkbox">
                 <span class="slider_list round"></span>
               </label>
               <span>Auslagern</span>
             </div>
-            <br/>
           </div>
           <div class="PopUp_footer">
             <button type="submit">
@@ -554,12 +517,195 @@ $(function () {
       </div>
     `);
 
-    $('#tableDiv').after(list_popup);
-    list_popup.fadeIn();
+    $('#tableDiv').after(list_number_popup);
+    list_number_popup.fadeIn();
+    let input = $(list_number_popup).find("input").first();
+    input.focus();
+    input.val(1);
     $("#cover").fadeIn();
 
-  
+
   });
 
- 
-});
+  //updates the max attribute in the list_number popup
+  function updateMaxval(ele, max){
+    let input = $(ele).parent().parent().parent().find("input[type=number]");
+    if(ele.checked){
+      $(input).attr({"max": max});
+    }else{
+      $(input).attr({"max": 9999});
+    };
+  }
+
+  //updates number in the list button
+  function updateListNumber(){
+    let list = sessionStorage.getItem("list");
+    let number_of_listitems = 0;
+    if(list !== null){
+      number_of_listitems = JSON.parse(list).length;
+    }
+    $("#list span").text(number_of_listitems);
+  };
+  updateListNumber();
+
+  //show popup if list button was clicked
+  $("body").on("click", "#list", function(e){
+    let list = sessionStorage.getItem("list");
+    let tableData = '';
+
+    //the popup that will be shown
+    let list_popup = $(`
+      <div id="list_popup">
+        <form>
+          <div class="PopUp_topBar">Artikelliste<div id="mdiv"><div class="mdiv"><div class="md"></div></div></div></div>
+          <div class="PopUp_middle">
+            <table>
+              <tr>
+                <td>Artikelnummer</td>
+                <td>Artikel</td>
+                <td>Anzahl (aktuell)</td>
+                <td>Ein-/Auslagern</td>
+                <td>Menge</td>
+                <td>Anzahl (danach)</td>
+                <td>Mindestbestand</td>
+                <td>Einheit</td>
+                <td>Lagerort</td>
+                <td>Lagerplatz</td>
+                <td></td>
+              </tr>
+            </table>
+          </div>
+          <div id="qrcode"></div>
+          <div class="PopUp_footer">
+            <button id="qrSubmit" type="submit">
+              QR-Code generieren
+            </button>
+          </div>
+        </form>
+      </div>
+    `);
+
+    //checks is session is empty
+    if(JSON.parse(list).length == 0){
+      tableData = $(`<tr><td colspan="100">Speichern Sie Artikel ab, um sie hier einsehen zu können.</td></tr>`);
+      $(list_popup).find("#qrSubmit").attr("disabled", true);
+    }else{
+      list = JSON.parse(list);
+      //fills tableData
+      for(let i = 0; i < list.length; i++){
+        let list_id = list[i]["id"];
+        let select_in = "selected";
+        let select_out ="selected";
+        let out = list[i]["change"] < 0;
+        (out) ? select_in = "" : select_out = "";
+
+        table.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
+          var data = this.data();
+          //if a table row matches with the session storage
+          if(list_id == data.id){
+            //adds a tr to tableData
+            tableData += `
+              <tr>
+                <td class="id">${data.id}</td>
+                <td>${data.name}</td>
+                <td class="curr_val">${data.number}</td>
+                <td>
+                  <select>
+                    <option value="in" ${select_in}>Einlagern</option>
+                    <option value="out" ${select_out}>Auslagern</option>
+                  </select>
+                </td>
+                <td><input class="amount" type="number" min="1" max="${(out) ? data.number : 9999}" value="${Math.abs(list[i]['change'])}"/></td>
+                <td class="sum">0</td>
+                <td class="min">${data.minimum_number}</td>
+                <td>${data.unit}</td>
+                <td>${data.storage_location}</td>
+                <td>${data.storage_place}</td>
+                <td class="delete"><i class="fas fa-trash"></i></td>
+              </tr>
+            `;
+          };
+        });
+      }
+    }
+
+    //triggers if the list_popup dropdown or number input was changed
+    $("body").on("change keyup", "#list_popup .amount, #list_popup select", function(e){
+      let row = $(this).parent().parent();
+      let id = row.find(".id").text();
+      let num = parseInt(row.find(".amount").val());
+      let curr_val = row.find(".curr_val").text();
+      let select_val = row.find("select").val();
+      let change = num;
+      
+      if(select_val == "out"){
+        change = num * -1;
+        row.find(".amount").attr({"max": curr_val});
+        if(num > curr_val){
+          row.find(".amount").val(curr_val);
+        }
+      }else{
+        row.find(".amount").attr({"max": 9999});
+        if(num > 9999){
+          row.find(".amount").val(9999);
+        }
+      }
+      let entry = {"id": id, "change": change};
+      //add updated entry to storage
+      addToList(entry);
+      //calculate new sum
+      calcListPopupSum();
+    });
+
+    //generate qr code
+    $("body").on("submit", "#list_popup form", function(e){
+      e.preventDefault();
+      let rows = $(this).find("tr");
+      let list = [];
+      for(let i = 1; i < rows.length; i++){
+        let article_id = $(rows[i]).find(".id").text();
+        let select = $(rows[i]).find("select").val();
+        let amount = $(rows[i]).find(".amount").val();
+        list.push({
+          "stock_id": article_id,
+          "lay_in": (select == "in" ? true : false),
+          "amount": amount
+        });
+      }
+      
+      $.post("/mobileList", {"list" : JSON.stringify(list)}, function(data){
+        $("#qrcode").text("");
+        new QRCode(document.getElementById("qrcode"), data);
+      });
+
+      
+    });
+
+    $("body").on("click", "#list_popup", function(){
+      $("#qrcode").text("");
+    })
+
+    list_popup.find("table").append(tableData);
+    $('#tableDiv').after(list_popup);
+    calcListPopupSum();
+    list_popup.fadeIn();
+    $("#cover").fadeIn();
+    
+  })
+
+  //updates the sum td in the popup
+  function calcListPopupSum(){
+    let rows = $("#list_popup").find("tr");
+    for(let i = 1; i < rows.length; i++){
+      let current_val = parseInt($(rows[i]).find(".curr_val").text());
+      let val = parseInt($(rows[i]).find(".amount").val());
+      let select = $(rows[i]).find("select").val();
+      let sum;
+
+      sum = select == "in" ? current_val + val : current_val - val;
+      
+      sum = isNaN(sum) ? current_val : sum;
+      $(rows[i]).find(".sum").text(sum);
+    }
+  }
+// });

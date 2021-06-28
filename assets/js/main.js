@@ -1,5 +1,3 @@
-$(document).ready(function () {
-
   $("#Logout").click(function () {
     $.get("/logout", function (data) {
       window.location.href = "/";
@@ -13,8 +11,8 @@ $(document).ready(function () {
     window.location.href = `/logs/${id}`;
   });
 
-  //hanlde list popup submit
-  $("body").on("submit", ".list_popup form", function(event){
+  //hanlde list_number popup submit
+  $("body").on("submit", "#list_number_popup form", function(event){
     event.preventDefault();
     let id = $(this).data("id");
     let change = $(this).serializeArray()[0].value;
@@ -28,7 +26,32 @@ $(document).ready(function () {
     let newEntry = {"id": id, "change": change};
     addToList(newEntry);
     
+    $(this).parent().fadeOut(300, () => $(this).parent().remove());
+    $("#cover").fadeOut();
+
+    //ui.js
+    updateListNumber();
   });
+
+  //trigggers if the trash icon in the list_popup was clicked
+  $("body").on("click", "#list_popup .PopUp_middle .fa-trash", function(e){
+    let row = $(this).parent().parent();
+    let id = row.find(".id").html();
+    let storage_old = JSON.parse(sessionStorage.getItem("list"));
+    //filter sesseionStorage to remove the clicked element
+    let storage_filtered = storage_old.filter(obj => obj.id != id);
+    //save changes to session
+    sessionStorage.setItem("list", JSON.stringify(storage_filtered));
+    //remove row from popup
+    row.remove();
+
+    if(storage_filtered.length == 0){
+      $("#list_popup").find("table").append($(`<tr><td colspan="100">Speichern Sie Artikel ab, um sie hier einsehen zu können.</td></tr>`));
+      $("#list_popup").find("#qrSubmit").attr("disabled", true);
+    }
+    //ui.js
+    updateListNumber();
+  })
 
   //stores on list entry in cookies
   function addToList(entry){
@@ -98,5 +121,3 @@ $(document).ready(function () {
       $(this).css("cursor", "no-drop");
     }
   })
-
-});

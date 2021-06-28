@@ -44,51 +44,6 @@
                     <th>Mindestanzahl</th>
                 </tr>
             </thead>
-            <tbody>
-                <% for(var i = result.length - 1; i >= 0; i--){ %>
-                <tr>
-                    <td style="word-break: keep-all">
-                        <%= result[i].event %>
-                    </td>
-                    <td>
-                        <%= result[i].stock_id %>
-                    </td>
-                    <td>
-                        <%= result[i].name %>
-                    </td>
-                    <td>
-                        <%= result[i].category %>
-                    </td>
-                    <td>
-                        <%= result[i].keywords %>
-                    </td>
-                    <td>
-                        <%= result[i].location_id %>
-                    </td>
-                    <td>
-                        <%= result[i].location %>
-                    </td>
-                    <td>
-                        <%= result[i].date %>
-                    </td>
-                    <td>
-                        <%= result[i].time %>
-                    </td>
-                    <td>
-                        <%= result[i].creator %>
-                    </td>
-                    <td>
-                        <%= result[i].change_by %>
-                    </td>
-                    <td>
-                        <%= result[i].number %>
-                    </td>
-                    <td>
-                        <%= result[i].minimum_number %>
-                    </td>
-                </tr>
-                <% } %>
-            </tbody>
         </table>
     </div>
 

@@ -4,13 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.css">
+    <link rel="stylesheet" href="assets/css/semantic.min.css">
     <link rel="stylesheet" href="assets/css/dataTables.semanticui.min.css">
 
     <link rel="stylesheet" href="assets/css/main.css">
     <link rel="stylesheet" href="assets/css/bundle.css">
-
-    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="assets/fontawesome/css/all.css">
 
@@ -27,15 +25,15 @@
 
     <div class="row ml-0 mt-3 ml-3">
         <div>
-            <button class="btn" id="New" title="Neuen Artikel hinzufügen">
-                    Neu
-                </button>
-                <button class="btn" id="Edit" disabled title="Wähle eine Zeile aus um sie bearbeiten zu können">
-                    Bearbeiten
-                </button>
-                <button class="btn" id="Delete" disabled title="Wähle mindestens eine Zeile aus um sie löschen zu können">
-                    Löschen
-                </button>
+            <button class="btn topbar_btn" id="New" title="Neuen Artikel hinzufügen">
+                Neu
+            </button>
+            <button class="btn topbar_btn" id="Edit" disabled title="Wähle eine Zeile aus um sie bearbeiten zu können">
+                Bearbeiten
+            </button>
+            <button class="btn topbar_btn" id="Delete" disabled title="Wähle mindestens eine Zeile aus um sie löschen zu können">
+                Löschen
+            </button>
         </div>
   
         <div class="w-100"></div>
@@ -98,6 +96,9 @@
                 </tr>
             </tfoot>
         </table>
+        <button id="list" class="btn topbar_btn">
+            Liste anzeigen (<span>0</span>)
+        </button>
     </div>
 
     <div id="PopUpDelete">
@@ -122,6 +123,7 @@
 
     </footer>
 
+    <script src="../assets/js/qrcode.min.js" ></script>
     <%- include('scripts'); %>
 
 </body>
