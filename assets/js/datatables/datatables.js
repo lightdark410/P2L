@@ -5,6 +5,8 @@
       "url": "/stock",
       "type": "GET"
     },
+    pageLength : 5,
+    "lengthMenu": [[5, 10, 25, 50, 100], [5, 10, 25, 50, 100]],
     responsive: false,
     "columns": [
       { data: "id" }, //mock data for saveIcon
@@ -28,7 +30,7 @@
       $(row).find("td").first().html('<img class="save" src="assets/iconfinder_add.png" alt="" title="Artikel speichern">');
       $(row).find("td").last().html('<img class="log" src="assets/iconfinder_link.svg" alt="" title="Zu den Logs..">');
 
-      //add backgroudn colors if number is less that the minimum number
+      //add background colors if number is less that the minimum number
       if (parseInt(data.number) < parseInt(data.minimum_number)) {
         if (parseInt(data.number) > 0) {
           $(row).find("td:nth-child(4)").addClass("notEnough_left");
@@ -67,7 +69,6 @@
       "searchPlaceholder": "Suchen..."
     },
     "oLanguage": { "sSearch": "" }
-
   });
   // Clear all Search filter (after reload)
   if (table.state.loaded()) {
@@ -78,7 +79,7 @@
 
   }
 
-  $('#logsTable').DataTable({
+$('#logsTable').DataTable({
     "ordering": false,
     language: {
       "url": "/assets/js/datatables/German.json",
@@ -95,7 +96,6 @@
       { data: "name" },
       { data: "category" },
       { data: "keywords"},
-      { data: "location_id"},
       { data: "location" }, 
       { data: "date" }, 
       { data: "time" }, 
@@ -104,6 +104,23 @@
       { data: "number" }, 
       { data: "minimum_number" },
     ],
+    "rowCallback": function (row, data, index) {
+
+      //add background colors for the events
+      switch (data.event) {
+        case "delete":
+            $(row).find("td").first().css("background-color", "#ffadad");
+            break;
+        case "change":
+            $(row).find("td").first().css("background-color", "#fdffb6");
+            break;
+        case "create":
+            $(row).find("td").first().css("background-color", "#9bf6ff");
+            break;
+        default:
+            break;
+        }
+    },
   });
 
   $('#kategorieTable').DataTable({

@@ -66,7 +66,7 @@
             $('<td/>').append(
               $('<ul/>', {'id': 'location', 'class': 'navbar-nav border'}).append(
                 $('<li/>', {'class': 'nav-item dropdown'}).append(
-                  $('<span/>', {'class': 'nav-link dropdown-toggle', 'data-toggle': 'dropdown', 'text': 'Wähle einen Ort aus'})
+                  $('<span/>', {'class': 'nav-link dropdown-toggle', 'data-toggle': 'dropdown', 'text': 'Ort auswählen'})
                 ).append(
                   $('<ul/>', {'class': 'dropdown-menu'})
                 )
@@ -423,7 +423,7 @@
   function toCreatePopup(popup){
     popup.find(".PopUp_topBar").text("Neuen Artikel anlegen");
     popup.find(".PopUp_topBar").append('<div id="mdiv"><div class="mdiv"><div class="md"></div></div></div>');
-    popup.find("#location span").first().text("Wähle einen Ort aus");
+    popup.find("#location span").first().text("Ort auswählen");
     popup.find("#location span").first().attr("data-id", 0);
     popup.find("#location span").first().data("parent", 0);
     popup.find("form").prop("action", "/stock");
@@ -550,7 +550,7 @@
 
   //show popup if list button was clicked
   $("body").on("click", "#list", function(e){
-    let list = sessionStorage.getItem("list");
+    let list = JSON.parse(sessionStorage.getItem("list"));
     let tableData = '';
 
     //the popup that will be shown
@@ -584,13 +584,11 @@
         </form>
       </div>
     `);
-
     //checks is session is empty
-    if(JSON.parse(list).length == 0){
+    if(list.length == 0 || list == null){
       tableData = $(`<tr><td colspan="100">Speichern Sie Artikel ab, um sie hier einsehen zu können.</td></tr>`);
       $(list_popup).find("#qrSubmit").attr("disabled", true);
     }else{
-      list = JSON.parse(list);
       //fills tableData
       for(let i = 0; i < list.length; i++){
         let list_id = list[i]["id"];

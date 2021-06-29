@@ -4,10 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.3.1/semantic.min.css">
+    <link rel="stylesheet" href="../assets/css/semantic.min.css">
     <link rel="stylesheet" href="../assets/css/dataTables.semanticui.min.css">
     <link rel="stylesheet" href="../assets/css/main.css">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../assets/fontawesome/css/all.css">
 
     <link rel="shortcut icon" href="../assets/favicon.jpg" />
@@ -20,12 +19,11 @@
 
 <body>
     <%- include('navbar'); %>
-    <div class="container-fluid mt-3 mb-3 d-flex justify-content-center">
+    <div class="container-fluid mt-3 d-flex justify-content-center">
         <h1><u>Logs</u></h1>
     </div>
 
-    <div id="logsDiv">
-
+    <div id="logDiv" class="pb-5">
         <table id="logsTable" class="ui celled table display" style="width:100%">
             <thead>
                 <tr>
@@ -34,7 +32,6 @@
                     <th>Akrtikelname</th>
                     <th>Kategorie</th>
                     <th>Stichwörter</th>
-                    <th>Ort Id</th>
                     <th>Ort</th>
                     <th>Änderungsdatum</th>
                     <th>Änderungsuhrzeit</th>
@@ -47,12 +44,11 @@
         </table>
     </div>
 
-    <footer>
+    <footer id="foot">
 
     </footer>
 
     <%- include('scripts'); %>
-    <script src="../assets/js/logs.js"></script>
 
 </body>
 

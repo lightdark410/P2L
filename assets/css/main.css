@@ -140,16 +140,6 @@ h2{
   transform: rotate(90deg);
   Z-index: 2;
 }
-/* #navUl {
-  background-color: #0096c7;
-  width: 100%;
-  height: 50px;
-  list-style-type: none;
-  font-size: 20px;
-  color: white;
-} */
-
-
 
 .navbar{
   background-color: #0096c7;
@@ -157,10 +147,6 @@ h2{
 
 .navbar-brand, .nav-link, .navbar-text {
   color: white !important;
-}
-
-#navUl li {
-  float: left;
 }
 
 .container {
@@ -171,14 +157,9 @@ h2{
   padding: 20px;
 }
 
-#navUl li a {
-  display: block;
-  margin-left: 8px;
-  margin-top: 16px;
-  margin-bottom: -16px;
-  padding-right: 16px;
-  text-decoration: none;
-  color: white;
+.navbar-nav li:active{
+  background-color: #0ba2d4;
+  border-radius: 10px;
 }
 
 .Navdropdown-content a {
@@ -201,6 +182,10 @@ h2{
 
 .dataTables_wrapper{
   padding-bottom: 15px;
+}
+
+#tableDiv{
+  padding-bottom: 30px;
 }
 
 #table_wrapper{
@@ -376,6 +361,12 @@ input[type="search"]{
   height: auto;
 }
 
+@media only screen and (max-width: 1400px) {
+  .save{
+    width: 30px;
+  }
+}
+
 .log:hover, .save:hover {
   cursor: pointer;
 }
@@ -428,6 +419,10 @@ button:hover:disabled {
 
 #inputTr th {
   padding: 5px;
+}
+
+#table th {
+  white-space: nowrap;
 }
 
 #table tr:nth-child(even) {
@@ -555,6 +550,12 @@ thead input {
   color: black;
 }
 
+@media only screen and (max-width: 1400px) {
+  #list_number_popup{
+    top: 25%;
+  }
+}
+
 #list_number_popup .PopUp_topBar{
   padding-left: 0;
 }
@@ -563,7 +564,7 @@ thead input {
   display: none;
   width: 1000px;
   min-width: 300px;
-  position: absolute;
+  position: fixed;
   left: 50%;
   top: 45%;
   transform: translate(-50%, -50%);
@@ -572,6 +573,12 @@ thead input {
   z-index: 2;
   background-color: #efefef;
   color: black;
+}
+
+@media only screen and (max-width: 1400px) {
+  #list_popup .fa-trash{
+    transform: scale(1.4);
+  }
 }
 
 #qrcode{
@@ -638,6 +645,7 @@ thead input {
 @media only screen and (max-width: 1400px) {
   #list_popup .PopUp_footer button{
     height: 33px;
+    font-weight: bold;
   }
 
   #list_popup .PopUp_footer{
@@ -919,22 +927,6 @@ input:checked + .slider_list:before {
   padding: 5px;
 }
 
-/* .Tags{
-  position: relative !important;
-  margin: 4px !important;
-  padding: 6px !important;
-  color: black !important;
-  line-height: 30px;
-  border-radius: 5px;
-  background-color: rgba(11, 158, 255, 0.87);
-  white-space: nowrap
-}
-
-.Tags:hover{
-  cursor: pointer;
-  background-color: #ff2d2d69;
-} */
-
 .PopUp_middle input {
   border: none;
   background-color: transparent;
@@ -988,3 +980,9 @@ footer {
   position: fixed;
   bottom: 0;
 }
+
+/*Log Page*/
+#logDiv{
+  margin-top: -50px;
+}
+/**/
