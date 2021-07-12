@@ -39,23 +39,20 @@
         </div>
      
     
-        <div id="table_div" class="container-fluid">
-            <table class="table table-borderless" data-index="0">
-                <tbody> 
-                    <tr>
-                        <th scope="row border-0">Artikelnummer</th>
-                        <td id="id" class="text-right pr-3"></td>
-                    </tr>
-                    <tr class="d-flex">
-                        <th scope="row" class="col-6">Name</th>
-                        <td id="name" class="text-right pr-3 col-10"></td>
-                    </tr>
-                    <tr id="amountTr">
-                        <th scope="row" id="amountTh"></th>
-                        <td id="amount" class="text-right pr-3"></td>
-                    </tr>
-                </tbody>
-            </table> 
+        <div id="itemlist_div" class="container-fluid" data-index="0">
+            <div class="row mt-3 mb-3">
+                <div class="col-7 font-weight-bold pl-4">Artikelnummer</div>
+                <div id="id" class="col-5 text-right pr-4"></div>
+            </div>
+            <div class="row mt-3 mb-3">
+                <div class="col-3 font-weight-bold pl-4">Name</div>
+                <div id="name" class="text-right pr-3 col-9 pr-4"></div>
+            </div>
+            <div id="amountDiv" class="row mt-3 mb-3 pt-1 pb-1">
+                <div id="amountTh" class="col-7 font-weight-bold pl-4"></div>
+                <div id="amount" class="col-5 text-right pr-4"></div>
+            </div>
+ 
         </div>
     
         <div id="switch" class="d-flex justify-content-center">
@@ -65,9 +62,9 @@
         <div class="fixed-bottom mb-4">
             <div id="page_div" class="row mb-2">
                 <div class="col-1"></div>
-                <div id="arrow_back" class="col-3 text-center" onclick="renderItemTableData($('table').attr(`data-index`) - 1)"> <img src="../assets/svg/arrow_left.svg" alt=""> </div>
-                <div id="view_all" class="col-4 text-center" onclick="toggleView()">Alle</div>
-                <div id="arrow_forward" class="col-3 text-center" onclick="renderItemTableData(parseInt($('table').attr(`data-index`)) + 1)"> <img src="../assets/svg/arrow_right.svg" alt=""> </div>         
+                <div id="arrow_back" class="col-3 text-center" onclick="renderItemData($('#itemlist_div').attr(`data-index`) - 1)"> <img src="../assets/svg/arrow_left.svg" alt=""> </div>
+                <div id="view_all" class="col-4 text-center" onclick="toggleView(); renderListTableData();">Alle</div>
+                <div id="arrow_forward" class="col-3 text-center" onclick="renderItemData(parseInt($('#itemlist_div').attr(`data-index`)) + 1)"> <img src="../assets/svg/arrow_right.svg" alt=""> </div>         
             </div>
             <div class="row">
                 <div class="col text-center">
@@ -78,11 +75,13 @@
     </div>
   
     <div id="listDiv">
-        <table class="table">
+        <table class="table table-hover">
             <thead>
-                <th scope="col">Artikel</th>
-                <th scope="col">Lagerort</th>
-                <th scope="col">Lagerplatz</th>
+                <tr class="d-flex">
+                    <th class="col-3 text-center">Artikel</th>
+                    <th class="col-4 text-center">Lagerort</th>
+                    <th class="col-4 text-center">Lagerplatz</th>
+                    <th class="col-1"></th>
               </tr>
             </thead>
             <tbody>
@@ -90,29 +89,28 @@
             </tbody>
           </table>
     </div>
-    
     <footer></footer>
 
     <script src="../assets/js/jquery/jquery-3.2.1.js"></script>
     <script src="../assets/bootstrap/js/bootstrap.min.js"></script>
     <script>
         let data = JSON.parse(`<%- data %>`); //get all data from the server
-        let tableIndex = $("table").data("index"); 
+        let tableIndex = $("#itemlist_div").data("index"); 
         let url = window.location.pathname;
         let id = url.substring(url.lastIndexOf('/') + 1);
         //get all svg´s
         let svg_paths = ["../assets/svg/cross.svg", "../assets/svg/check.svg", "../assets/svg/warning.svg"];
 
         $("#total_pages").text(data.length);
-        renderItemTableData(tableIndex);
+        renderItemData(tableIndex);
 
         renderListTableData();
 
         //render all data in the table
-        function renderItemTableData(tableIndex){
+        function renderItemData(tableIndex){
             if(typeof data[tableIndex] !== 'undefined'){
                 
-                $("table").attr("data-index", tableIndex); //updates the data property of the table
+                $("#itemlist_div").attr("data-index", tableIndex); //updates the data property of the table
                 $("#curr_page").text(tableIndex + 1);      //updates page number
 
                 loadSvg(tableIndex);
@@ -123,10 +121,10 @@
                 $("#amount").text(obj.amount);
                 if(obj.lay_in == 1){
                     $("#amountTh").text("Einlagern");
-                    $("#amountTr").css("background-color", "rgba(131,255,131,0.6)");
+                    $("#amountDiv").css("background-color", "rgba(131,255,131,0.6)");
                 }else{
                     $("#amountTh").text("Auslagern");
-                    $("#amountTr").css("background-color", "rgba(131,195,255,0.6)");
+                    $("#amountDiv").css("background-color", "rgba(131,195,255,0.6)");
                 }
                 $("#storage").text(data[tableIndex].storage);
                 $("#storage_place").text(data[tableIndex].storage_place);
@@ -134,8 +132,18 @@
         }
 
         function renderListTableData(){
-            for(let i = 0; data.length; i++){
-                console.log(data[0]);
+            let tbody = $("#listDiv table tbody");
+            let storageStates = JSON.parse(localStorage.getItem("mobileList")).states;
+            $(tbody).html("");
+            for(var i = 0; i < data.length; i++){
+                $(tbody).append(`
+                    <tr class="d-flex pr-1" data-index="${i}">
+                        <td class="col-3">${data[i].articleName}</td>
+                        <td class="col-4">${data[i].storage}</td>
+                        <td class="col-4">${data[i].storage_place}</td>
+                        <td class="col-1" style="padding-left: 0; padding-right: 0;"><img src="${svg_paths[storageStates[i]]}" alt=""></td>
+                    </tr>
+                `)
             }
         }
 
@@ -162,11 +170,18 @@
             $(this).attr("src", svg_paths[next_index]);
             $(this).attr("data-index", next_index);
             //update localStorage
-            let table_index = document.querySelector("table").dataset.index;
+            let table_index = document.getElementById("itemlist_div").dataset.index;
             let storage = JSON.parse(localStorage.getItem("mobileList"));
             storage.states[table_index] = next_index;
             localStorage.setItem("mobileList", JSON.stringify(storage));
         });
+
+        //load one item if it was clicked in list
+        $("body").on("click", "#listDiv tbody tr", function(){
+            let index = $(this).attr("data-index");
+            toggleView();
+            renderItemData(parseInt(index));
+        })
 
         function toggleView(){
             $("#itemDiv").toggle();

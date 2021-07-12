@@ -6,14 +6,13 @@ html, body{
     font-size: 115%;
     font-size: 3vh;
 }
-
-/* #main{
-    height: 100% !important;
-    width: 100% !important;
-} */
  
-#table_div{
+#itemlist_div{
     margin-top: calc(1vh * 25 - 149px);
+}
+
+#name{
+    word-break: break-all;
 }
 
 #switch{
@@ -22,18 +21,9 @@ html, body{
     height: 11vh;
 }
 
-#name{
-    word-break: break-all;
-}
-
 #storage{
     word-break: break-all;
 }
-
-/* #page_div{
-    margin-top: 20px !important;
-
-} */
 
 #arrow_back{
     border: 1px solid black;
@@ -67,6 +57,20 @@ html, body{
 
 #listDiv{
     display: none;
+    font-size: 5vw;
+}
+
+#listDiv table td{
+    text-align: center;
+}
+
+#listDiv img{
+    width: 33px;
+}
+
+table td{
+
+    word-break: break-all;
 }
 
 footer{
