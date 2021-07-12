@@ -539,7 +539,7 @@
 
   //updates number in the list button
   function updateListNumber(){
-    let list = sessionStorage.getItem("list");
+    let list = localStorage.getItem("list");
     let number_of_listitems = 0;
     if(list !== null){
       number_of_listitems = JSON.parse(list).length;
@@ -550,7 +550,7 @@
 
   //show popup if list button was clicked
   $("body").on("click", "#list", function(e){
-    let list = JSON.parse(sessionStorage.getItem("list"));
+    let list = JSON.parse(localStorage.getItem("list"));
     let tableData = '';
 
     //the popup that will be shown
@@ -585,7 +585,7 @@
       </div>
     `);
     //checks is session is empty
-    if(list.length == 0 || list == null){
+    if(list == null || list.length == 0){
       tableData = $(`<tr><td colspan="100">Speichern Sie Artikel ab, um sie hier einsehen zu können.</td></tr>`);
       $(list_popup).find("#qrSubmit").attr("disabled", true);
     }else{
@@ -653,30 +653,6 @@
       addToList(entry);
       //calculate new sum
       calcListPopupSum();
-    });
-
-    //generate qr code
-    $("body").on("submit", "#list_popup form", function(e){
-      e.preventDefault();
-      let rows = $(this).find("tr");
-      let list = [];
-      for(let i = 1; i < rows.length; i++){
-        let article_id = $(rows[i]).find(".id").text();
-        let select = $(rows[i]).find("select").val();
-        let amount = $(rows[i]).find(".amount").val();
-        list.push({
-          "stock_id": article_id,
-          "lay_in": (select == "in" ? true : false),
-          "amount": amount
-        });
-      }
-      
-      $.post("/mobileList", {"list" : JSON.stringify(list)}, function(data){
-        $("#qrcode").text("");
-        new QRCode(document.getElementById("qrcode"), data);
-      });
-
-      
     });
 
     $("body").on("click", "#list_popup", function(){

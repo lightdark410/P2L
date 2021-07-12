@@ -48,7 +48,7 @@ function getLog() {
     return new Promise((resolve, reject) => {
         var res = {"data":[]};
         con.query(
-            "SELECT * FROM `log`",
+            "SELECT * FROM `log` ORDER BY date DESC, time DESC",
             function (err, result) {
                 //send results
                 if (err) {
@@ -64,15 +64,17 @@ function getLog() {
 
 function getLogByStockId(stock_id) {
     return new Promise((resolve, reject) => {
+        var res = {"data":[]};
         con.query(
-            "SELECT * FROM `log` WHERE stock_id = ?", [stock_id],
+            "SELECT * FROM `log` WHERE stock_id = ? ORDER BY date DESC", [stock_id],
             function (err, result) {
                 //send results
                 if (err) {
                     reject(err);
                     console.log(err);
                 }
-                resolve(result);
+                res.data = result;
+                resolve(res);
             }
         );
     });

@@ -6,6 +6,7 @@ ul, #locationUL {
   #locationUL {
     margin: 0;
     padding: 0;
+    min-height: 80%;
   }
   
   .caret {
@@ -50,7 +51,7 @@ ul, #locationUL {
 
   
 .popup{
-  position: absolute;
+  position: fixed;
   padding: 0 !important;
   border-radius: 10px;
   width: 35%;

@@ -79,6 +79,10 @@
 
   }
 
+let url = window.location.pathname;
+let id = url.substring(url.lastIndexOf('/') + 1);
+let ajax_url;
+(!isNaN(id)) ? ajax_url = `/logData/${id}` : ajax_url = "/logData";
 $('#logsTable').DataTable({
     "ordering": false,
     language: {
@@ -87,7 +91,7 @@ $('#logsTable').DataTable({
     },
     "processing": true,
     "ajax": {
-      "url": "/logData",
+      "url": ajax_url,
       "type": "GET"
     },
     "columns": [
@@ -138,7 +142,10 @@ $('#logsTable').DataTable({
     language: {
       "url": "/assets/js/datatables/German.json",
       "searchPlaceholder": "Suchen..."
-    }
+    },
+    "scrollY":        "300px",
+    "scrollCollapse": true,
+    "paging":         false
   });
   
   $('#keywordsTable').DataTable({
@@ -156,7 +163,10 @@ $('#logsTable').DataTable({
     language: {
       "url": "/assets/js/datatables/German.json",
       "searchPlaceholder": "Suchen..."
-    }
+    },
+    "scrollY":        "300px",
+    "scrollCollapse": true,
+    "paging":         false
   });
 
   $('#unitTable').DataTable({
@@ -174,7 +184,10 @@ $('#logsTable').DataTable({
     language: {
       "url": "/assets/js/datatables/German.json",
       "searchPlaceholder": "Suchen..."
-    }
+    },
+    "scrollY":        "300px",
+    "scrollCollapse": true,
+    "paging":         false
   });
   //save all rows with errors in array warnArr
 

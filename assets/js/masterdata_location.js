@@ -269,7 +269,7 @@ $("#DeleteNode").click(function(){
 
     let cover = '<div class="cover"></div>';
 
-    $(".Stamm_container").prepend($(cover + popUp).hide().fadeIn());
+    $("body").prepend($(cover + popUp).hide().fadeIn());
 
     $(".popup_mid > .cancel").click(function () {
         $(".cover").fadeOut();

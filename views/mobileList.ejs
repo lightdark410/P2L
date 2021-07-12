@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
-    <link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.css">
     <link rel="stylesheet" href="../assets/css/mobileList.css">
+    <link rel="shortcut icon" href="../assets/favicon.jpg" />
 
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="../assets/bootstrap/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
@@ -15,83 +15,109 @@
 </head>
 <body>
 
- <div class="ml-3 mt-3 mr-3 p-3 border border-dark border-2">
-        <div class="row">
-            <div class="col-6">
-                <b>Lagerort</b>
+    <div id="itemDiv">
+        <div class="ml-3 mt-3 mr-3 p-3 border border-dark border-2">
+            <div class="row">
+                <div class="col-6">
+                    <b>Lagerort</b>
+                </div>
+                <div class="col-6 text-right">
+                    <b id="storage"></b>
+                </div>
             </div>
-            <div class="col-6 text-right">
-                <b id="storage"></b>
+            <div class="row mt-4">
+                <div class="col-6 ">
+                    <b>Lagerplatz</b>
+                </div>
+                <div class="col-3">
+    
+                </div>
+                <div class="col-3 text-right">
+                    <b id="storage_place"></b>
+                </div>
             </div>
         </div>
-        <div class="row mt-4">
-            <div class="col-6 ">
-                <b>Lagerplatz</b>
+     
+    
+        <div id="table_div" class="container-fluid">
+            <table class="table table-borderless" data-index="0">
+                <tbody> 
+                    <tr>
+                        <th scope="row border-0">Artikelnummer</th>
+                        <td id="id" class="text-right pr-3"></td>
+                    </tr>
+                    <tr class="d-flex">
+                        <th scope="row" class="col-6">Name</th>
+                        <td id="name" class="text-right pr-3 col-10"></td>
+                    </tr>
+                    <tr id="amountTr">
+                        <th scope="row" id="amountTh"></th>
+                        <td id="amount" class="text-right pr-3"></td>
+                    </tr>
+                </tbody>
+            </table> 
+        </div>
+    
+        <div id="switch" class="d-flex justify-content-center">
+            <img class="" src="../assets/svg/cross.svg">
+        </div>
+    
+        <div class="fixed-bottom mb-4">
+            <div id="page_div" class="row mb-2">
+                <div class="col-1"></div>
+                <div id="arrow_back" class="col-3 text-center" onclick="renderItemTableData($('table').attr(`data-index`) - 1)"> <img src="../assets/svg/arrow_left.svg" alt=""> </div>
+                <div id="view_all" class="col-4 text-center" onclick="toggleView()">Alle</div>
+                <div id="arrow_forward" class="col-3 text-center" onclick="renderItemTableData(parseInt($('table').attr(`data-index`)) + 1)"> <img src="../assets/svg/arrow_right.svg" alt=""> </div>         
             </div>
-            <div class="col-3">
-
-            </div>
-            <div class="col-3 text-right">
-                <b id="storage_place"></b>
+            <div class="row">
+                <div class="col text-center">
+                    Artikel <span id="curr_page"></span> von <span id="total_pages"></span>
+                </div>
             </div>
         </div>
     </div>
- 
-
-    <div id="table_div" class="container-fluid">
-        <table class="table table-borderless" data-index="0">
-            <tbody> 
-                <tr>
-                    <th scope="row border-0">Artikelnummer</th>
-                    <td id="id" class="text-right pr-3"></td>
-                </tr>
-                <tr class="d-flex">
-                    <th scope="row" class="col-6">Name</th>
-                    <td id="name" class="text-right pr-3 col-10"></td>
-                </tr>
-                <tr id="amountTr">
-                    <th scope="row" id="amountTh"></th>
-                    <td id="amount" class="text-right pr-3"></td>
-                </tr>
+  
+    <div id="listDiv">
+        <table class="table">
+            <thead>
+                <th scope="col">Artikel</th>
+                <th scope="col">Lagerort</th>
+                <th scope="col">Lagerplatz</th>
+              </tr>
+            </thead>
+            <tbody>
+              
             </tbody>
-        </table> 
-    </div>
-
-    <div id="switch" class="d-flex justify-content-center">
-        <img class="" src="../assets/svg/cross.svg">
-    </div>
-
-    <div class="fixed-bottom mb-4">
-        <div id="page_div" class="row mb-2">
-            <div class="col-1"></div>
-            <div id="arrow_back" class="col-3 text-center" onclick="renderTableData($('table').attr(`data-index`) - 1)"> <img src="../assets/svg/arrow_left.svg" alt=""> </div>
-            <div id="view_all" class="col-4 text-center">Alle</div>
-            <div id="arrow_forward" class="col-3 text-center" onclick="renderTableData(parseInt($('table').attr(`data-index`)) + 1)"> <img src="../assets/svg/arrow_right.svg" alt=""> </div>         
-        </div>
-        <div class="row">
-            <div class="col text-center">
-                Artikel <span id="curr_page"></span> von <span id="total_pages"></span>
-            </div>
-        </div>
+          </table>
     </div>
     
     <footer></footer>
 
-    <%- include('scripts'); %>
+    <script src="../assets/js/jquery/jquery-3.2.1.js"></script>
+    <script src="../assets/bootstrap/js/bootstrap.min.js"></script>
     <script>
         let data = JSON.parse(`<%- data %>`); //get all data from the server
-        let index = $("table").data("index"); 
+        let tableIndex = $("table").data("index"); 
+        let url = window.location.pathname;
+        let id = url.substring(url.lastIndexOf('/') + 1);
+        //get all svg´s
+        let svg_paths = ["../assets/svg/cross.svg", "../assets/svg/check.svg", "../assets/svg/warning.svg"];
 
         $("#total_pages").text(data.length);
-        renderTableData(index);
+        renderItemTableData(tableIndex);
+
+        renderListTableData();
 
         //render all data in the table
-        function renderTableData(index){
-            if(typeof data[index] !== 'undefined'){
-                $("table").attr("data-index", index); //updates the data property of the table
-                $("#curr_page").text(index + 1);      //updates page number
+        function renderItemTableData(tableIndex){
+            if(typeof data[tableIndex] !== 'undefined'){
+                
+                $("table").attr("data-index", tableIndex); //updates the data property of the table
+                $("#curr_page").text(tableIndex + 1);      //updates page number
 
-                let obj = data[index];
+                loadSvg(tableIndex);
+
+                let obj = data[tableIndex];
                 $("#id").text(obj.stock_id);
                 $("#name").text(obj.articleName);
                 $("#amount").text(obj.amount);
@@ -102,13 +128,30 @@
                     $("#amountTh").text("Auslagern");
                     $("#amountTr").css("background-color", "rgba(131,195,255,0.6)");
                 }
-                $("#storage").text(data[index].storage);
-                $("#storage_place").text(data[index].storage_place);
+                $("#storage").text(data[tableIndex].storage);
+                $("#storage_place").text(data[tableIndex].storage_place);
             }
         }
 
-        //save all svg´s
-        let svg_paths = ["../assets/svg/cross.svg", "../assets/svg/check.svg", "../assets/svg/warning.svg"];
+        function renderListTableData(){
+            for(let i = 0; data.length; i++){
+                console.log(data[0]);
+            }
+        }
+
+        function loadSvg(tableIndex){
+            let storage = localStorage.getItem("mobileList");
+            if(storage === null){
+                let states = new Array(data.length).fill(0);
+                let json = {"id": id, "states": states};
+                localStorage.setItem("mobileList", JSON.stringify(json));
+            }else if(JSON.parse(storage).id == id){
+                let state = JSON.parse(storage).states[tableIndex];
+                $("#switch img").attr("src", svg_paths[state]);
+            }
+        }
+
+        //switch svg when button was clicked
         $("#switch img").click(function(){
             let curr_path = $(this).attr("src");
             let curr_index = svg_paths.findIndex(ele => ele == curr_path);
@@ -117,7 +160,18 @@
             curr_index == svg_paths.length - 1 ? next_index = 0 : next_index = curr_index + 1;
             //set new svg
             $(this).attr("src", svg_paths[next_index]);
+            $(this).attr("data-index", next_index);
+            //update localStorage
+            let table_index = document.querySelector("table").dataset.index;
+            let storage = JSON.parse(localStorage.getItem("mobileList"));
+            storage.states[table_index] = next_index;
+            localStorage.setItem("mobileList", JSON.stringify(storage));
         });
+
+        function toggleView(){
+            $("#itemDiv").toggle();
+            $("#listDiv").toggle();
+        }
     </script>
 </body>
 </html>

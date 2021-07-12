@@ -37,11 +37,11 @@
   $("body").on("click", "#list_popup .PopUp_middle .fa-trash", function(e){
     let row = $(this).parent().parent();
     let id = row.find(".id").html();
-    let storage_old = JSON.parse(sessionStorage.getItem("list"));
+    let storage_old = JSON.parse(localStorage.getItem("list"));
     //filter sesseionStorage to remove the clicked element
     let storage_filtered = storage_old.filter(obj => obj.id != id);
     //save changes to session
-    sessionStorage.setItem("list", JSON.stringify(storage_filtered));
+    localStorage.setItem("list", JSON.stringify(storage_filtered));
     //remove row from popup
     row.remove();
 
@@ -55,7 +55,7 @@
 
   //stores on list entry in cookies
   function addToList(entry){
-    let list = sessionStorage.getItem("list");
+    let list = localStorage.getItem("list");
     let newList = [];
 
     if(list == null){
@@ -66,7 +66,7 @@
       newList = newList.filter(obj => obj.id != entry.id);
       newList.push(entry);
     }
-    sessionStorage.setItem("list", JSON.stringify(newList));
+    localStorage.setItem("list", JSON.stringify(newList));
   }
 
   //handle stock popup submit
@@ -114,6 +114,28 @@
     }else{
       $("#location span").first().attr("style", "color: red !important");
     }
+  });
+
+  //generate qr code
+  $("body").on("submit", "#list_popup form", function(e){
+    e.preventDefault();
+    let rows = $(this).find("tr");
+    let list = [];
+    for(let i = 1; i < rows.length; i++){
+      let article_id = $(rows[i]).find(".id").text();
+      let select = $(rows[i]).find("select").val();
+      let amount = $(rows[i]).find(".amount").val();
+      list.push({
+        "stock_id": article_id,
+        "lay_in": (select == "in" ? true : false),
+        "amount": amount
+      });
+    }
+    
+    $.post("/mobileList", {"list" : JSON.stringify(list)}, function(data){
+      $("#qrcode").text("");
+      new QRCode(document.getElementById("qrcode"), data);
+    });
   });
 
   $("body").on("mouseenter", "#location ul li span", function(e){

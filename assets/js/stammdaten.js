@@ -22,6 +22,33 @@ $(".AddRow").click(function () {
     }
 });
 
+//handles scrolling if location inputs on tablet were clicked
+$("#locationUL").on("focusin", "input", function(){
+    if(screen.width < 1400){
+        this.scrollIntoView();
+        let scrolledY = window.scrollY;
+        window.scrollTo(0, scrolledY - 100);
+    };
+});
+
+//handles scrolling if inputs were clicked on tablet to add master data
+$("body").on("focusin", ".StammInput", function(){
+    if(screen.width < 1400){
+        let height = $(this).closest(".dt-table").height();
+
+        if($(this).attr("placeholder") != "Kategorie..."){
+            $(this).focusout(function(){
+                $(".Stamm_div").parent().last().attr("style", `padding-bottom: 0`);
+            });
+            
+            $(".Stamm_div").parent().last().attr("style", `padding-bottom: ${height}px !important`);
+            this.scrollIntoView();
+        }else{
+            window.scrollTo(0, height);
+        }        
+    }
+});
+
 $(".AddRow").hover(function () {
     $(this).css("cursor", "pointer");
 });
@@ -73,7 +100,6 @@ $("table").on("click", ".fa-trash", function () {
       });
 
     let popUpMid = ``;
-    console.log("number: " + number);
     if(number == 0){
         popUpMid = `
         <span>Sicher, dass Sie "${val}" <b><u>unwiderruflich</u></b></span>
@@ -112,11 +138,13 @@ $("table").on("click", ".fa-trash", function () {
 
     let cover = '<div class="cover"></div>';
 
-    $(".Stamm_container").prepend($(cover + popUp).hide().fadeIn());
+    $("body").prepend($(cover + popUp).hide().fadeIn());
 
     $(".popup_mid > .cancel").click(function () {
         $(".cover").fadeOut();
+        $(".cover").remove();
         $(".popup").fadeOut();
+        $(".popup").remove();
     })
 
     $(".popup_mid > .delete").click(function () {
@@ -147,5 +175,7 @@ $("table").on("click", ".fa-trash", function () {
 
 $("body").on("click", ".cover, #mdiv", function(){
     $(".cover").fadeOut();
+    $(".cover").remove();
     $(".popup").fadeOut();
+    $(".popup").remove();
 })

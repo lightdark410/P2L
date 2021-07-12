@@ -131,7 +131,21 @@ module.exports = function (app) {
         req.session.redirectTo = `/logs`;
         res.render("login", { err: req.query.err}); //redirect to login page if not logged in
       }
-  
+    })
+    
+    //also render log page with an id
+    app.get("/logs/:stockId", async (req, res) => {
+      if(req.session.loggedin){
+        try {
+          res.render("logs", { session: req.session });
+        } catch (error) {
+          res.status("500").send("Internal Server Error");
+          console.log(error);
+        }
+      }else{
+        req.session.redirectTo = `/logs/${req.params.stockId}`;
+        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+      }
     })
 
     app.get("/logData", async (req, res) => {
@@ -151,11 +165,11 @@ module.exports = function (app) {
       }
     })
 
-    app.get("/logs/:stockId", async (req, res) => {
+    app.get("/logData/:stockId", async (req, res) => {
       if(req.session.loggedin){
         try {
           var logs = await logDB.getLogByStockId(req.params.stockId);
-          res.render("logs", { result: logs, session: req.session });
+          res.send(logs);
         } catch (error) {
           res.status("500").send("Internal Server Error");
           console.log(error);
@@ -228,6 +242,7 @@ module.exports = function (app) {
         let data = JSON.parse(req.body.list);
         await mobileListDB.insert_mobile_list(username);
         let list_id = await mobileListDB.get_latest_mobile_list_id();
+
         data.forEach(async obj => {
           await mobileListDB.insert_mobile_list_entries(list_id, obj.stock_id, obj.lay_in, obj.amount);
         })
