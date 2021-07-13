@@ -270,7 +270,7 @@ module.exports = function (app) {
           result.data[i].storage_location = storage_place.name;
           result.data[i].storage_place = storage_place.place;
         }
-
+        console.log(result);
         res.send(result);
       } else {
         req.session.redirectTo = `/stock`;
@@ -316,8 +316,6 @@ module.exports = function (app) {
       //create entry in db
       if(req.session.loggedin){
         var username = req.session.username;
-        var fulldate = functions.getDate(); //get time/date
-        var time = functions.getTime();
     
         try {
 
@@ -325,7 +323,7 @@ module.exports = function (app) {
             await functions.insertArticle(req.body.name, 1, category.id);
 
             const item = await functions.getLatestArticle();
-            await functions.insertStock(item.id, req.body.number, req.body.minimum_number, username, username, fulldate, time);
+            await functions.insertStock(item.id, req.body.number, req.body.minimum_number, username, username);
 
             var latestStock = await functions.getLatestStock();
       
@@ -374,6 +372,7 @@ module.exports = function (app) {
               "unit": entry.unit
             };
 
+            //check if any changes were made
             let flag=true;
             if(Object.keys(req.body).length==Object.keys(compare_json).length){
                 for(key in req.body) { 
@@ -391,7 +390,7 @@ module.exports = function (app) {
             }
 
             if(flag){
-              res.send("updated");
+              res.send("not updated");
               return;
             }
           //

@@ -485,11 +485,17 @@
   });
 
    //show popup if save icon was clicked
-   $("#table").on("click", ".save", function (e) {
+   $("#table").on("click", "td", function (e) {
+
+    //only show popup if the td contains the save icon
+    if(!$(this).find(".save").length){
+      return;
+    }
+
     //gets id of clicked row
-    let id = $(this).parent().parent().children().eq(1).html().trim();
-    let name = $(this).parent().parent().children().eq(2).html().trim();
-    let num = $(this).parent().parent().children().eq(3).html().trim();
+    let id = $(this).parent().children().eq(1).html().trim();
+    let name = $(this).parent().children().eq(2).html().trim();
+    let num = $(this).parent().children().eq(3).html().trim();
 
     let list_number_popup = $(`
       <div id="list_number_popup">
@@ -497,12 +503,12 @@
           <div class="PopUp_topBar">${name} in Liste speichern<div id="mdiv"><div class="mdiv"><div class="md"></div></div></div></div>
           <div class="PopUp_middle">
             <br>
-            <input type="number" name="value" min="0" max="9999"/>
+            <input type="number" name="value" min="0" max="${num}"/>
             <br/>
             <div>
               <span>Einlagern</span>
               <label for="ein_auslagern" class="switch_list">
-                <input id="ein_auslagern" onchange="updateMaxval(this, ${num})" name="auslagern" type="checkbox">
+                <input id="ein_auslagern" onchange="updateMaxval(this, ${num})" name="auslagern" checked type="checkbox">
                 <span class="slider_list round"></span>
               </label>
               <span>Auslagern</span>

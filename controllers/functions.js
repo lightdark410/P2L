@@ -22,6 +22,12 @@ function getStock() {
             function (err, result) {
                 //send results
                 if (err) reject(err);
+
+                //correct timezone from date string
+                for(let i = 0; i < result.length; i++){
+                    result[i].date = result[i].date.toLocaleString();
+                }
+                
                 res.data = result;
                 resolve(res);
             }
@@ -120,7 +126,7 @@ function deleteStock(id) {
     });
 }
 
-function insertStock(article_id, number, minimum_number, creator, change_by, date, time) {
+function insertStock(article_id, number, minimum_number, creator, change_by) {
     return new Promise((resolve, reject) => {
         con.query(
             `INSERT INTO stock 
@@ -129,19 +135,15 @@ function insertStock(article_id, number, minimum_number, creator, change_by, dat
             number,
             minimum_number,
             creator,
-            change_by,
-            date,
-            time
+            change_by
         )
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+           VALUES (?, ?, ?, ?, ?)`,
             [
                 article_id,
                 number,
                 minimum_number,
                 creator,
-                change_by,
-                date,
-                time
+                change_by
             ],
             function (err, result) {
                 if (err){
@@ -205,43 +207,6 @@ function insertArticle(name, unit_id, category_id) {
     });
 }
 
-function getDate() {
-    var d = new Date();
-    var date = d.getUTCDate();
-    var month = d.getUTCMonth();
-    month += 1;
-    var year = d.getUTCFullYear();
-
-    if (date <= 9) {
-        date = "0" + date;
-    }
-    if (month <= 9) {
-        month = "0" + month;
-    }
-
-    var fulldate = date + "." + month + "." + year;
-
-    return fulldate;
-}
-
-function getTime() {
-    var d = new Date();
-
-    var hours = d.getHours();
-    var minutes = d.getMinutes();
-
-    if (hours <= 9) {
-        hours = "0" + hours;
-    }
-    if (minutes <= 9) {
-        minutes = "0" + minutes;
-    }
-
-    var time = hours + ":" + minutes;
-
-    return time;
-}
-
 function UserSearch(client, base, search_options) {
     return new Promise(function (resolve, reject) {
 
@@ -273,8 +238,8 @@ function updateArticle(article_id, name, unit_id, category_id) {
 
 function updateStock(number, minimum_number, username, id) {
     return new Promise((resolve, reject) => {
-        con.query("UPDATE stock SET number = ?, minimum_number = ?, change_by = ?, date = ?, time = ? WHERE id = ?",
-            [number, minimum_number, username, getDate(), getTime(), id],
+        con.query("UPDATE stock SET number = ?, minimum_number = ?, change_by = ? WHERE id = ?",
+            [number, minimum_number, username, id],
             function (err, result) {
                 if (err) {
                     reject(err);
@@ -287,8 +252,8 @@ function updateStock(number, minimum_number, username, id) {
 
 function updateStockNumber(stock_id, number, username){
     return new Promise((resolve, reject) => {
-        con.query("UPDATE stock SET number = ?, change_by = ?, date = ?, time = ? WHERE id = ?",
-            [number, username, getDate(), getTime(), stock_id],
+        con.query("UPDATE stock SET number = ?, change_by = ? WHERE id = ?",
+            [number, username, stock_id],
             function (err, result) {
                 if (err) {
                     reject(err);
@@ -321,8 +286,6 @@ module.exports = {
     deleteStock,
     insertStock,
     insertArticle,
-    getDate,
-    getTime,
     UserSearch,
     getLatestStock,
     updateArticle,

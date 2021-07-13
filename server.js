@@ -1,6 +1,6 @@
 var express = require('express');
 var app = express();
-var bodyParser = require('body-parser');
+//var bodyParser = require('body-parser');
 var session = require('express-session');
 
 var controller = require('./controllers/mainController');
@@ -19,7 +19,6 @@ app.use(express.urlencoded({
   }));
 
 app.use(express.json());
-//app.use(expressLogger);
 
 controller(app);
 

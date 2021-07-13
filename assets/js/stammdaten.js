@@ -33,7 +33,7 @@ $("#locationUL").on("focusin", "input", function(){
 
 //handles scrolling if inputs were clicked on tablet to add master data
 $("body").on("focusin", ".StammInput", function(){
-    if(screen.width < 1400){
+    //if(screen.width < 1400){
         let height = $(this).closest(".dt-table").height();
 
         if($(this).attr("placeholder") != "Kategorie..."){
@@ -46,7 +46,7 @@ $("body").on("focusin", ".StammInput", function(){
         }else{
             window.scrollTo(0, height);
         }        
-    }
+    //}
 });
 
 $(".AddRow").hover(function () {
@@ -93,8 +93,7 @@ $("table").on("click", ".fa-trash", function () {
         'type': "GET",
         'global': false,
         'url': `/stammdaten/${table}/${val}`,
-        'success': function (data) {+
-            console.log(data);
+        'success': function (data) {
           number = data.number;
         }
       });

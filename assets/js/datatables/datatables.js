@@ -5,7 +5,7 @@
       "url": "/stock",
       "type": "GET"
     },
-    pageLength : 5,
+    pageLength : 10,
     "lengthMenu": [[5, 10, 25, 50, 100], [5, 10, 25, 50, 100]],
     responsive: false,
     "columns": [
@@ -21,7 +21,6 @@
       { data: "creator" }, 
       { data: "change_by" }, 
       { data: "date" }, 
-      { data: "time" }, 
       { data: "keyword" },
       { data: "id"} //mock data for logs
     ],
@@ -43,7 +42,7 @@
       }
     },
     "order": [[1, "asc"]],
-    "columnDefs": [{ "targets": [0, 14], "orderable": false }],
+    "columnDefs": [{ "targets": [0, 13], "orderable": false }],
     "initComplete": function () {
       // Apply the search
       this.api().columns().every(function () {
@@ -101,8 +100,7 @@ $('#logsTable').DataTable({
       { data: "category" },
       { data: "keywords"},
       { data: "location" }, 
-      { data: "date" }, 
-      { data: "time" }, 
+      { data: "date" },
       { data: "creator" }, 
       { data: "change_by" }, 
       { data: "number" }, 

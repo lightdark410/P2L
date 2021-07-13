@@ -69,6 +69,14 @@
     localStorage.setItem("list", JSON.stringify(newList));
   }
 
+  function clearList(){
+    localStorage.removeItem('list');
+    updateListNumber();
+    $("#list_popup").find("table tr").not(':first').remove();
+    $("#list_popup").find("table").append($(`<tr><td colspan="100">Speichern Sie Artikel ab, um sie hier einsehen zu können.</td></tr>`));
+    $("#list_popup").find("#qrSubmit").attr("disabled", true);
+  }
+
   //handle stock popup submit
   $("body").on("submit", "#PopUp form", function(event){
     event.preventDefault();
@@ -135,6 +143,7 @@
     $.post("/mobileList", {"list" : JSON.stringify(list)}, function(data){
       $("#qrcode").text("");
       new QRCode(document.getElementById("qrcode"), data);
+      clearList();
     });
   });
 

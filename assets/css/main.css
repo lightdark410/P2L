@@ -357,7 +357,7 @@ input[type="search"]{
 }
 
 .log, .save {
-  width: 24px;
+  width: 28px;
   height: auto;
 }
 
@@ -426,7 +426,7 @@ button:hover:disabled {
 }
 
 #table tr:nth-child(even) {
-  background-color: #bfbfbf4f;
+  background-color: #bfbfbf3b;
 }
 
 #table tr:hover {
@@ -633,10 +633,10 @@ thead input {
 #list_number_popup .PopUp_middle input{
   width: 35% !important;
 }
-
+/* 
 #list_popup .PopUp_middle input{
   width: 65% !important;
-}
+} */
 
 #list_popup .PopUp_footer button{
   width: 165px;
