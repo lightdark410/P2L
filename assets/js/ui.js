@@ -78,13 +78,13 @@
             $('<td/>', {'text': 'Anzahl:'})
           ).append(
             $('<td/>', {'style': 'text-align:center'}).append(
-              $('<input/>', {'type': 'number', 'id': 'number', 'name': 'number', 'min': '0', 'maxlength': '10'})
+              $('<input/>', {'type': 'number', 'id': 'number', 'name': 'number', 'min': '0', 'max': '10000'})
             )
           ).append(
             $('<td/>', {'text': 'Mindestanzahl:'})
           ).append(
             $('<td>').append(
-              $('<input/>', {'type': 'number', 'id': 'minimum_number', 'name': 'minimum_number', 'min': '0', 'maxlength': '10'})
+              $('<input/>', {'type': 'number', 'id': 'minimum_number', 'name': 'minimum_number', 'min': '0', 'max': '10000'})
             )
           )
         ).append(
@@ -92,7 +92,7 @@
             $('<td/>', {'text': 'Kategorie:'})
           ).append(
             $('<td/>').append(
-              $('<select/>', {'name': 'category', 'id': 'category', 'oninvalid': 'this.setCustomValidity(`Wählen Sie bitte eine Kategorie aus.\n Sie müssen diese vorher in den Stammdaten eintragen`)'})
+              $('<select/>', {'name': 'category', 'id': 'category', 'oninvalid': 'this.setCustomValidity(`Wählen Sie bitte eine Kategorie aus.\n Diese müssen vorher in den Stammdaten eingetragen werden.`)'})
             )
           ).append(
             $('<td/>', {'text': 'Stichwörter:'})
@@ -108,7 +108,7 @@
             $('<td/>', {'text': 'Einheit:'})
           ).append(
             $('<td/>').append(
-              $('<select/>', {'name': 'unit', 'id': 'unit', 'oninvalid': 'this.setCustomValidity(`Wählen Sie bitte eine Einheit aus.\n Sie müssen diese vorher in den Stammdaten eintragen`)'})
+              $('<select/>', {'name': 'unit', 'id': 'unit', 'oninvalid': 'this.setCustomValidity(`Wählen Sie bitte eine Einheit aus.\n Diese müssen vorher in den Stammdaten eingetragen werden.`)'})
             )
           )
         )
@@ -136,7 +136,7 @@
     //checks if there every 'emptyPlaces' property is 0 
     if(stammdaten.storage_location.every(emptyPlaceIsZero)){
       $("#location").parent().append(
-        $("<span/>", {"id": "LocationNotification", "text": "Alle Lagerplätze sind belegt."})
+        $("<span/>", {"id": "LocationNotification", "text": "Es sind keine freien Lagerplätze verfügbar."})
       );
     };
   })

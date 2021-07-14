@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Erstellungszeit: 14. Dez 2020 um 08:15
+-- Erstellungszeit: 14. Jul 2021 um 07:22
 -- Server-Version: 10.1.33-MariaDB
 -- PHP-Version: 7.2.6
 
@@ -38,7 +38,9 @@ CREATE TABLE IF NOT EXISTS `article` (
   PRIMARY KEY (`id`),
   KEY `einheit_id` (`unit_id`),
   KEY `kategorieId` (`category_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
 
 --
 -- Tabellenstruktur für Tabelle `category`
@@ -48,7 +50,9 @@ CREATE TABLE IF NOT EXISTS `category` (
   `id` int(255) NOT NULL AUTO_INCREMENT,
   `category` varchar(150) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
 
 --
 -- Tabellenstruktur für Tabelle `keyword`
@@ -58,7 +62,9 @@ CREATE TABLE IF NOT EXISTS `keyword` (
   `id` int(255) NOT NULL AUTO_INCREMENT,
   `keyword` varchar(150) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
 
 --
 -- Tabellenstruktur für Tabelle `keyword_list`
@@ -71,7 +77,9 @@ CREATE TABLE IF NOT EXISTS `keyword_list` (
   PRIMARY KEY (`id`),
   KEY `stichwort_id` (`keyword_id`),
   KEY `stichwortliste_ibfk_1` (`stock_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
 
 --
 -- Tabellenstruktur für Tabelle `log`
@@ -86,15 +94,46 @@ CREATE TABLE IF NOT EXISTS `log` (
   `keywords` varchar(255) NOT NULL,
   `location_id` int(11) NOT NULL,
   `location` varchar(255) NOT NULL,
-  `date` varchar(255) NOT NULL,
-  `time` varchar(255) NOT NULL,
+  `date` datetime NOT NULL,
   `creator` varchar(255) NOT NULL,
   `change_by` varchar(255) NOT NULL,
   `number` int(255) NOT NULL,
   `minimum_number` int(255) NOT NULL,
   `deleted` tinyint(1) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+
+--
+-- Tabellenstruktur für Tabelle `mobile_list`
+--
+
+CREATE TABLE IF NOT EXISTS `mobile_list` (
+  `id` int(255) NOT NULL AUTO_INCREMENT,
+  `creator` varchar(255) NOT NULL,
+  `date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
+-- Tabellenstruktur für Tabelle `mobile_list_entries`
+--
+
+CREATE TABLE IF NOT EXISTS `mobile_list_entries` (
+  `id` int(255) NOT NULL AUTO_INCREMENT,
+  `list_id` int(255) NOT NULL,
+  `stock_id` int(255) NOT NULL,
+  `lay_in` tinyint(1) NOT NULL,
+  `amount` int(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `artikelnummer` (`stock_id`),
+  KEY `list_id` (`list_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
 
 --
 -- Tabellenstruktur für Tabelle `stock`
@@ -107,12 +146,12 @@ CREATE TABLE IF NOT EXISTS `stock` (
   `minimum_number` int(255) NOT NULL,
   `creator` varchar(255) NOT NULL,
   `change_by` varchar(255) NOT NULL,
-  `date` varchar(255) NOT NULL,
-  `time` varchar(255) NOT NULL,
-  `deleted` tinyint(1) NOT NULL,
+  `date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `artikelid` (`article_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
 
 --
 -- Tabellenstruktur für Tabelle `storage_location`
@@ -124,7 +163,9 @@ CREATE TABLE IF NOT EXISTS `storage_location` (
   `parent` int(255) NOT NULL,
   `places` int(255) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
 
 --
 -- Tabellenstruktur für Tabelle `storage_place`
@@ -139,7 +180,9 @@ CREATE TABLE IF NOT EXISTS `storage_place` (
   UNIQUE KEY `artikelliste_id` (`stock_id`),
   KEY `lagerort_id` (`storage_location_id`),
   KEY `lagerplatz_ibfk_1` (`stock_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
 
 --
 -- Tabellenstruktur für Tabelle `unit`
@@ -149,7 +192,7 @@ CREATE TABLE IF NOT EXISTS `unit` (
   `id` int(255) NOT NULL AUTO_INCREMENT,
   `unit` varchar(255) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
 -- Constraints der exportierten Tabellen
@@ -170,10 +213,24 @@ ALTER TABLE `keyword_list`
   ADD CONSTRAINT `keyword_list_ibfk_2` FOREIGN KEY (`keyword_id`) REFERENCES `keyword` (`id`);
 
 --
+-- Constraints der Tabelle `mobile_list_entries`
+--
+ALTER TABLE `mobile_list_entries`
+  ADD CONSTRAINT `mobile_list_entries_ibfk_1` FOREIGN KEY (`stock_id`) REFERENCES `stock` (`id`),
+  ADD CONSTRAINT `mobile_list_entries_ibfk_2` FOREIGN KEY (`list_id`) REFERENCES `mobile_list` (`id`);
+
+--
 -- Constraints der Tabelle `stock`
 --
 ALTER TABLE `stock`
   ADD CONSTRAINT `stock_ibfk_1` FOREIGN KEY (`article_id`) REFERENCES `article` (`id`);
+
+--
+-- Constraints der Tabelle `storage_place`
+--
+ALTER TABLE `storage_place`
+  ADD CONSTRAINT `storage_place_ibfk_1` FOREIGN KEY (`storage_location_id`) REFERENCES `storage_location` (`id`),
+  ADD CONSTRAINT `storage_place_ibfk_2` FOREIGN KEY (`stock_id`) REFERENCES `stock` (`id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
