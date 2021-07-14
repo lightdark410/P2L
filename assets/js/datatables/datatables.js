@@ -1,5 +1,6 @@
   // DataTable
-  var table = $("#table").DataTable({
+  let table_ids = []; //used to store all id´s from table data
+  let table = $("#table").DataTable({
     "processing": true,
     "ajax": {
       "url": "/stock",
@@ -40,6 +41,9 @@
         }
 
       }
+      
+      table_ids.push(data.article_id);
+
     },
     "order": [[1, "asc"]],
     "columnDefs": [{ "targets": [0, 13], "orderable": false }],
@@ -61,6 +65,13 @@
       });
       $("#table thead").append(r);
       $("#search_0").css("text-align", "center");
+
+
+      let list = JSON.parse(localStorage.getItem("list"));
+
+      res = list.filter(item => table_ids.includes(item.id));
+      localStorage.setItem("list", JSON.stringify(res));
+      $("#list").find("span").text(res.length);
     },
     stateSave: true,
     language: {
@@ -68,15 +79,17 @@
       "searchPlaceholder": "Suchen..."
     },
     "oLanguage": { "sSearch": "" }
-  });
-  // Clear all Search filter (after reload)
-  if (table.state.loaded()) {
-    table
-      .search('')
-      .columns().search('')
-      .draw();
+});
 
-  }
+// Clear all Search filter (after reload)
+if (table.state.loaded()) {
+  table
+    .search('')
+    .columns().search('')
+    .draw();
+
+}
+
 
 let url = window.location.pathname;
 let id = url.substring(url.lastIndexOf('/') + 1);
@@ -307,9 +320,15 @@ $('#logsTable').DataTable({
         url: post_urlNew,
         type: "DELETE",
         success: function (result) {
-          location.reload();
+          let localeStorageList = JSON.parse(localStorage.getItem("list"));
+          let filterList = localeStorageList.filter((el) =>{
+            return el.id !== id;
+          })
+          localStorage.setItem("list", JSON.stringify(filterList));
+          location.reload(); 
         },
       });
+ 
     }
   });
 
