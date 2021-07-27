@@ -227,7 +227,7 @@ module.exports = function (app) {
         let ledRes = await ledPostRequest();
         console.log(ledRes);
 
-        res.send(`localhost/mobileList/${list_id}`);
+        res.send(`http://ainventar01.bbw-azubi.local:8090/mobileList/${list_id}`);
       } else {
        req.session.redirectTo = `/`;
         res.render("login", { err: req.query.err}); //redirect to login page if not logged in

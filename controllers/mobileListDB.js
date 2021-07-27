@@ -1,11 +1,7 @@
 let mysql = require("mysql");
 
-let con = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "",
-    database: "inventur"
-});
+var con = mysql.createConnection(config.get('dbConfig'));
+
 
 function insert_mobile_list(username) {
     return new Promise((resolve, reject) => {

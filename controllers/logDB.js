@@ -2,12 +2,8 @@ let mysql = require("mysql");
 let masterdataDB = require("./masterdataDB"); //import sql functions for handling masterdata database changes
 let functions = require("./functions.js");
 
-let con = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "",
-    database: "inventur"
-});
+var con = mysql.createConnection(config.get('dbConfig'));
+
 
 async function log(id, event) {
     var data = await functions.getStockById(id);

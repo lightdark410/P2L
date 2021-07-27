@@ -1,11 +1,7 @@
 var mysql = require("mysql");
 
-var con = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "",
-    database: "inventur",
-});
+var con = mysql.createConnection(config.get('dbConfig'));
+
 
 //get full stock data with every foreign key
 function getStock() {

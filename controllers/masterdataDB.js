@@ -1,11 +1,7 @@
 let mysql = require("mysql");
 
-let con = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "",
-    database: "inventur"
-});
+var con = mysql.createConnection(config.get('dbConfig'));
+
 
 function getMasterdata(table) {
     return new Promise((resolve, reject) => {
