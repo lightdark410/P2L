@@ -1,6 +1,7 @@
 let mysql = require("mysql");
 let masterdataDB = require("./masterdataDB"); //import sql functions for handling masterdata database changes
 let functions = require("./functions.js");
+const config = require('config'); 
 
 var con = mysql.createConnection(config.get('dbConfig'));
 
