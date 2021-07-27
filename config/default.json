@@ -1,12 +1,13 @@
 {
     "dbConfig": {
         "host": "localhost",
-        "user": "wmacher",
-        "password": "test",
+        "user": "root",
+        "password": "",
+        "database": "inventur",
         "multipleStatements": true
     },
     "ldap": {
-        "url": "ldap://bbw-azubi.local",
+        "url": "ldap://192.168.138.51",
         "domain": "dc=bbw-azubi, dc=local",
         "reconnect": {
             "initialDelay": 100,

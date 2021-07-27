@@ -1,10 +1,12 @@
 const mysql = require("mysql2");
-const functions = require("./functions.js");
+const logger = require("../logger/logger");
+const config = require('config'); 
+
+const functions = require("./functions");
 const masterdataDB = require("./masterdataDB"); //import sql functions for handling masterdata database changes
 const mobileListDB = require("./mobileListDB");
 const logDB = require("./logDB");
 const fs = require('fs');
-const config = require('config'); 
 const http = require('http');
 
 var con = mysql.createConnection(config.get('dbConfig'));
@@ -550,6 +552,7 @@ module.exports = function (app) {
 
     app.post("/stammdaten/:table", async (req, res) => {
       if(req.session.loggedin){
+        logger.info(`Method: Post - Route: /stammdaten/${req.params.table} - Body: ${JSON.stringify(req.body)}`);
         try {
           let dataDoesNotExistsInDB = typeof await masterdataDB.getMasterdataByName(req.params.table, req.body.value) === 'undefined';
           if(dataDoesNotExistsInDB){
