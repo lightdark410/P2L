@@ -1,37 +1,13 @@
-let mysql = require("mysql2");
-let functions = require("./functions.js");
-let masterdataDB = require("./masterdataDB"); //import sql functions for handling masterdata database changes
-let mobileListDB = require("./mobileListDB");
-let logDB = require("./logDB");
-let fs = require('fs');
-let config = require('config'); 
+const mysql = require("mysql2");
+const functions = require("./functions.js");
+const masterdataDB = require("./masterdataDB"); //import sql functions for handling masterdata database changes
+const mobileListDB = require("./mobileListDB");
+const logDB = require("./logDB");
+const fs = require('fs');
+const config = require('config'); 
+const http = require('http');
 
 var con = mysql.createConnection(config.get('dbConfig'));
-
-// var mqtt = require('mqtt');
-
-// var MQTT_TOPIC          = "esp-0001";
-// var MQTT_ADDR           = "mqtt://192.168.138.136";
-
-
-// /* This works... */
-// var client  = mqtt.connect(MQTT_ADDR,{protocolId: 'MQIsdp', protocolVersion: 3});
-
-// client.on('connect', function () {
-//     client.subscribe(MQTT_TOPIC);
-//     client.publish(MQTT_TOPIC, '0~40~0~0~0');
-// });
-
-// client.on('message', function (topic, message) {
-//     // message is Buffer
-//     console.log(message.toString());
-//     client.end();
-// });
-
-// client.on('error', function(){
-//     console.log("ERROR")
-//     client.end()
-// })
 
 //checks if required Database exists and if not creates it
 fs.readFile('./config/schema.sql', 'utf8', function (err, data) {
@@ -247,6 +223,10 @@ module.exports = function (app) {
           await mobileListDB.insert_mobile_list_entries(list_id, obj.stock_id, obj.lay_in, obj.amount);
         })
 
+        console.log(data);
+        let ledRes = await ledPostRequest();
+        console.log(ledRes);
+
         res.send(`localhost/mobileList/${list_id}`);
       } else {
        req.session.redirectTo = `/`;
@@ -254,6 +234,50 @@ module.exports = function (app) {
       }      
     })
   //
+
+  function ledPostRequest(){
+    const data = JSON.stringify({
+      todo: 'Buy the milk',
+    })
+    
+    const options = {
+      hostname: 'localhost',
+      port: 3000,
+      path: '/test',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': data.length,
+      },
+    }
+
+    return new Promise((resolve, reject) => {
+      const req = http.request(options, (res) => {  
+        let result = '';
+  
+        res.on('data', (d) => {
+          result += d;
+        })
+  
+        res.on('end', () => {
+          resolve(result);
+        })
+      })
+      
+      req.on('error', (error) => {
+        console.error(error)
+      })
+      
+      req.write(data)
+      req.end()
+    })
+    
+  }
+
+  app.post("/test", function (req, res) {
+    console.log("Body: " + JSON.stringify(req.body));
+    res.send("test");
+  })
 
   //stock related data/routes for the home page
     app.get("/stock", async (req, res) => {
@@ -270,7 +294,6 @@ module.exports = function (app) {
           result.data[i].storage_location = storage_place.name;
           result.data[i].storage_place = storage_place.place;
         }
-        console.log(result);
         res.send(result);
       } else {
         req.session.redirectTo = `/stock`;

@@ -321,10 +321,12 @@ $('#logsTable').DataTable({
         type: "DELETE",
         success: function (result) {
           let localeStorageList = JSON.parse(localStorage.getItem("list"));
-          let filterList = localeStorageList.filter((el) =>{
-            return el.id !== id;
-          })
-          localStorage.setItem("list", JSON.stringify(filterList));
+          if(localeStorageList != null){
+            let filterList = localeStorageList.filter((el) =>{
+              return el.id !== id;
+            })
+            localStorage.setItem("list", JSON.stringify(filterList));
+          }
           location.reload(); 
         },
       });

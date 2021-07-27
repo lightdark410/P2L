@@ -58,7 +58,7 @@
             $('<td/>', {'text': 'Artikel:'})
           ).append(
             $('<td/>').append(
-              $('<input/>', {'type': 'text', 'id': 'name', 'name': 'name', 'maxlength': '20'})
+              $('<input/>', {'type': 'text', 'id': 'name', 'name': 'name', 'maxlength': '50'})
             )
           ).append(
             $('<td/>', {'text': 'Ort:'})

@@ -1,9 +1,10 @@
-var express = require('express');
-var app = express();
-//var bodyParser = require('body-parser');
-var session = require('express-session');
+const express = require('express');
 
-var controller = require('./controllers/mainController');
+const PORT = process.env.PORT || 8090;
+const app = express();
+const session = require('express-session');
+
+const controller = require('./controllers/mainController');
 
 app.set('view engine', 'ejs');
 
@@ -22,6 +23,6 @@ app.use(express.json());
 
 controller(app);
 
-app.listen(3000, () => {
-	console.log("Server is listening on port: 3000");
+app.listen(PORT, () => {
+	console.log("Server is listening on port %d", PORT);
 });
