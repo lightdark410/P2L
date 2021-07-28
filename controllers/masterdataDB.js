@@ -461,6 +461,22 @@ function deleteKeywordList(stock_id){
     });
 }
 
+function getLocationIdAndGroupPlaceIdsByStockIds(stock_ids){
+    return new Promise((resolve, reject) => {
+        con.query(
+            `select storage_location_id, group_concat(id separator ",") as "places" from storage_place WHERE stock_id in (${stock_ids}) group by storage_location_id;`,
+            function (err, result) {
+                if (err){
+                    reject(err);
+                    console.log(err);
+                } 
+                resolve(result);
+
+            }
+        );      
+    });
+}
+
 module.exports = {
     getMasterdata,
     getMasterdataByName,
@@ -486,5 +502,6 @@ module.exports = {
     getKeywordlistByStockid,
     insertKeywordList,
     countKeywordlistById,
-    deleteKeywordList
+    deleteKeywordList,
+    getLocationIdAndGroupPlaceIdsByStockIds
 }

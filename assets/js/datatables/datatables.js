@@ -69,9 +69,13 @@
 
       let list = JSON.parse(localStorage.getItem("list"));
 
-      res = list.filter(item => table_ids.includes(item.id));
-      localStorage.setItem("list", JSON.stringify(res));
-      $("#list").find("span").text(res.length);
+      //filter items that are not in the table anymore
+      if(list !== null){
+        res = list.filter(item => table_ids.includes(item.id));
+        localStorage.setItem("list", JSON.stringify(res));
+        $("#list").find("span").text(res.length);
+      }
+      
     },
     stateSave: true,
     language: {

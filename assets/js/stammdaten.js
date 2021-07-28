@@ -62,11 +62,9 @@ $(".AddRow").hover(function () {
 
 //post masterdata
 function addMasterdata(buttonEle) {
-    var input = $(".StammInput");
-    var placeholder = $(".StammInput").attr("placeholder");
+    let text = ($(buttonEle).siblings()[0].value);
+    let placeholder = $(".StammInput").attr("placeholder");
     placeholder = placeholder.slice(0, placeholder.length - 3);
-
-    var text = input.val();
     switch (placeholder) {
         case "Kategorie":
             placeholder = "category";

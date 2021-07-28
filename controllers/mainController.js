@@ -216,20 +216,45 @@ module.exports = function (app) {
   //save list for mobile view
     app.post("/mobileList", async (req, res) => {
       if (req.session.loggedin) {
-        let username = req.session.username;
-        let data = JSON.parse(req.body.list);
-        await mobileListDB.insert_mobile_list(username);
-        let list_id = await mobileListDB.get_latest_mobile_list_id();
+        try {
+          logger.info(`User: ${req.session.username} - Method: Post - Route: /mobileList/${req.params.table} - Body: ${JSON.stringify(req.body)}`);
 
-        data.forEach(async obj => {
-          await mobileListDB.insert_mobile_list_entries(list_id, obj.stock_id, obj.lay_in, obj.amount);
-        })
+          let username = req.session.username;
+          let data = JSON.parse(req.body.list);
+          //create new mobileList
+          await mobileListDB.insert_mobile_list(username);
+          let list_id = await mobileListDB.get_latest_mobile_list_id();
+  
+          //fill mobileListEntries
+          data.forEach(async obj => {
+            await mobileListDB.insert_mobile_list_entries(list_id, obj.stock_id, obj.lay_in, obj.amount);
+          })
 
-        console.log(data);
-        let ledRes = await ledPostRequest();
-        console.log(ledRes);
+          //Build Json for led post request
+          let stock_ids = data.map((d) => d.stock_id).join(", ");
+          let locationIds = await masterdataDB.getLocationIdAndGroupPlaceIdsByStockIds(stock_ids);
+          
+          let locationData = [];
+          locationIds.forEach(obj => {
+            locationData.push(JSON.parse(`{"id": ${obj.storage_location_id}, "plaetze": "[${obj.places}]"}`));
+          });
 
-        res.send(`http://ainventar01.bbw-azubi.local:8090/mobileList/${list_id}`);
+          let lagerData = {
+            "auftrag": list_id,
+            "lager": []
+          }
+          lagerData.lager = locationData;
+
+          let ledRes = await ledPostRequest(lagerData);
+          console.log(ledRes);
+  
+          res.send(`http://ainventar01.bbw-azubi.local:8090/mobileList/${list_id}`);
+        } catch (error) {
+          res.status(400).send("Bad Request");
+          logger.error(`User: ${req.session.username} - Method: Post - Route: /mobileList/${req.params.table} - Body: ${JSON.stringify(req.body)} - Error: ${error}`);
+          
+        }
+    
       } else {
        req.session.redirectTo = `/`;
         res.render("login", { err: req.query.err}); //redirect to login page if not logged in
@@ -237,15 +262,13 @@ module.exports = function (app) {
     })
   //
 
-  function ledPostRequest(){
-    const data = JSON.stringify({
-      todo: 'Buy the milk',
-    })
+  function ledPostRequest(postdata){
+    const data = JSON.stringify(postdata)
     
     const options = {
       hostname: 'localhost',
-      port: 3000,
-      path: '/test',
+      port: 8081,
+      path: '/api/v1',
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -275,11 +298,6 @@ module.exports = function (app) {
     })
     
   }
-
-  app.post("/test", function (req, res) {
-    console.log("Body: " + JSON.stringify(req.body));
-    res.send("test");
-  })
 
   //stock related data/routes for the home page
     app.get("/stock", async (req, res) => {
@@ -552,8 +570,9 @@ module.exports = function (app) {
 
     app.post("/stammdaten/:table", async (req, res) => {
       if(req.session.loggedin){
-        logger.info(`Method: Post - Route: /stammdaten/${req.params.table} - Body: ${JSON.stringify(req.body)}`);
         try {
+          logger.info(`User: ${req.session.username} - Method: Post - Route: /stammdaten/${req.params.table} - Body: ${JSON.stringify(req.body)}`);
+
           let dataDoesNotExistsInDB = typeof await masterdataDB.getMasterdataByName(req.params.table, req.body.value) === 'undefined';
           if(dataDoesNotExistsInDB){
             await masterdataDB.insertMasterdata(req.params.table.toLowerCase(), req.body.value);
@@ -562,8 +581,8 @@ module.exports = function (app) {
             res.send("Entry already exists");
           }
         } catch (error) {
+          logger.error(`User: ${req.session.username} - Method: Post - Route: /stammdaten/${req.params.table} - Body: ${JSON.stringify(req.body)} - Error: ${error}`);
           res.status("400").send("Bad Request");
-          console.log(error);
         }
       }else{
         req.session.redirectTo = `/`;
@@ -660,6 +679,7 @@ module.exports = function (app) {
     app.post("/lagerorte", async (req, res) => {
       if (req.session.loggedin){
         try{
+          
           let dbEntry = await masterdataDB.getStorageLocationByNameAndParent(req.body.name, req.body.parent);
           let entryDoesNotExists = dbEntry.length == 0;
 
