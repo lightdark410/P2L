@@ -583,9 +583,14 @@ thead input {
 
 #qrcode{
   position: absolute;
-  top: 40%;
-  left: calc(50% - 128px);
+  top: 25%;
+  left: calc(50% - 150px);
   z-index: 9999;
+}
+
+#qrcode img{
+  border: 18px solid white;
+  border-radius: 25px;
 }
 
 #list_popup .PopUp_middle{

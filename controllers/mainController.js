@@ -126,38 +126,6 @@ module.exports = function (app) {
       }
     })
 
-    app.get("/logData", async (req, res) => {
-      if (req.session.loggedin) {
-        try {
-          var logs = await logDB.getLog();
-
-          res.send(logs);
-        } catch (error) {
-          res.status("500").send("Internal Server Error");
-          console.log(error);
-        }
-  
-      } else {
-        req.session.redirectTo = `/logs`;
-        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
-      }
-    })
-
-    app.get("/logData/:stockId", async (req, res) => {
-      if(req.session.loggedin){
-        try {
-          var logs = await logDB.getLogByStockId(req.params.stockId);
-          res.send(logs);
-        } catch (error) {
-          res.status("500").send("Internal Server Error");
-          console.log(error);
-        }
-      }else{
-        req.session.redirectTo = `/logs/${req.params.stockId}`;
-        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
-      }
-    })
-
     app.get("/qr", async (req, res) => {
       if (req.session.loggedin) {
         res.render("qr", { session: req.session })
@@ -205,6 +173,8 @@ module.exports = function (app) {
           data[i].storage_place = storage_data.place;
         }
        
+        let color = await getledColor(req.params.id);
+        console.log(color);
         res.render("mobileList", { session: req.session, data: JSON.stringify(data) });
       } else {
        req.session.redirectTo = `/mobileList/${req.params.id}`;
@@ -212,6 +182,38 @@ module.exports = function (app) {
       }
     })
   // 
+
+  app.get("/logData", async (req, res) => {
+    if (req.session.loggedin) {
+      try {
+        var logs = await logDB.getLog();
+
+        res.send(logs);
+      } catch (error) {
+        res.status("500").send("Internal Server Error");
+        console.log(error);
+      }
+
+    } else {
+      req.session.redirectTo = `/logs`;
+      res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+    }
+  })
+
+  app.get("/logData/:stockId", async (req, res) => {
+    if(req.session.loggedin){
+      try {
+        var logs = await logDB.getLogByStockId(req.params.stockId);
+        res.send(logs);
+      } catch (error) {
+        res.status("500").send("Internal Server Error");
+        console.log(error);
+      }
+    }else{
+      req.session.redirectTo = `/logs/${req.params.stockId}`;
+      res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+    }
+  })
 
   //save list for mobile view
     app.post("/mobileList", async (req, res) => {
@@ -233,20 +235,21 @@ module.exports = function (app) {
           //Build Json for led post request
           let stock_ids = data.map((d) => d.stock_id).join(", ");
           let locationIds = await masterdataDB.getLocationIdAndGroupPlaceIdsByStockIds(stock_ids);
-          
+          console.log(locationIds);
           let locationData = [];
           locationIds.forEach(obj => {
-            locationData.push(JSON.parse(`{"id": ${obj.storage_location_id}, "plaetze": "[${obj.places}]"}`));
+            let json = {};
+            json.id = obj.storage_location_id;
+            json.plaetze = JSON.parse(`[${obj.places}]`);
+            locationData.push(json);
           });
 
-          let lagerData = {
-            "auftrag": list_id,
-            "lager": []
-          }
+          let lagerData = {};
+          lagerData.auftrag = list_id;
           lagerData.lager = locationData;
 
           let ledRes = await ledPostRequest(lagerData);
-          console.log(ledRes);
+          console.log(ledRes); 
   
           res.send(`http://ainventar01.bbw-azubi.local:8090/mobileList/${list_id}`);
         } catch (error) {
@@ -262,13 +265,45 @@ module.exports = function (app) {
     })
   //
 
-  function ledPostRequest(postdata){
-    const data = JSON.stringify(postdata)
-    
+  //sends get request to the color api
+  function getledColor(auftragsId){
     const options = {
-      hostname: 'localhost',
+      hostname: '192.168.138.146',
       port: 8081,
-      path: '/api/v1',
+      path: `/color/api/v1?id=${auftragsId}`,
+      method: 'GET'
+    }
+    
+    return new Promise((resolve, reject) => {
+      const req = http.request(options, res => {
+      
+        let result = '';
+        res.on('data', (d) => {
+          result += d;
+        })
+  
+        res.on('end', () => {
+          resolve(result);
+        })
+      })
+      
+      req.on('error', error => {
+        console.error(error)
+      })
+      
+      req.end()
+    })
+
+  }
+
+  //sends post request to the led api
+  function ledPostRequest(postdata){
+    
+    const data = JSON.stringify(postdata);
+    const options = {
+      hostname: '192.168.138.146',
+      port: 8081,
+      path: '/anfrage/api/v1',
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -279,7 +314,6 @@ module.exports = function (app) {
     return new Promise((resolve, reject) => {
       const req = http.request(options, (res) => {  
         let result = '';
-  
         res.on('data', (d) => {
           result += d;
         })

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Erstellungszeit: 14. Jul 2021 um 07:22
+-- Erstellungszeit: 28. Jul 2021 um 11:19
 -- Server-Version: 10.1.33-MariaDB
 -- PHP-Version: 7.2.6
 
@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS `log` (
   `keywords` varchar(255) NOT NULL,
   `location_id` int(11) NOT NULL,
   `location` varchar(255) NOT NULL,
-  `date` datetime NOT NULL,
+  `date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `creator` varchar(255) NOT NULL,
   `change_by` varchar(255) NOT NULL,
   `number` int(255) NOT NULL,

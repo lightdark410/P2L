@@ -27,8 +27,8 @@ async function log(id, event) {
 
     return new Promise((resolve, reject) => {
         con.query(
-            "INSERT INTO `log`(`event`, `stock_id`, `name`, `category`, `keywords`, `location_id`, `location`, `date`, `creator`, `change_by`, `number`, `minimum_number`, `deleted`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-            [event, data.id, data.name, data.category, data.keyword, storage_place.storage_location_id, data.storage_location, data.date, data.creator, data.change_by, data.number, data.minimum_number, deleted],
+            "INSERT INTO `log`(`event`, `stock_id`, `name`, `category`, `keywords`, `location_id`, `location`, `creator`, `change_by`, `number`, `minimum_number`, `deleted`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            [event, data.id, data.name, data.category, data.keyword, storage_place.storage_location_id, data.storage_location, data.creator, data.change_by, data.number, data.minimum_number, deleted],
             function (err, result) {
                 //send results
                 if (err) {
