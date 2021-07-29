@@ -75,8 +75,8 @@
         </div>
     </div>
   
-    <div id="listDiv">
-        <table class="table table-hover">
+    <div id="listDiv" class="container border">
+        <table class="table table-hover table-fixed">
             <thead>
                 <tr class="d-flex">
                     <th class="col-3 text-center">Artikel</th>
@@ -150,7 +150,8 @@
 
         function loadSvg(tableIndex){
             let storage = localStorage.getItem("mobileList");
-            if(storage === null){
+
+            if(storage === null || JSON.parse(storage).id != id){
                 let states = new Array(data.length).fill(0);
                 let json = {"id": id, "states": states};
                 localStorage.setItem("mobileList", JSON.stringify(json));
@@ -170,8 +171,17 @@
             //set new svg
             $(this).attr("src", svg_paths[next_index]);
             $(this).attr("data-index", next_index);
+
+        
             //update localStorage
             let table_index = document.getElementById("itemlist_div").dataset.index;
+            $.ajax({
+                url: '/list',
+                type: 'PUT',
+                data: `list_id=${data[table_index].list_id}&stock_id=${ data[table_index].stock_id},&status=${next_index}}`,
+                success: function(data) {
+                }
+            });
             let storage = JSON.parse(localStorage.getItem("mobileList"));
             storage.states[table_index] = next_index;
             localStorage.setItem("mobileList", JSON.stringify(storage));
