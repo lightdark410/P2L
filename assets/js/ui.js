@@ -329,6 +329,7 @@
 
   $("#Edit").click(function () {
     
+    //get data from selected line
     var id;
     $("#table tbody tr").each(function () {
       if ($(this).hasClass("selected")) {
