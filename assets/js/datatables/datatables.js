@@ -98,7 +98,7 @@ if (table.state.loaded()) {
 let url = window.location.pathname;
 let id = url.substring(url.lastIndexOf('/') + 1);
 let ajax_url;
-(!isNaN(id)) ? ajax_url = `/logData/${id}` : ajax_url = "/logData";
+(!isNaN(id)) ? ajax_url = `/api/logs/${id}` : ajax_url = "/api/logs";
 $('#logsTable').DataTable({
     "ordering": false,
     language: {

@@ -9,7 +9,7 @@
       'async': false,
       'type': "GET",
       'global': false,
-      'url': "/lagerorte",
+      'url': "/api/storageLocation",
       'success': function (data) {
         location = data;
       }
@@ -64,7 +64,7 @@
             $('<td/>', {'text': 'Ort:'})
           ).append(
             $('<td/>').append(
-              $('<ul/>', {'id': 'location', 'class': 'navbar-nav border'}).append(
+              $('<ul/>', {'id': 'location', 'class': 'navbar-nav border', 'tabindex': '0'}).append(
                 $('<li/>', {'class': 'nav-item dropdown'}).append(
                   $('<span/>', {'class': 'nav-link dropdown-toggle', 'data-toggle': 'dropdown', 'text': 'Ort auswählen'})
                 ).append(
@@ -99,7 +99,7 @@
           ).append(
             $('<td/>').append(
               $('<div/>', {'class': 'select-wrapper'}).append(
-                $('<span/>', {'class': 'autocomplete-select'})
+                $('<span/>', {'class': 'autocomplete-select', 'tabindex': '0'})
               )
             )
           )
@@ -164,7 +164,7 @@
 
   //append children locations in the popup
   function appendChild(parentId){
-    $.get(`/lagerorte/parent/${parentId}`, function(data){
+    $.get(`/api/storageLocation/parent/${parentId}`, function(data){
 
       if(data.length > 0){
         let parentSpan = $(ul).find(`*[data-id=${parentId}]`);

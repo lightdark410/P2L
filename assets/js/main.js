@@ -140,7 +140,7 @@
       });
     }
     
-    $.post("/mobileList", {"list" : JSON.stringify(list)}, function(data){
+    $.post("/api/mobileList", {"list" : JSON.stringify(list)}, function(data){
       $("#qrcode").text("");
       new QRCode(document.getElementById("qrcode"), data);
       clearList();

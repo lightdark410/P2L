@@ -111,7 +111,6 @@ module.exports = function (app) {
       }
     })
     
-    //also render log page with an id
     app.get("/logs/:stockId", async (req, res) => {
       if(req.session.loggedin){
         try {
@@ -184,7 +183,7 @@ module.exports = function (app) {
     })
   // 
 
-  app.get("/logData", async (req, res) => {
+  app.get("/api/logs", async (req, res) => {
     if (req.session.loggedin) {
       try {
         var logs = await logDB.getLog();
@@ -201,7 +200,7 @@ module.exports = function (app) {
     }
   })
 
-  app.get("/logData/:stockId", async (req, res) => {
+  app.get("/api/logs/:stockId", async (req, res) => {
     if(req.session.loggedin){
       try {
         var logs = await logDB.getLogByStockId(req.params.stockId);
@@ -217,10 +216,10 @@ module.exports = function (app) {
   })
 
   //save list
-  app.post("/mobileList", async (req, res) => {
+  app.post("/api/mobileList", async (req, res) => {
     if (req.session.loggedin) {
       try {
-        logger.info(`User: ${req.session.username} - Method: Post - Route: /mobileList/${req.params.table} - Body: ${JSON.stringify(req.body)}`);
+        logger.info(`User: ${req.session.username} - Method: Post - Route: /api/mobileList/${req.params.table} - Body: ${JSON.stringify(req.body)}`);
 
         let username = req.session.username;
         let data = JSON.parse(req.body.list);
@@ -249,10 +248,11 @@ module.exports = function (app) {
         lagerData.lager = locationData;
         let ledRes = await ledPostRequest(lagerData);
         console.log(ledRes);
+        //send qr code link
         res.send(`http://ainventar01.bbw-azubi.local:8090/mobileList/${list_id}`);
       } catch (error) {
         res.status(400).send("Bad Request");
-        logger.error(`User: ${req.session.username} - Method: Post - Route: /mobileList/${req.params.table} - Body: ${JSON.stringify(req.body)} - Error: ${error}`);
+        logger.error(`User: ${req.session.username} - Method: Post - Route: /api/mobileList/${req.params.table} - Body: ${JSON.stringify(req.body)} - Error: ${error}`);
         
       }
   
@@ -748,7 +748,7 @@ module.exports = function (app) {
   
     })  
 
-    app.get("/lagerorte", async (req, res) => {
+    app.get("/api/storageLocation", async (req, res) => {
       if(req.session.loggedin){
         try {
           var results = await masterdataDB.getStorageLocation();
@@ -761,14 +761,14 @@ module.exports = function (app) {
           res.status(404).send("404 Not Found");
         }
       }else{
-        req.session.redirectTo = `/lagerorte`;
+        req.session.redirectTo = `/`;
         res.render("login", { err: req.query.err}); //redirect to login page if not logged in
       }
   
 
     });
     
-    app.get("/lagerorte/:id", async (req, res) => {
+    app.get("/api/storageLocation/:id", async (req, res) => {
       if (req.session.loggedin) {
         let storage_location = await masterdataDB.getStorageLocationById(req.params.id);
         if(!storage_location){
@@ -779,12 +779,12 @@ module.exports = function (app) {
         storage_location.empty_places = empty_places;
         res.send(storage_location);
       } else {
-        req.session.redirectTo = `/lagerorte/${req.params.id}`;
+        req.session.redirectTo = `/`;
         res.render("login", { err: req.query.err}); //redirect to login page if not logged in
       }
     })
 
-    app.get("/lagerorte/parent/:id", async (req,res) => {
+    app.get("/api/storageLocation/parent/:id", async (req,res) => {
       if (req.session.loggedin) {
         var results = await masterdataDB.getStorageLocationByParentId(req.params.id);
         for(var i = 0; i < results.length; i++){
@@ -793,12 +793,12 @@ module.exports = function (app) {
         }
         res.send(results);
       } else {
-        req.session.redirectTo = `/lagerorte/parent/${req.params.id}`;
+        req.session.redirectTo = `/`;
         res.render("login", { err: req.query.err}); //redirect to login page if not logged in
       }
     });
 
-    app.post("/lagerorte", async (req, res) => {
+    app.post("/api/storageLocation", async (req, res) => {
       if (req.session.loggedin){
         try{
           
@@ -831,7 +831,7 @@ module.exports = function (app) {
       }
     });
 
-    app.patch("/lagerorte", async (req,res) => {
+    app.patch("/api/storageLocation", async (req,res) => {
       if(req.session.loggedin){
         try {
           let oldStorageLocation = await masterdataDB.getStorageLocationById(req.body.id);
@@ -852,6 +852,7 @@ module.exports = function (app) {
         res.render("login", { err: req.query.err}); //redirect to login page if not logged in
       }
     })
+
   //
 
   //Updates the stock number after the submit on the mobile item page

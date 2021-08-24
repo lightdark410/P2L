@@ -2,7 +2,7 @@ displayRootNodes();
 
 //displays all locations without a parent
 function displayRootNodes(){
-    $.get( "/lagerorte/parent/0", function( data ) {
+    $.get( "/api/storageLocation/parent/0", function( data ) {
         $("#locationUL li").remove();
         for(var i = 0; i < data.length; i++){
             $("#locationUL").append(
@@ -20,7 +20,7 @@ function displayRootNodes(){
 function getChildrenByParentId(parentId){
     var result = null;
     $.ajax({
-        url: `/lagerorte/parent/${parentId}`,
+        url: `/api/storageLocation/parent/${parentId}`,
         type: 'get',
         async: false,
         success: function(data) {
@@ -34,7 +34,7 @@ function getChildrenByParentId(parentId){
 function getLocationById(id){
     var result = null;
     $.ajax({
-        url: `/lagerorte/${id}`,
+        url: `/api/storageLocation/${id}`,
         type: 'get',
         async: false,
         success: function(data) {
@@ -305,7 +305,7 @@ $("#locationUL").on("submit", ".createForm", function(e){
                 places: places
             };
 
-            $.post("/lagerorte", data, function(data){
+            $.post("/api/storageLocation", data, function(data){
                 displayChildNodes(parentEle);
             })
         }
@@ -322,7 +322,7 @@ $("#locationUL").on("submit", ".editForm", function(e){
 
     $.ajax({
         type: 'PATCH',
-        url: "/lagerorte",
+        url: "/api/storageLocation",
         data: formdata,
         processData: false,
         contentType: 'application/x-www-form-urlencoded',
