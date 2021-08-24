@@ -48,86 +48,67 @@
   }();
 
   //create stock Popup
-  var popup = $('<div/>', {'id':'PopUp'}).append(
-    $('<form/>', {'action': '/stock'}).append(
-      $('<div/>', {'class': 'PopUp_topBar'})
-    ).append(
-      $('<div/>', {'class': 'PopUp_middle'}).append(
-        $('<table/>').append(
-          $('<tr/>').append(
-            $('<td/>', {'text': 'Artikel:'})
-          ).append(
-            $('<td/>').append(
-              $('<input/>', {'type': 'text', 'id': 'name', 'name': 'name', 'maxlength': '50'})
-            )
-          ).append(
-            $('<td/>', {'text': 'Ort:'})
-          ).append(
-            $('<td/>').append(
-              $('<ul/>', {'id': 'location', 'class': 'navbar-nav border', 'tabindex': '0'}).append(
-                $('<li/>', {'class': 'nav-item dropdown'}).append(
-                  $('<span/>', {'class': 'nav-link dropdown-toggle', 'data-toggle': 'dropdown', 'text': 'Ort auswählen'})
-                ).append(
-                  $('<ul/>', {'class': 'dropdown-menu'})
-                )
-              )
-            )
-          )
-        ).append(
-          $('<tr/>').append(
-            $('<td/>', {'text': 'Anzahl:'})
-          ).append(
-            $('<td/>', {'style': 'text-align:center'}).append(
-              $('<input/>', {'type': 'number', 'id': 'number', 'name': 'number', 'min': '0', 'max': '10000'})
-            )
-          ).append(
-            $('<td/>', {'text': 'Mindestanzahl:'})
-          ).append(
-            $('<td>').append(
-              $('<input/>', {'type': 'number', 'id': 'minimum_number', 'name': 'minimum_number', 'min': '0', 'max': '10000'})
-            )
-          )
-        ).append(
-          $('<tr/>').append(
-            $('<td/>', {'text': 'Kategorie:'})
-          ).append(
-            $('<td/>').append(
-              $('<select/>', {'name': 'category', 'id': 'category', 'oninvalid': 'this.setCustomValidity(`Wählen Sie bitte eine Kategorie aus.\n Diese müssen vorher in den Stammdaten eingetragen werden.`)'})
-            )
-          ).append(
-            $('<td/>', {'text': 'Stichwörter:'})
-          ).append(
-            $('<td/>').append(
-              $('<div/>', {'class': 'select-wrapper'}).append(
-                $('<span/>', {'class': 'autocomplete-select', 'tabindex': '0'})
-              )
-            )
-          )
-        ).append(
-          $('<tr/>').append(
-            $('<td/>', {'text': 'Einheit:'})
-          ).append(
-            $('<td/>').append(
-              $('<select/>', {'name': 'unit', 'id': 'unit', 'oninvalid': 'this.setCustomValidity(`Wählen Sie bitte eine Einheit aus.\n Diese müssen vorher in den Stammdaten eingetragen werden.`)'})
-            )
-          )
-        )
-      )
-    ).append(
-      $('<div/>', {'class': 'PopUp_footer'}).append(
-        $('<button/>', {'type': 'submit', 'id': 'PopUpSubmit', 'text': 'Speichern'})
-      )
-    )
-  );
-
-  popup.find("#name").prop("required", "true");
-  popup.find("#name").attr("autocomplete", "off");
-  popup.find("#number").prop("required", "true");
-  popup.find("#minimum_number").prop("required", "true");
-  popup.find("#category").prop("required", "true");
-  popup.find("#unit").prop("required", "true");
-
-  let ul = popup.find("#location").find("ul");
+  let popup = $(`
+  <div id="PopUp">
+    <form action="/stock">
+      <div class="PopUp_topBar"></div>
+      <div class="PopUp_middle">
+        <table>
+          <tr>
+            <td>Artikel:</td>
+            <td>
+              <input type="text" id="name" name="name" maxlength="50" required autocomplete="off"/>
+            </td>
+            <td>Ort:</td>
+            <td style="text-align:left">
+              <ul id="myUL">
+              <li>
+                <span class="location_caret">Ort auswählen</span>
+                <ul id="rootUL" class="location_nested">
+                  
+                </ul>
+              </li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td>Anzahl:</td>
+            <td>
+              <input type="number" id="number" name="number" min="0" max="10000" required />
+            </td>
+            <td>Mindestanzahl:</td>
+            <td>
+              <input type="number" id="minimum_number" name="minimum_number" min="0" max="10000" required />
+            </td>
+          </tr>
+          <tr>
+            <td>Kategorie:</td>
+            <td>
+              <select name="category" id="category" oninvalid="this.setCustomValidity('Wählen Sie bitte eine Kategorie aus.\n Diese müssen vorher in den Stammdaten eingetragen werden.')" required></select>
+            </td>
+            <td>Stichwörter:</td>
+            <td>
+              <div class="select-wrapper">
+                <span class="autocomplete-select" tabindex="0"></span>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>Einheit:</td>
+            <td>
+              <select name="unit" id="unit" oninvalid="this.setCustomValidity('Wählen Sie bitte eine Einheit aus.\n Diese müssen vorher in den Stammdaten eingetragen werden.')" required></select>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div class="PopUp_footer">
+        <button type="submit" id="PopUpSubmit">
+          Speichern
+        </button>
+      </div>
+    </form>
+  </div>
+`);
 
   const emptyPlaceIsZero = (currentValue) => currentValue.empty_places === 0;
 
@@ -141,45 +122,35 @@
     };
   })
 
-  //displays all root locations in the popup
+let rootUL = popup.find("#rootUL");
+
+ //load all root locations in the popup
   $.each(stammdaten.storage_location, function(i, p){
     if(p.parent == 0){
-      $(ul).append(
-        $('<li/>').append(
-          $('<span/>', {'class': 'dropdown-item', 'text': p.name, 'data-id': p.id, 'data-parent': p.parent, 'data-places': p.places, 'data-empty_places': p.empty_places})
-        )
+      $(rootUL[0]).append(
+        $('<li/>', {'text': p.name, 'data-id': p.id, 'data-parent': p.parent, 'data-places': p.places, 'data-empty_places': p.empty_places})
       );
       appendChild(p.id);
     }
   });
-  
-  //apply option tags for selection
-  $.each(stammdaten.category, function(i, p) {
-    popup.find('#category').append($('<option></option>').val(p.category).html(p.category));
-  });
 
-  $.each(stammdaten.unit, function(i, p) {
-    popup.find('#unit').append($('<option></option>').val(p.unit).html(p.unit));
-  });
-
-  //append children locations in the popup
+   //append children locations in the popup
   function appendChild(parentId){
     $.get(`/api/storageLocation/parent/${parentId}`, function(data){
 
       if(data.length > 0){
-        let parentSpan = $(ul).find(`*[data-id=${parentId}]`);
-        $(parentSpan).addClass("submenuIcon");
-        
-        $(parentSpan).parent().append(
-          $("<ul/>", {'class': 'submenu dropdown-menu'})
-        );
+        let parentLI = $(rootUL).find(`*[data-id=${parentId}]`);
+        let LIText = parentLI.text();
+  
+        $(parentLI).text("");
+        $(parentLI).append(`
+          <span class="location_caret">${LIText}</span>
+          <ul class="location_nested">
+        `);
 
         $.each(data, function(i, p){
-            $(parentSpan).parent().find(".submenu").append(
-              $("<li/>").append(
-                $('<span/>', {'class': 'dropdown-item', 'text': p.name, 'data-id': p.id, 'data-parent': p.parent, 'data-places': p.places, 'data-empty_places': p.empty_places})
-    
-              )
+            $(parentLI).find(".location_nested").append(
+                $('<li/>', {'text': p.name, 'data-id': p.id, 'data-parent': p.parent, 'data-places': p.places, 'data-empty_places': p.empty_places})
             )
             appendChild(p.id);   
         });
@@ -194,34 +165,72 @@
 
     let endNode = popup.find(`[data-id='${nodeDataId}']`);
     let endNodeParent = $(endNode).data("parent");
-    let parentUl = $(endNode).parent().parent();
+    let parentUl = $(endNode).parent();
 
     if($(endNode).data("empty_places") == 0){
-      $(endNode).parent().remove();
+      $(endNode).remove();
 
       if(parentUl.children().length == 0){
         $(parentUl).remove();
 
         let parentNode = popup.find(`[data-id="${endNodeParent}"]`);
-        $(parentNode).removeClass("submenuIcon");
         removeEndNode(endNodeParent);
       }
     }
   }
+  
+  //apply option tags for selection
+  $.each(stammdaten.category, function(i, p) {
+    popup.find('#category').append($('<option></option>').val(p.category).html(p.category));
+  });
+
+  $.each(stammdaten.unit, function(i, p) {
+    popup.find('#unit').append($('<option></option>').val(p.unit).html(p.unit));
+  });
 
   //apply selected location to popup
-  $("body").on("click", "#location ul li span", function(e){
+  $("body").on("click", "#rootUL li", function(e){
     let locationHasFreeStoragePlaces = $(this).data("empty_places") > 0;
     if(locationHasFreeStoragePlaces){
+      let locationHasChildren = $(e.target).is("span");
       let name = $(this).text();
       let dataId = $(this).data("id");
       let dataParent = $(this).data("parent");
-      let selectedItem = $("#location li span").first()[0];
-  
-      $(selectedItem).text(name);
-      $(selectedItem).attr("data-id", dataId);
-      $(selectedItem).attr("data-parent", dataParent);
+
+      if(locationHasChildren){
+        name = $(this).find("span").first().text();
+      }
+
+      let location = $("#myUL").find("span").first();
+
+      location.text(name);
+      location.attr("data-id", dataId);
+      location.attr("data-parent", dataParent);
+      location.attr("style", "color: black !important");
+
+      return false;
     }    
+  })
+
+  //toggle location classes on click
+  $("body").on("click", ".location_caret", function() {
+    this.parentElement.querySelector(".location_nested").classList.toggle("active");
+    this.classList.toggle("location_caret-down");
+  })
+
+  //close location dropdown on outside click
+  $("body").on("click", "#PopUp", function(e){
+    let target = $(e.target);
+    if(!target.is(".location_caret") && target.closest("#rootUL").length == 0){
+      $("#rootUL").removeClass("active");
+    }
+  })
+
+  //change cursor if no empty places are available 
+  $("body").on("mouseenter", "#rootUL li span", function(e){
+    if($(this).parent().data("empty_places") == 0){
+      $(this).css("cursor", "no-drop");
+    }
   })
 
   //check if new Item already exists
@@ -406,7 +415,7 @@
         }
     });
 
-    let location = $("#location li span").first()[0];
+    let location = $("#myUL").find("span").first();
 
     $("#name").val(result.name);
     $(location).text(result.storage_location);
@@ -465,8 +474,12 @@
       $("#cover").fadeOut();
       $("#notification").fadeOut();
 
-      //remove 
-      // $(".Tags").remove();
+      //close location dropdown
+      $("#rootUL").removeClass("active");
+
+      $("#myUL").find("span").first().removeAttr("data-id");
+      $("#myUL").find("span").first().removeAttr("data-parent");
+      $("#myUL").find("span").first().text("Ort auswählen");
 
       //clears all input field
       $("#PopUp input").each(function (i) {

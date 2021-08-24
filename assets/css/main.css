@@ -11,8 +11,8 @@
 }
 
 body {
-  font-family: "Roboto", sans-serif;
   padding-top: 50px;
+  font-size: 1.1em !important;
 }
 
 h1{
@@ -212,6 +212,7 @@ input[type="search"]{
 }
 .numberButton{
   box-sizing: border-box;
+  font-size: 0.9em;
   margin-top: 3px;
   margin-left: 1px;
   margin-right: 1px;
@@ -887,6 +888,7 @@ input:checked + .slider_list:before {
   left: 26vw;
 }
 
+
 .PopUp_topBar {
   width: 100%;
   margin-left: auto;
@@ -923,6 +925,70 @@ input:checked + .slider_list:before {
   width: 90%;
   height: 89%;
   margin-bottom: 5%;
+}
+
+.location_nested, #myUL {
+  list-style-type: none;
+  background-color: white;
+}
+
+#myUL {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: inline-block;
+}
+
+.location_nested{
+  min-width: 100px;
+  padding-left: 30px;
+}
+
+.location_nested > li{
+  min-width: 50px;
+}
+
+.location_nested > li:hover{
+  background-color: #efefef;
+  cursor: pointer;
+
+}
+
+#rootUL{
+  position: absolute;
+  z-index: 1000;
+  max-height: 350px;
+  min-width: 142px;
+  overflow: auto;
+}
+
+.location_caret {
+  cursor: pointer;
+  -webkit-user-select: none; /* Safari 3.1+ */
+  -moz-user-select: none; /* Firefox 2+ */
+  -ms-user-select: none; /* IE 10+ */
+  user-select: none;
+}
+
+.location_caret::before {
+  content: "\25B6";
+  color: black;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.location_caret-down::before {
+  -ms-transform: rotate(90deg); /* IE 9 */
+  -webkit-transform: rotate(90deg); /* Safari */
+  transform: rotate(90deg);  
+}
+
+.location_nested {
+  display: none;
+}
+
+.active {
+  display: block;
 }
 
 #keywords, #keywords_update{

@@ -88,7 +88,7 @@
 
     //get all values from popup
     var name = $("#name").val();
-    var location = $("#location li span").first()[0].dataset.id;
+    var location = $("#myUL").find("span").first().attr("data-id");
     var number = $("#number").val();
     var minimum_number = $("#minimum_number").val();
     var category = $("#category").val();
@@ -120,7 +120,7 @@
         });
       }
     }else{
-      $("#location span").first().attr("style", "color: red !important");
+      $("#myUL").find("span").first().attr("style", "color: red !important");
     }
   });
 
@@ -146,9 +146,3 @@
       clearList();
     });
   });
-
-  $("body").on("mouseenter", "#location ul li span", function(e){
-    if($(this).data("empty_places") == 0){
-      $(this).css("cursor", "no-drop");
-    }
-  })

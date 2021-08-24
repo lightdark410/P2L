@@ -135,9 +135,9 @@ $("#locationUL").on("click", ".caret", function() {
     $(".caret").removeClass("selectedNode");
     $("#EditNode").prop("disabled", true);
     $("#DeleteNode").prop("disabled", true);
-
+    console.log(this);
     this.parentElement.querySelector(".nested").classList.toggle("active");
-
+    console.log(this.parentElement.querySelector(".nested").classList);
     if($(this).find("input").length == 0){
         this.classList.toggle("caret-down");
         $(".CreateNode").remove();
