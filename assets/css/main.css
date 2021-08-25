@@ -35,10 +35,6 @@ h2{
 }
 
 @media only screen and (max-width: 1024px){
-  .Stamm_container{
-    display: inherit !important;
-  }
-
   #list_popup{
     width: 90% !important; 
   }

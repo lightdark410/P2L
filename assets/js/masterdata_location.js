@@ -133,11 +133,10 @@ $("#locationUL").on("keyup", "input[name='name']", function() {
 //toggles arrow and edit/delete button when a location is clicked
 $("#locationUL").on("click", ".caret", function() {
     $(".caret").removeClass("selectedNode");
-    $("#EditNode").prop("disabled", true);
-    $("#DeleteNode").prop("disabled", true);
-    console.log(this);
+    $(this).addClass("selectedNode");
+    // $("#EditNode").prop("disabled", true);
+    // $("#DeleteNode").prop("disabled", true);
     this.parentElement.querySelector(".nested").classList.toggle("active");
-    console.log(this.parentElement.querySelector(".nested").classList);
     if($(this).find("input").length == 0){
         this.classList.toggle("caret-down");
         $(".CreateNode").remove();
