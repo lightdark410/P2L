@@ -139,3 +139,34 @@
 2021-07-29 14:28:47 info: User: wmacher - Method: Put - Route: /list - Body: {"list_id":"44","stock_id":"22,","status":"1}"}
 2021-07-29 14:28:47 info: User: wmacher - Method: Put - Route: /list - Body: {"list_id":"44","stock_id":"22,","status":"2}"}
 2021-07-29 14:28:48 info: User: wmacher - Method: Put - Route: /list - Body: {"list_id":"44","stock_id":"22,","status":"0}"}
+2021-08-25 07:40:46 info: User: wmacher - Method: Post - Route: /api/mobileList/undefined - Body: {"list":"[{\"stock_id\":\"22\",\"lay_in\":false,\"amount\":\"1\"}]"}
+2021-08-25 08:08:14 info: User: wmacher - Method: Put - Route: /list - Body: {"list_id":"15","stock_id":"22,","status":"1}"}
+2021-08-25 08:08:14 info: User: wmacher - Method: Put - Route: /list - Body: {"list_id":"15","stock_id":"22,","status":"2}"}
+2021-08-25 08:20:48 info: User: wmacher - Method: Put - Route: /list - Body: {"list_id":"15","stock_id":"22,","status":"0}"}
+2021-08-25 08:27:25 info: User: wmacher - Method: Put - Route: /list - Body: {"list_id":"15","stock_id":"22,","status":"1}"}
+2021-08-25 08:27:51 info: User: wmacher - Method: Put - Route: /list - Body: {"list_id":"15","stock_id":"22,","status":"2}"}
+2021-08-25 08:33:23 info: User: wmacher - Method: Put - Route: /list - Body: {"list_id":"15","stock_id":"22,","status":"0}"}
+2021-08-25 08:33:26 info: User: wmacher - Method: Put - Route: /list - Body: {"list_id":"15","stock_id":"22,","status":"1}"}
+2021-08-25 08:33:30 info: User: wmacher - Method: Put - Route: /list - Body: {"list_id":"15","stock_id":"22,","status":"2}"}
+2021-08-25 08:34:13 info: User: wmacher - Method: Put - Route: /list - Body: {"list_id":"15","stock_id":"22,","status":"0}"}
+2021-08-25 08:34:15 info: User: wmacher - Method: Put - Route: /list - Body: {"list_id":"15","stock_id":"22,","status":"1}"}
+2021-08-25 08:35:04 info: User: wmacher - Method: Put - Route: /list - Body: {"list_id":"15","stock_id":"22,","status":"2}"}
+2021-08-25 08:35:06 info: User: wmacher - Method: Put - Route: /list - Body: {"list_id":"15","stock_id":"22,","status":"0}"}
+2021-08-25 08:35:08 info: User: wmacher - Method: Put - Route: /list - Body: {"list_id":"15","stock_id":"22,","status":"1}"}
+2021-08-25 08:35:11 info: User: wmacher - Method: Put - Route: /list - Body: {"list_id":"15","stock_id":"22,","status":"2}"}
+2021-08-25 08:35:12 info: User: wmacher - Method: Put - Route: /list - Body: {"list_id":"15","stock_id":"22,","status":"0}"}
+2021-08-25 08:45:31 info: User: wmacher - Method: Put - Route: /api/mobilelist - Body: {"list_id":"15","stock_id":"22,","status":"1}"}
+2021-08-25 08:45:31 error: User: wmacher - Method: Put - Route: /api/mobilelist - Body: {"list_id":"15","stock_id":"22,","status":"1}"} - Error: ReferenceError: ledPutRequest is not defined
+2021-08-25 08:46:54 info: User: wmacher - Method: Put - Route: /api/mobilelist - Body: {"list_id":"15","stock_id":"22,","status":"2}"}
+2021-08-25 08:46:54 error: User: wmacher - Method: Put - Route: /api/mobilelist - Body: {"list_id":"15","stock_id":"22,","status":"2}"} - Error: ReferenceError: ledPutRequest is not defined
+2021-08-25 08:48:58 info: User: wmacher - Method: Put - Route: /api/mobilelist - Body: {"list_id":"15","stock_id":"22,","status":"0}"}
+2021-08-25 08:49:01 info: User: wmacher - Method: Put - Route: /api/mobilelist - Body: {"list_id":"15","stock_id":"22,","status":"1}"}
+2021-08-25 08:51:20 info: User: wmacher - Method: Delete - Route: /api/mobilelist - Body: {"auftrag":"15"}
+2021-08-25 08:54:31 info: User: wmacher - Method: Delete - Route: /api/mobilelist - Body: {"auftrag":"15"}
+2021-08-25 08:55:55 info: User: wmacher - Method: Post - Route: /api/mobileList/undefined - Body: {"list":"[{\"stock_id\":\"20\",\"lay_in\":false,\"amount\":\"1\"},{\"stock_id\":\"18\",\"lay_in\":true,\"amount\":\"1\"},{\"stock_id\":\"22\",\"lay_in\":false,\"amount\":\"2\"},{\"stock_id\":\"14\",\"lay_in\":true,\"amount\":\"1000\"}]"}
+2021-08-25 08:56:10 info: User: wmacher - Method: Put - Route: /api/mobilelist - Body: {"list_id":"46","stock_id":"20,","status":"1}"}
+2021-08-25 08:56:23 info: User: wmacher - Method: Put - Route: /api/mobilelist - Body: {"list_id":"46","stock_id":"22,","status":"1}"}
+2021-08-25 08:56:24 info: User: wmacher - Method: Put - Route: /api/mobilelist - Body: {"list_id":"46","stock_id":"14,","status":"1}"}
+2021-08-25 08:56:28 info: User: wmacher - Method: Put - Route: /api/mobilelist - Body: {"list_id":"46","stock_id":"18,","status":"1}"}
+2021-08-25 08:56:28 info: User: wmacher - Method: Put - Route: /api/mobilelist - Body: {"list_id":"46","stock_id":"18,","status":"2}"}
+2021-08-25 08:56:30 info: User: wmacher - Method: Delete - Route: /api/mobilelist - Body: {"auftrag":"46"}

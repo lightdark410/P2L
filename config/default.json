@@ -6,6 +6,14 @@
         "database": "inventur",
         "multipleStatements": true
     },
+    "qr":{
+        "_comment": "http://ainventar01.bbw-azubi.local:8090",
+        "domain": "localhost"
+    },
+    "led":{
+        "hostname": "192.168.138.146",
+        "port": "8081"
+    },
     "ldap": {
         "url": "ldap://192.168.138.51",
         "domain": "dc=bbw-azubi, dc=local",

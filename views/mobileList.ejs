@@ -75,20 +75,20 @@
         </div>
     </div>
   
-    <div id="listDiv" class="container border">
+    <div id="listDiv" class="container">
         <table class="table table-hover table-fixed">
             <thead>
                 <tr class="d-flex">
-                    <th class="col-3 text-center">Artikel</th>
+                    <th class="col-4 text-center">Artikel</th>
                     <th class="col-4 text-center">Lagerort</th>
-                    <th class="col-4 text-center">Lagerplatz</th>
-                    <th class="col-1"></th>
+                    <th class="col-4 text-center">Status</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody class="border">
               
             </tbody>
           </table>
+          <button type="button" class="btn btn-success">Auftrag abschließen</button>
     </div>
     <footer></footer>
 
@@ -101,6 +101,7 @@
         let id = url.substring(url.lastIndexOf('/') + 1);
         //get all svg´s
         let svg_paths = ["../assets/svg/cross.svg", "../assets/svg/check.svg", "../assets/svg/warning.svg"];
+        let svg_noborder_paths = ["../assets/svg/cross_noborder.svg", "../assets/svg/check_noborder.svg", "../assets/svg/warning_noborder.svg"];
 
         $("#total_pages").text(data.length);
         renderItemData(tableIndex);
@@ -132,19 +133,32 @@
             }
         }
 
+        //displays all entries
         function renderListTableData(){
             let tbody = $("#listDiv table tbody");
             let storageStates = JSON.parse(localStorage.getItem("mobileList")).states;
             $(tbody).html("");
+
+            let anyStateisZero = false;
+
             for(var i = 0; i < data.length; i++){
                 $(tbody).append(`
                     <tr class="d-flex pr-1" data-index="${i}">
-                        <td class="col-3">${data[i].articleName}</td>
+                        <td class="col-4">${data[i].articleName}</td>
                         <td class="col-4">${data[i].storage}</td>
-                        <td class="col-4">${data[i].storage_place}</td>
-                        <td class="col-1" style="padding-left: 0; padding-right: 0;"><img src="${svg_paths[storageStates[i]]}" alt=""></td>
+                        <td class="col-4" style="padding-left: 0; padding-right: 0;"><img src="${svg_noborder_paths[storageStates[i]]}" alt=""></td>
                     </tr>
                 `)
+
+                if(storageStates[i] == 0){
+                    anyStateisZero = true;
+                }
+            }
+
+            if(anyStateisZero){
+                $("#listDiv button").attr("disabled", true);
+            }else{
+                $("#listDiv button").attr("disabled", false);
             }
         }
 
@@ -176,7 +190,7 @@
             //update localStorage
             let table_index = document.getElementById("itemlist_div").dataset.index;
             $.ajax({
-                url: '/list',
+                url: '/api/mobilelist',
                 type: 'PUT',
                 data: `list_id=${data[table_index].list_id}&stock_id=${ data[table_index].stock_id},&status=${next_index}}`,
                 success: function(data) {
@@ -192,6 +206,34 @@
             let index = $(this).attr("data-index");
             toggleView();
             renderItemData(parseInt(index));
+        })
+
+        $("body").on("click", "#listDiv button", function() {
+            console.log(data);
+            for(let i = 0; i < data.length; i++){
+                let number;
+                if(data[i].lay_in == 0){
+                    number = data[i].number - data[i].amount;
+                }else{
+                    number = data[i].number + data[i].amount;
+                }
+                $.ajax({
+                    url: '/storagePlace',
+                    type: 'PATCH',
+                    data: `id=${data[i].stock_id}&number=${number}&username=${data[i].creator}`,
+                    success: function(data){
+
+                    }
+                })
+            }
+            // $.ajax({
+            //     url: '/api/mobilelist',
+            //     type: 'DELETE',
+            //     data: `auftrag=${data[0].list_id}`,
+            //     success: function(data){
+
+            //     }
+            // })
         })
 
         function toggleView(){

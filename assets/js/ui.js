@@ -63,7 +63,7 @@
             <td style="text-align:left">
               <ul id="myUL">
               <li>
-                <span class="location_caret">Ort auswählen</span>
+                <div class="location_caret">Ort auswählen</div>
                 <ul id="rootUL" class="location_nested">
                   
                 </ul>
@@ -112,6 +112,7 @@
 
   const emptyPlaceIsZero = (currentValue) => currentValue.empty_places === 0;
 
+  //BROKEN
   //handles clicks on the location tab in the popup
   $("body").on("click", "#location span", function(){
     //checks if there every 'emptyPlaces' property is 0 
@@ -144,7 +145,7 @@ let rootUL = popup.find("#rootUL");
   
         $(parentLI).text("");
         $(parentLI).append(`
-          <span class="location_caret">${LIText}</span>
+          <div class="location_caret">${LIText}</div>
           <ul class="location_nested">
         `);
 
@@ -192,16 +193,16 @@ let rootUL = popup.find("#rootUL");
   $("body").on("click", "#rootUL li", function(e){
     let locationHasFreeStoragePlaces = $(this).data("empty_places") > 0;
     if(locationHasFreeStoragePlaces){
-      let locationHasChildren = $(e.target).is("span");
+      let locationHasChildren = $(e.target).is("div");
       let name = $(this).text();
       let dataId = $(this).data("id");
       let dataParent = $(this).data("parent");
 
       if(locationHasChildren){
-        name = $(this).find("span").first().text();
+        name = $(this).find("div").first().text();
       }
 
-      let location = $("#myUL").find("span").first();
+      let location = $("#myUL").find("div").first();
 
       location.text(name);
       location.attr("data-id", dataId);
@@ -215,7 +216,6 @@ let rootUL = popup.find("#rootUL");
   //toggle location classes on click
   $("body").on("click", ".location_caret", function() {
     this.parentElement.querySelector(".location_nested").classList.toggle("active");
-    this.classList.toggle("location_caret-down");
   })
 
   //close location dropdown on outside click
@@ -227,9 +227,9 @@ let rootUL = popup.find("#rootUL");
   })
 
   //change cursor if no empty places are available 
-  $("body").on("mouseenter", "#rootUL li span", function(e){
+  $("body").on("mouseenter", "#rootUL li div", function(e){
     if($(this).parent().data("empty_places") == 0){
-      $(this).css("cursor", "no-drop");
+      $(this).css("cursor", "default"); 
     }
   })
 
@@ -415,7 +415,7 @@ let rootUL = popup.find("#rootUL");
         }
     });
 
-    let location = $("#myUL").find("span").first();
+    let location = $("#myUL").find("div").first();
 
     $("#name").val(result.name);
     $(location).text(result.storage_location);
@@ -433,9 +433,9 @@ let rootUL = popup.find("#rootUL");
   function toCreatePopup(popup){
     popup.find(".PopUp_topBar").text("Neuen Artikel anlegen");
     popup.find(".PopUp_topBar").append('<div id="mdiv"><div class="mdiv"><div class="md"></div></div></div>');
-    popup.find("#location span").first().text("Ort auswählen");
-    popup.find("#location span").first().attr("data-id", 0);
-    popup.find("#location span").first().data("parent", 0);
+    popup.find("#location div").first().text("Ort auswählen");
+    popup.find("#location div").first().attr("data-id", 0);
+    popup.find("#location div").first().data("parent", 0);
     popup.find("form").prop("action", "/stock");
     popup.find(".numberButton").remove();
     $(popup.find("#minimum_number")).css("margin-bottom", "0");
@@ -475,11 +475,11 @@ let rootUL = popup.find("#rootUL");
       $("#notification").fadeOut();
 
       //close location dropdown
-      $("#rootUL").removeClass("active");
+      $("#myUL ul").removeClass("active");
 
-      $("#myUL").find("span").first().removeAttr("data-id");
-      $("#myUL").find("span").first().removeAttr("data-parent");
-      $("#myUL").find("span").first().text("Ort auswählen");
+      $("#myUL").find("div").first().removeAttr("data-id");
+      $("#myUL").find("div").first().removeAttr("data-parent");
+      $("#myUL").find("div").first().text("Ort auswählen");
 
       //clears all input field
       $("#PopUp input").each(function (i) {

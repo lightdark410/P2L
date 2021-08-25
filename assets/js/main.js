@@ -88,7 +88,7 @@
 
     //get all values from popup
     var name = $("#name").val();
-    var location = $("#myUL").find("span").first().attr("data-id");
+    var location = $("#myUL").find("div").first().attr("data-id");
     var number = $("#number").val();
     var minimum_number = $("#minimum_number").val();
     var category = $("#category").val();
@@ -102,10 +102,12 @@
     //only submit if a location was selected
     if(location > 0){
       var formdata = `id=${id}&name=${name}&location=${location}&number=${number}&minimum_number=${minimum_number}&category=${category}&keywords=${keywordArr}&unit=${unit}`;
-    
       if(typeof id === 'undefined'){ 
         $.post('/stock', formdata, function (response) {
-          history.go(0);
+          //load new data
+          table.ajax.reload();
+          //close popup
+          $("#mdiv").click();
         });
       }else{
         $.ajax({
@@ -115,12 +117,15 @@
           processData: false,
           contentType: 'application/x-www-form-urlencoded',
           success: function () {
-            history.go(0);          
+            //load new data
+            table.ajax.reload();
+            //close popup
+            $("#mdiv").click();          
           }
         });
       }
     }else{
-      $("#myUL").find("span").first().attr("style", "color: red !important");
+      $("#myUL").find("div").first().attr("style", "color: red !important");
     }
   });
 

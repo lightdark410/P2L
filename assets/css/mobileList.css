@@ -6,6 +6,28 @@ html, body{
     font-size: 115%;
     font-size: 3vh;
 }
+
+/* width */
+::-webkit-scrollbar {
+    width: 6px !important;
+    cursor: pointer !important;
+  
+  }
+  
+  /* Track */
+  ::-webkit-scrollbar-track {
+    background: transparent !important; 
+  }
+   
+  /* Handle */
+  ::-webkit-scrollbar-thumb {
+    background: rgb(72, 136, 255) !important; 
+  }
+  
+  /* Handle on hover */
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(102, 168, 255) !important; 
+  }
  
 #itemlist_div{
     margin-top: calc(1vh * 25 - 149px);
@@ -58,6 +80,17 @@ html, body{
 #listDiv{
     display: none;
     font-size: 5vw;
+    text-align: center;
+}
+
+#listDiv thead, #listDiv tbody{
+    display: block;
+}
+
+#listDiv tbody{
+    height: 65vh;       /* Just for the demo          */
+    overflow-y: auto;    /* Trigger vertical scroll    */
+    overflow-x: hidden;  /* Hide the horizontal scroll */
 }
 
 #listDiv table td{
@@ -65,7 +98,7 @@ html, body{
 }
 
 #listDiv img{
-    width: 33px;
+    width: 55px;
 }
 
 table td{

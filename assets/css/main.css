@@ -84,15 +84,6 @@ h2{
     padding-top: 0 !important;
   }
 
-  #PopUp{
-    position: fixed !important;
-    min-width: 0 !important;
-    width: 90% !important;
-    height: 85% !important;
-    top: 50% !important;
-    z-index: 1030 !important;
-  }
-
 
   .PopUp_middle table, .PopUp_middle table td, .PopUp_middle table tr, .PopUp_middle table th { display: block; text-align: left; } 
   .PopUp_middle table th, .PopUp_middle table td { margin: 0; padding-left: 25px;  }
@@ -513,15 +504,14 @@ thead input {
 
 #PopUp{
   display: none;
-  width: 40%;
-  min-width: 720px;
+  width: 800px;
   position: fixed;
   left: 50%;
   top: 45%;
   transform: translate(-50%, -50%);
   border-radius: 10px;
   text-align: center;
-  z-index: 2;
+  z-index: 1030;
   background-color: #efefef;
   font-weight: bold;
   color: black;
@@ -930,53 +920,58 @@ input:checked + .slider_list:before {
 
 #myUL {
   margin: 0;
-  padding: 0;
+  padding: 2px 0px 2px 0px;
   width: 100%;
+  font-weight: 400;
   display: inline-block;
+  border: 1px solid #0000006b;
+  border-radius: 2px;
+}
+
+#myUL li{
+  position: relative;
+  padding-left: 6px;
 }
 
 .location_nested{
   min-width: 100px;
   padding-left: 30px;
-}
-
-.location_nested > li{
-  min-width: 50px;
+  margin-left: -6px;
 }
 
 .location_nested > li:hover{
-  background-color: #efefef;
+  background-color: rgb(30, 144, 255);
+  color: white;
   cursor: pointer;
+}
 
+.location_nested > li:hover ul {
+  color: black;
 }
 
 #rootUL{
   position: absolute;
   z-index: 1000;
   max-height: 350px;
-  min-width: 142px;
+  min-width: 160px;
   overflow: auto;
+  padding-left: 0;
+  margin-left: -7px;
+  padding-bottom: 5px;
+  border: 1px solid #0000006b;
 }
 
 .location_caret {
-  cursor: pointer;
-  -webkit-user-select: none; /* Safari 3.1+ */
-  -moz-user-select: none; /* Firefox 2+ */
-  -ms-user-select: none; /* IE 10+ */
-  user-select: none;
+  padding-bottom: 2px;
 }
 
-.location_caret::before {
-  content: "\25B6";
-  color: black;
-  display: inline-block;
-  margin-right: 6px;
-}
-
-.location_caret-down::before {
-  -ms-transform: rotate(90deg); /* IE 9 */
-  -webkit-transform: rotate(90deg); /* Safari */
-  transform: rotate(90deg);  
+.location_caret::after {
+  content: url(../svg/arrow_down.svg);
+  margin-right:3px;
+  margin-top: 2px;
+  position: absolute;
+  width: 10px;
+  right: 2px;
 }
 
 .location_nested {
