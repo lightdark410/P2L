@@ -178,3 +178,7 @@
 2021-08-27 09:43:31 info: User: wmacher - Method: Post - Route: /api/mobileList/undefined - Body: {"list":"[{\"stock_id\":\"90\",\"lay_in\":false,\"amount\":\"1\"}]"}
 2021-08-27 09:44:55 info: User: wmacher - Method: Post - Route: /api/mobileList/undefined - Body: {"list":"[{\"stock_id\":\"90\",\"lay_in\":false,\"amount\":\"1\"}]"}
 2021-08-27 09:46:07 info: User: wmacher - Method: Put - Route: /api/mobilelist - Body: {"list_id":"5","stock_id":"90,","status":"1}"}
+2021-08-27 09:50:02 info: User: wmacher - Method: Post - Route: /stammdaten/category - Body: {"value":"Test"}
+2021-08-27 09:50:03 info: User: wmacher - Method: Post - Route: /stammdaten/unit - Body: {"value":"Test"}
+2021-08-27 09:50:05 info: User: wmacher - Method: Post - Route: /stammdaten/keyword - Body: {"value":"Test"}
+2021-08-27 09:52:34 info: User: wmacher - Method: Post - Route: /api/mobileList/undefined - Body: {"list":"[{\"stock_id\":\"1\",\"lay_in\":false,\"amount\":\"1\"}]"}

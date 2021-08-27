@@ -295,7 +295,7 @@ let rootUL = popup.find("#rootUL");
     //apply multi dropdown field for keywords
     $('.select-pure__select').remove();
     $.ajax({
-      url: 'stammdaten/keyword',
+      url: 'api/stammdaten/keyword',
       success: function(data) {
           var optionsArr = [];
           for(var i = 0; i < data.data.length; i ++){
