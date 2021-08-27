@@ -173,3 +173,8 @@
 2021-08-26 08:08:52 info: User: wmacher - Method: Post - Route: /stammdaten/category - Body: {"value":"sefse"}
 2021-08-26 08:08:55 info: User: wmacher - Method: Post - Route: /stammdaten/keyword - Body: {"value":"esfsef"}
 2021-08-26 08:08:59 info: User: wmacher - Method: Post - Route: /stammdaten/unit - Body: {"value":"sefsefs"}
+2021-08-27 08:36:34 info: User: wmacher - Method: Post - Route: /stammdaten/category - Body: {"value":"ye"}
+2021-08-27 09:43:11 info: User: wmacher - Method: Post - Route: /api/mobileList/undefined - Body: {"list":"[{\"stock_id\":\"90\",\"lay_in\":false,\"amount\":\"1\"}]"}
+2021-08-27 09:43:31 info: User: wmacher - Method: Post - Route: /api/mobileList/undefined - Body: {"list":"[{\"stock_id\":\"90\",\"lay_in\":false,\"amount\":\"1\"}]"}
+2021-08-27 09:44:55 info: User: wmacher - Method: Post - Route: /api/mobileList/undefined - Body: {"list":"[{\"stock_id\":\"90\",\"lay_in\":false,\"amount\":\"1\"}]"}
+2021-08-27 09:46:07 info: User: wmacher - Method: Put - Route: /api/mobilelist - Body: {"list_id":"5","stock_id":"90,","status":"1}"}

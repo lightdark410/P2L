@@ -1,14 +1,14 @@
 {
     "dbConfig": {
         "host": "localhost",
-        "user": "root",
-        "password": "",
+        "user": "wmacher",
+        "password": "test",
         "database": "inventur",
         "multipleStatements": true
     },
     "qr":{
         "_comment": "http://ainventar01.bbw-azubi.local:8090",
-        "domain": "localhost"
+        "domain": "http://ainventar01.bbw-azubi.local:8090"
     },
     "led":{
         "hostname": "192.168.138.146",

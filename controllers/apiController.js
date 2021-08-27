@@ -144,42 +144,6 @@ module.exports = function(app){
     }
   })
 
-  //sends get request to the color api
-  function getledColor(auftragsId){
-    const options = {
-      hostname: config.get("led.hostname"),
-      port: config.get("led.port"),
-      path: `/color/api/v1?id=${auftragsId}`,
-      method: 'GET',
-      timeout: 500,
-    }
-    
-    return new Promise((resolve, reject) => {
-      const req = http.request(options, res => {
-      
-        let result = '';
-        res.on('data', (d) => {
-          result += d;
-        })
-  
-        res.on('end', () => {
-          resolve(result);
-        })
-      })
-      
-      req.on('timeout', () => {
-        req.destroy();
-      });
-
-      req.on('error', error => {
-        resolve(error);
-      })
-      
-      req.end()
-    })
-
-  }
-
   //send request to the led api
   function ledRequest(RequestData, method){
     const data = JSON.stringify(RequestData);

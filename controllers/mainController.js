@@ -5,6 +5,8 @@ const functions = require("./functions");
 const masterdataDB = require("./masterdataDB"); //import sql functions for handling masterdata database changes
 const listDB = require("./listDB");
 const fs = require('fs');
+const http = require('http');
+
 
 //read config with fs to delete database in case it doesn´t exist yet 
 let rawConfig = fs.readFileSync("./config/default.json");
@@ -183,5 +185,41 @@ module.exports = function (app) {
       }
     })
   // 
+
+    //sends get request to the color api
+    function getledColor(auftragsId){
+      const options = {
+        hostname: config.get("led.hostname"),
+        port: config.get("led.port"),
+        path: `/color/api/v1?id=${auftragsId}`,
+        method: 'GET',
+        timeout: 500,
+      }
+      
+      return new Promise((resolve, reject) => {
+        const req = http.request(options, res => {
+        
+          let result = '';
+          res.on('data', (d) => {
+            result += d;
+          })
+    
+          res.on('end', () => {
+            resolve(result);
+          })
+        })
+        
+        req.on('timeout', () => {
+          req.destroy();
+        });
+  
+        req.on('error', error => {
+          resolve(error);
+        })
+        
+        req.end()
+      })
+  
+    }
   
 }

@@ -128,6 +128,7 @@ CREATE TABLE IF NOT EXISTS `mobile_list_entries` (
   `stock_id` int(255) NOT NULL,
   `lay_in` tinyint(1) NOT NULL,
   `amount` int(255) NOT NULL,
+  `status` int(255) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `artikelnummer` (`stock_id`),
   KEY `list_id` (`list_id`)
