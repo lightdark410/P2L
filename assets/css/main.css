@@ -549,7 +549,7 @@ thead input {
 
 #list_popup{
   display: none;
-  width: 1000px;
+  width: 1010px;
   min-width: 300px;
   position: fixed;
   left: 50%;

@@ -186,13 +186,14 @@
             $(this).attr("src", svg_paths[next_index]);
             $(this).attr("data-index", next_index);
 
-        
+            
             //update localStorage
             let table_index = document.getElementById("itemlist_div").dataset.index;
+
             $.ajax({
                 url: '/api/mobileList',
                 type: 'PUT',
-                data: `list_id=${data[table_index].list_id}&stock_id=${ data[table_index].stock_id},&status=${next_index}`,
+                data: `list_id=${data[table_index].list_id}&stock_id=${ data[table_index].stock_id}&status=${next_index}`,
                 success: function(data) {
                 }
             });
