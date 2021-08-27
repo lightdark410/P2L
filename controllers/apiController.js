@@ -43,7 +43,7 @@ module.exports = function(app){
   app.post("/api/mobileList", async (req, res) => {
     if (req.session.loggedin) {
       try {
-        logger.info(`User: ${req.session.username} - Method: Post - Route: /api/mobileList/${req.params.table} - Body: ${JSON.stringify(req.body)}`);
+        logger.info(`User: ${req.session.username} - Method: Post - Route: /api/mobileList - Body: ${JSON.stringify(req.body)}`);
 
         let username = req.session.username;
         let data = JSON.parse(req.body.list);
@@ -86,7 +86,7 @@ module.exports = function(app){
     }      
   })
 
-  app.put("/api/mobilelist", async (req, res) => {
+  app.put("/api/mobileList", async (req, res) => {
     if(req.session.loggedin){
       try {
         logger.info(`User: ${req.session.username} - Method: Put - Route: /api/mobilelist - Body: ${JSON.stringify(req.body)}`);

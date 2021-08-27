@@ -190,9 +190,9 @@
             //update localStorage
             let table_index = document.getElementById("itemlist_div").dataset.index;
             $.ajax({
-                url: '/api/mobilelist',
+                url: '/api/mobileList',
                 type: 'PUT',
-                data: `list_id=${data[table_index].list_id}&stock_id=${ data[table_index].stock_id},&status=${next_index}}`,
+                data: `list_id=${data[table_index].list_id}&stock_id=${ data[table_index].stock_id},&status=${next_index}`,
                 success: function(data) {
                 }
             });
@@ -226,14 +226,14 @@
                     }
                 })
             }
-            // $.ajax({
-            //     url: '/api/mobilelist',
-            //     type: 'DELETE',
-            //     data: `auftrag=${data[0].list_id}`,
-            //     success: function(data){
+            $.ajax({
+                url: '/api/mobilelist',
+                type: 'DELETE',
+                data: `auftrag=${data[0].list_id}`,
+                success: function(data){
 
-            //     }
-            // })
+                }
+            })
         })
 
         function toggleView(){
