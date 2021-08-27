@@ -108,6 +108,9 @@
           table.ajax.reload();
           //close popup
           $("#mdiv").click();
+
+          //find and show the new row
+          table.order([1, "desc"]).draw();
         });
       }else{
         $.ajax({

@@ -19,11 +19,14 @@ function getStock() {
             function (err, result) {
                 //send results
                 if (err) reject(err);
-
+                
                 //correct timezone from date string
-                for(let i = 0; i < result.length; i++){
-                    result[i].date = result[i].date.toLocaleString();
+                if(typeof result !== 'undefined'){
+                    for(let i = 0; i < result.length; i++){
+                        result[i].date = result[i].date.toLocaleString();
+                    }
                 }
+            
                 
                 res.data = result;
                 resolve(res);

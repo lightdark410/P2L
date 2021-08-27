@@ -47,7 +47,8 @@
     },
     "order": [[1, "asc"]],
     "columnDefs": [{ "targets": [0, 13], "orderable": false }],
-    "initComplete": function () {
+    "initComplete": function () {      
+      
       // Apply the search
       this.api().columns().every(function () {
         var that = this;
@@ -69,7 +70,7 @@
 
       let list = JSON.parse(localStorage.getItem("list"));
 
-      //filter items that are not in the table anymore
+      //filter listitems that are not in the table anymore
       if(list !== null){
         res = list.filter(item => table_ids.includes(item.id));
         localStorage.setItem("list", JSON.stringify(res));

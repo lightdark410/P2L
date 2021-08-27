@@ -11,7 +11,11 @@ const logDB = require("./logDB");
 const fs = require('fs');
 const http = require('http');
 
-let con = mysql.createConnection(config.get('dbConfig'));
+//read config with fs to delete database in case it doesn´t exist yet 
+let rawConfig = fs.readFileSync("./config/default.json");
+let dbConfig = JSON.parse(rawConfig).dbConfig;
+delete dbConfig["database"];
+let con = mysql.createConnection(dbConfig);
 
 //checks if required Database exists and if not creates it
 fs.readFile('./config/schema.sql', 'utf8', function (err, data) {
@@ -323,8 +327,6 @@ module.exports = function (app) {
       res.render("login", { err: req.query.err}); //redirect to login page if not logged in
     }
   })
-
-
 
   //sends get request to the color api
   function getledColor(auftragsId){

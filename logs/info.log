@@ -170,3 +170,6 @@
 2021-08-25 08:56:28 info: User: wmacher - Method: Put - Route: /api/mobilelist - Body: {"list_id":"46","stock_id":"18,","status":"1}"}
 2021-08-25 08:56:28 info: User: wmacher - Method: Put - Route: /api/mobilelist - Body: {"list_id":"46","stock_id":"18,","status":"2}"}
 2021-08-25 08:56:30 info: User: wmacher - Method: Delete - Route: /api/mobilelist - Body: {"auftrag":"46"}
+2021-08-26 08:08:52 info: User: wmacher - Method: Post - Route: /stammdaten/category - Body: {"value":"sefse"}
+2021-08-26 08:08:55 info: User: wmacher - Method: Post - Route: /stammdaten/keyword - Body: {"value":"esfsef"}
+2021-08-26 08:08:59 info: User: wmacher - Method: Post - Route: /stammdaten/unit - Body: {"value":"sefsefs"}

@@ -73,7 +73,7 @@
           </tr>
           <tr>
             <td>Anzahl:</td>
-            <td>
+            <td style="text-align: center">
               <input type="number" id="number" name="number" min="0" max="10000" required />
             </td>
             <td>Mindestanzahl:</td>
