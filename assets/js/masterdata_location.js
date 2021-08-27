@@ -68,7 +68,7 @@ function displayChildNodes(parent){
         
         if(dataFromSelectedEle.places != "0"){
             $(parent).parent().find("ul").first().prepend(
-                $("<span/>", {"text": `Freie Lagerplätze: ${dataFromSelectedEle.empty_places}`})
+                $("<span/>", {"text": `Freie Lagerplätze: ${dataFromSelectedEle.empty_places}`, "class": "empty_places"})
             ).prepend(
                 $("<br/>")
             ).prepend(
@@ -87,7 +87,7 @@ function getCreateNode(){
             $("<span/>", {"class": "caret create"}).append(
                 $("<input/>", {"type": "text", "placeholder": "Name...", "name": "name", "height": "32", "maxlength": "15"})
                 ).append(
-                    $("<input/>", {"type": "number", "value": 0, "name": "number", "height": "32", "width": "55", "min": "0", "max": "100"})
+                    $("<input/>", {"type": "number", "value": 1, "name": "number", "height": "32", "width": "55", "min": "0", "max": "100"})
                 ).append(
                     $("<button/>", {"type": "submit", "class": "btn btn-success mb-1", "text": "Speichern"})
                 )
@@ -134,8 +134,7 @@ $("#locationUL").on("keyup", "input[name='name']", function() {
 $("#locationUL").on("click", ".caret", function() {
     $(".caret").removeClass("selectedNode");
     $(this).addClass("selectedNode");
-    // $("#EditNode").prop("disabled", true);
-    // $("#DeleteNode").prop("disabled", true);
+    
     this.parentElement.querySelector(".nested").classList.toggle("active");
     if($(this).find("input").length == 0){
         this.classList.toggle("caret-down");
@@ -143,12 +142,16 @@ $("#locationUL").on("click", ".caret", function() {
         $(".editForm").remove();
 
     }
+
+    $("#EditNode").prop("disabled", false);
+    $("#DeleteNode").prop("disabled", false);
+
     if($(this).hasClass("caret-down")){
-        if($(this).find("input").length == 0){
-            $(this).addClass("selectedNode");
-            $("#EditNode").prop("disabled", false);
-            $("#DeleteNode").prop("disabled", false);
-        }
+        // if($(this).find("input").length == 0){
+        //     $(this).addClass("selectedNode");
+        //     $("#EditNode").prop("disabled", false);
+        //     $("#DeleteNode").prop("disabled", false);
+        // }
         displayChildNodes($(this));      
     }
 
@@ -160,6 +163,9 @@ $("#CreateNode").click(function(){
 
     let parentNode;
     if($(".selectedNode").length != 0){ //find correct parent element
+        if(!$(".selectedNode").hasClass("caret-down")){
+            $(".selectedNode").click();
+        }
         parentNode = $(".selectedNode").parent().find("ul").first();
     }else{
         parentNode = $("#locationUL");
@@ -329,4 +335,16 @@ $("#locationUL").on("submit", ".editForm", function(e){
           history.go(0);          
         }
       });
+})
+
+$("body").on("click", function(e){
+    let target = $(e.target);
+    //remove selected location if user clicks anywhere besides these tags
+    if(target.is(".caret") || target.is("button") || target.is(".places") || target.is(".empty_places") || target.is("i")){
+        return;
+    }else{
+        $("span").removeClass("selectedNode");
+        $("#EditNode").prop("disabled", true);
+        $("#DeleteNode").prop("disabled", true);
+    }
 })
