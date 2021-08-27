@@ -673,8 +673,11 @@ let rootUL = popup.find("#rootUL");
       calcListPopupSum();
     });
 
-    $("body").on("click", "#list_popup", function(){
-      $("#qrcode").text("");
+    $("body").on("click", "#list_popup", function(e){
+      if(!$(e.target).is("img")){
+        $("#qrcode").text("");
+        
+      }
     })
 
     list_popup.find("table").append(tableData);
