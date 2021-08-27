@@ -4,7 +4,9 @@ const PORT = process.env.PORT || 8090;
 const app = express();
 const session = require('express-session');
 
-const controller = require('./controllers/mainController');
+const mainController = require('./controllers/mainController');
+const apiController = require('./controllers/apiController');
+
 
 app.set('view engine', 'ejs');
 
@@ -21,7 +23,8 @@ app.use(express.urlencoded({
 
 app.use(express.json());
 
-controller(app);
+mainController(app);
+apiController(app);
 
 app.listen(PORT, () => {
 	console.log("Server is listening on port %d", PORT);

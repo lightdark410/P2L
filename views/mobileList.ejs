@@ -218,7 +218,7 @@
                     number = data[i].number + data[i].amount;
                 }
                 $.ajax({
-                    url: '/storagePlace',
+                    url: '/api/storagePlace',
                     type: 'PATCH',
                     data: `id=${data[i].stock_id}&number=${number}&username=${data[i].creator}`,
                     success: function(data){

@@ -102,7 +102,7 @@ $("body").on("click", ".save", function(){
 
         $.ajax({
             type: 'PATCH',
-            url: "/storagePlace",
+            url: "/api/storagePlace",
             data: formdata,
             processData: false,
             contentType: 'application/x-www-form-urlencoded',

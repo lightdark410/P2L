@@ -3,7 +3,7 @@
   let table = $("#table").DataTable({
     "processing": true,
     "ajax": {
-      "url": "/stock",
+      "url": "/api/stock",
       "type": "GET"
     },
     pageLength : 10,
@@ -146,7 +146,7 @@ $('#logsTable').DataTable({
   $('#kategorieTable').DataTable({
     "processing": true,
     "ajax":{
-      "url": "/stammdaten/category",
+      "url": "/api/stammdaten/category",
       "type": "GET"
     },
     "columns":  [
@@ -167,7 +167,7 @@ $('#logsTable').DataTable({
   $('#keywordsTable').DataTable({
     "processing": true,
     "ajax":{
-      "url": "/stammdaten/keyword",
+      "url": "/api/stammdaten/keyword",
       "type": "GET"
     },
     "columns":  [
@@ -188,7 +188,7 @@ $('#logsTable').DataTable({
   $('#unitTable').DataTable({
     "processing": true,
     "ajax":{
-      "url": "/stammdaten/unit",
+      "url": "/api/stammdaten/unit",
       "type": "GET"
     },
     "columns":  [

@@ -103,7 +103,7 @@
     if(location > 0){
       var formdata = `id=${id}&name=${name}&location=${location}&number=${number}&minimum_number=${minimum_number}&category=${category}&keywords=${keywordArr}&unit=${unit}`;
       if(typeof id === 'undefined'){ 
-        $.post('/stock', formdata, function (response) {
+        $.post('/api/stock', formdata, function (response) {
           //load new data
           table.ajax.reload();
           //close popup
@@ -115,7 +115,7 @@
       }else{
         $.ajax({
           type: 'PATCH',
-          url: '/stock',
+          url: '/api/stock',
           data: formdata,
           processData: false,
           contentType: 'application/x-www-form-urlencoded',
@@ -123,7 +123,10 @@
             //load new data
             table.ajax.reload();
             //close popup
-            $("#mdiv").click();          
+            $("#mdiv").click();  
+            
+            //find and show the new row
+            table.order([1, "desc"]).draw();
           }
         });
       }

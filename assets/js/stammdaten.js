@@ -80,7 +80,7 @@ function addMasterdata(buttonEle) {
     }
     if (text != "") {
         $(buttonEle).prop("disabled", true);
-        $.post(`/stammdaten/${placeholder}`, { value: text }, function (data) {
+        $.post(`/api/stammdaten/${placeholder}`, { value: text }, function (data) {
             location.reload();
         });
     }
@@ -97,7 +97,7 @@ $("table").on("click", ".fa-trash", function () {
         'async': false,
         'type': "GET",
         'global': false,
-        'url': `/stammdaten/${table}/${val}`,
+        'url': `/api/stammdaten/${table}/${val}`,
         'success': function (data) {
           number = data.number;
         }
@@ -166,7 +166,7 @@ $("table").on("click", ".fa-trash", function () {
                 break;
         }
         $.ajax({
-            url: `/stammdaten/${table}/${val}`,
+            url: `/api/stammdaten/${table}/${val}`,
             type: "DELETE",
             success: function (result) {
                 location.reload();

@@ -19,7 +19,7 @@
       'async': false,
       'type': "GET",
       'global': false,
-      'url': "/stammdaten/category",
+      'url': "/api/stammdaten/category",
       'success': function (data) {
         category = data;
       }
@@ -29,7 +29,7 @@
       'async': false,
       'type': "GET",
       'global': false,
-      'url': "/stammdaten/unit",
+      'url': "/api/stammdaten/unit",
       'success': function (data) {
         unit = data;
       }
@@ -39,7 +39,7 @@
       'async': false,
       'type': "GET",
       'global': false,
-      'url': "/stammdaten/keyword",
+      'url': "/api/stammdaten/keyword",
       'success': function (data) {
           keyword = data;
       }
@@ -50,7 +50,7 @@
   //create stock Popup
   let popup = $(`
   <div id="PopUp">
-    <form action="/stock">
+    <form>
       <div class="PopUp_topBar"></div>
       <div class="PopUp_middle">
         <table>
@@ -251,7 +251,7 @@ let rootUL = popup.find("#rootUL");
 
     //Only check for a match if the input is not empty and not the same as in the selected row
     if (nameIsNotEmpty && nameIsNotEqualToSelectedName) {
-      $.get(`/stock/name/${name}`, function (data) {
+      $.get(`/api/stock/name/${name}`, function (data) {
         if (data) {
           let noErrMsgExists = $("#notification").length == 0;
           if (noErrMsgExists) {
@@ -353,7 +353,7 @@ let rootUL = popup.find("#rootUL");
       "async": false,
       "type": "GET",
       "global": false,
-      "url": `/stock/${id}`,
+      "url": `/api/stock/${id}`,
       "success": function(data){
         result = {
           "name": data.name,
@@ -436,7 +436,6 @@ let rootUL = popup.find("#rootUL");
     popup.find("#location div").first().text("Ort auswählen");
     popup.find("#location div").first().attr("data-id", 0);
     popup.find("#location div").first().data("parent", 0);
-    popup.find("form").prop("action", "/stock");
     popup.find(".numberButton").remove();
     $(popup.find("#minimum_number")).css("margin-bottom", "0");
     
@@ -447,7 +446,6 @@ let rootUL = popup.find("#rootUL");
   function toUpdatePopup(popup){
     popup.find(".PopUp_topBar").text("Artikel bearbeiten");
     popup.find(".PopUp_topBar").append('<div id="mdiv"><div class="mdiv"><div class="md"></div></div></div>')
-    popup.find("form").prop("action", "/entry");
 
     popup.find(".numberButton").remove();
     $(popup.find("#minimum_number")).css("margin-bottom", "22px");

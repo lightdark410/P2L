@@ -283,7 +283,7 @@ $("#DeleteNode").click(function(){
 
     $(".popup_mid > .delete").click(function () {        
         $.ajax({
-            url: `/stammdaten/storageLocation/${selectedId}`,
+            url: `/api/stammdaten/storageLocation/${selectedId}`,
             type: "DELETE",
             success: function (result) {
                 location.reload();
