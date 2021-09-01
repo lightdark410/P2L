@@ -56,25 +56,26 @@
 	<div class="login-form">
 		<h1>Inventur Login</h1>
 		<form action="/auth" method="POST">
-				<label for="RememberMe">Remember Me?</label>
-				<input type="checkbox" id="RememberMe">
+			<label for="RememberMe">Remember Me?</label>
+			<input type="checkbox" id="RememberMe">
+			
 			<input type="text" name="username" id="username" placeholder="Username" required>
 			<input type="password" name="password" id="password" placeholder="Password" required>
-
 		
 			<input type="submit" value="Einloggen">
-			<% if(err == 'FalseCred'){
-				%>
-			<span style="color: red;">Username und/oder Passwort sind nicht korrekt</span>
-			<%
-			}%>
-
-
+			<span id="errorMessage" style="color: red;"></span>
 		</form>
 	</div>
 
 	<script src="../assets/js/jquery/jquery-3.2.1.js"></script>
 	<script>
+		const queryString = window.location.search;
+		const urlParams = new URLSearchParams(queryString);
+		const err = urlParams.get('err');
+		if(err == "FalseCred"){
+			$("#errorMessage").text("Username und/oder Passwort sind nicht korrekt");
+		}
+
 		$("#username").val(getCookie("username"));
 		if($("#username").val() != ""){
 			$("#password").focus();

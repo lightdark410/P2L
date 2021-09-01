@@ -78,7 +78,7 @@ module.exports = function (app) {
       if (req.session.loggedin) {
         res.render("index", { session: req.session }); //load index
       } else {
-        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+        res.render("login"); //redirect to login page if not logged in
       }
     })
 
@@ -87,7 +87,7 @@ module.exports = function (app) {
           res.render("stammdaten", { session: req.session });
       } else {
         req.session.redirectTo = `/stammdaten`;
-        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+        res.render("login"); //redirect to login page if not logged in
       }
     })
 
@@ -108,7 +108,7 @@ module.exports = function (app) {
   
       } else {
         req.session.redirectTo = `/logs`;
-        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+        res.render("login"); //redirect to login page if not logged in
       }
     })
     
@@ -122,7 +122,7 @@ module.exports = function (app) {
         }
       }else{
         req.session.redirectTo = `/logs/${req.params.stockId}`;
-        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+        res.render("login"); //redirect to login page if not logged in
       }
     })
 
@@ -131,7 +131,7 @@ module.exports = function (app) {
         res.render("qr", { session: req.session })
       } else {
        req.session.redirectTo = `/qr`;
-       res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+       res.render("login"); //redirect to login page if not logged in
       }
     })
 
@@ -157,7 +157,7 @@ module.exports = function (app) {
         }
       }else{
         req.session.redirectTo = `/storagePlace/${req.params.id}`;
-        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+        res.render("login"); //redirect to login page if not logged in
       }
     })
 
@@ -168,7 +168,7 @@ module.exports = function (app) {
 
       } else {
        req.session.redirectTo = `/mobileList/${req.params.id}`;
-        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+        res.render("login"); //redirect to login page if not logged in
       }
     })
   // 

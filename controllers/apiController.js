@@ -5,12 +5,20 @@ const masterdataDB = require("./masterdataDB"); //import sql functions for handl
 const taskDB = require("./taskDB");
 const logDB = require("./logDB");
 const http = require('http');
-const { data } = require("../logger/logger");
 
 module.exports = function(app){
     
+  app.get("/api/user", async (req, res) => {
+    if(req.session.loggedin){
+      res.send(req.session);
+    }else{
+      req.session.redirectTo = '/api/user';
+      res.redirect("/"); //redirect to login page if not logged in
+    }
+  })
+
   app.get("/api/logs", async (req, res) => {
-    if (req.session.loggedin) {
+    // if (req.session.loggedin) {
       try {
         var logs = await logDB.getLog();
 
@@ -20,10 +28,10 @@ module.exports = function(app){
         console.log(error);
       }
 
-    } else {
-      req.session.redirectTo = `/logs`;
-      res.render("login", { err: req.query.err}); //redirect to login page if not logged in
-    }
+    // } else {
+    //   req.session.redirectTo = `/api/logs`;
+    //   res.redirect("/"); //redirect to login page if not logged in
+    // }
   })
 
   app.get("/api/logs/:stockId", async (req, res) => {
@@ -36,13 +44,13 @@ module.exports = function(app){
         console.log(error);
       }
     }else{
-      req.session.redirectTo = `/logs/${req.params.stockId}`;
-      res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+      req.session.redirectTo = `/api/logs/${req.params.stockId}`;
+      res.redirect("/"); //redirect to login page if not logged in
     }
   })
 
   app.get("/api/mobileList/:id", async (req, res) => {
-
+    if(req.session.loggedin){
       try {
         let list = await taskDB.get_task(req.params.id);
         for(let i = 0; i < list.length; i++){
@@ -65,7 +73,10 @@ module.exports = function(app){
         res.status(400).send("Bad Request");
         logger.error(`User: ${req.session.username} - Method: Get - Route: /api/mobileList/${req.params.table} - Body: ${JSON.stringify(req.body)} - Error: ${error}`);
       }
-
+    }else{
+      req.session.redirectTo = `/api/mobileList/${req.params.id}`;
+      res.redirect("/"); //redirect to login page if not logged in
+    }
   })
 
   app.post("/api/mobileList", async (req, res) => {
@@ -109,7 +120,7 @@ module.exports = function(app){
   
     } else {
       req.session.redirectTo = `/`;
-      res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+      res.redirect("/"); //redirect to login page if not logged in
     }      
   })
 
@@ -146,7 +157,7 @@ module.exports = function(app){
       }
     }else{
       req.session.redirectTo = `/`;
-      res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+      res.redirect("/"); //redirect to login page if not logged in
     }
   })
 
@@ -166,7 +177,7 @@ module.exports = function(app){
       }
     }else{
       req.session.redirectTo = `/`;
-      res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+      res.redirect("/"); //redirect to login page if not logged in
     }
   })
 
@@ -188,7 +199,7 @@ module.exports = function(app){
         res.send(result);
       } else {
         req.session.redirectTo = `/api/stock`;
-        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+        res.redirect("/"); //redirect to login page if not logged in
       }
     });
 
@@ -220,7 +231,7 @@ module.exports = function(app){
         }
       }else{
         req.session.redirectTo = `/api/stock/${req.params.id}`;
-        res.render("login", { err: req.query.err }); //redirect to login page if not logged in
+        res.redirect("/"); //redirect to login page if not logged in
 
       }
         
@@ -233,7 +244,7 @@ module.exports = function(app){
           res.send(result);
       }else{
         req.session.redirectTo = `/api/stock/name/${req.params.name}`;
-        res.render("login", { err: req.query.err }); //redirect to login page if not logged in
+        res.redirect("/"); //redirect to login page if not logged in
       }
     });
 
@@ -271,14 +282,13 @@ module.exports = function(app){
         }
       }else{
         req.session.redirectTo = `/`;
-        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+        res.redirect("/"); //redirect to login page if not logged in
       }
   
 
     });
 
     app.patch("/api/stock", async (req, res) => {
-
       if(req.session.loggedin){
         try {
           let entry = await functions.getStockById(req.body.id);
@@ -352,7 +362,7 @@ module.exports = function(app){
         }
       }else{
         req.session.redirectTo = `/`;
-        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+        res.redirect("/"); //redirect to login page if not logged in
       }
       
     });
@@ -389,8 +399,8 @@ module.exports = function(app){
           res.status(404).send("404 Not Found");
         }
       }else{
-        req.session.redirectTo = `/stammdaten/${req.params.table}`;
-        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+        req.session.redirectTo = `/api/stammdaten/${req.params.table}`;
+        res.redirect("/"); //redirect to login page if not logged in
       }
     })
 
@@ -433,8 +443,8 @@ module.exports = function(app){
           result.number = count[0].number;
           res.send(result);
       }else{
-        req.session.redirectTo = `/stammdaten/${req.params.table}/${req.params.name}`;
-        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+        req.session.redirectTo = `/api/stammdaten/${req.params.table}/${req.params.name}`;
+        res.redirect("/"); //redirect to login page if not logged in
       }
     })
 
@@ -456,7 +466,7 @@ module.exports = function(app){
         }
       }else{
         req.session.redirectTo = `/`;
-        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+        res.redirect("/"); //redirect to login page if not logged in
       }
      
     })
@@ -490,7 +500,7 @@ module.exports = function(app){
         }
       }else{
         req.session.redirectTo = `/`;
-        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+        res.redirect("/"); //redirect to login page if not logged in
       }
   
   
@@ -509,8 +519,8 @@ module.exports = function(app){
           res.status(404).send("404 Not Found");
         }
       }else{
-        req.session.redirectTo = `/`;
-        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+        req.session.redirectTo = `/api/storageLocation`;
+        res.redirect("/"); //redirect to login page if not logged in
       }
   
 
@@ -527,8 +537,8 @@ module.exports = function(app){
         storage_location.empty_places = empty_places;
         res.send(storage_location);
       } else {
-        req.session.redirectTo = `/`;
-        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+        req.session.redirectTo = `/api/storageLocation/${req.params.id}`;
+        res.redirect("/"); //redirect to login page if not logged in
       }
     })
 
@@ -541,8 +551,8 @@ module.exports = function(app){
         }
         res.send(results);
       } else {
-        req.session.redirectTo = `/`;
-        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+        req.session.redirectTo = `/api/storageLocation/parent/${req.params.id}`;
+        res.redirect("/"); //redirect to login page if not logged in
       }
     });
 
@@ -575,7 +585,7 @@ module.exports = function(app){
         }
       }else{
         req.session.redirectTo = `/`;
-        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+        res.redirect("/"); //redirect to login page if not logged in
       }
     });
 
@@ -597,7 +607,7 @@ module.exports = function(app){
         }
       }else{
         req.session.redirectTo = `/`;
-        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+        res.redirect("/"); //redirect to login page if not logged in
       }
     })
   //
@@ -621,7 +631,7 @@ module.exports = function(app){
       } else {
         
         req.session.redirectTo = `/storagePlace`;
-        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+        res.redirect("/"); //redirect to login page if not logged in
       }
     })
     //
