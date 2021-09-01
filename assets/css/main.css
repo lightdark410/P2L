@@ -871,7 +871,8 @@ input:checked + .slider_list:before {
   text-align: left;
   position: absolute;
   width: 200%;
-  left: 26vw;
+  left: 425px;
+  top: 95px;
 }
 
 

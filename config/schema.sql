@@ -106,23 +106,24 @@ CREATE TABLE IF NOT EXISTS `log` (
 -- --------------------------------------------------------
 
 --
--- Tabellenstruktur für Tabelle `mobile_list`
+-- Tabellenstruktur für Tabelle `task`
 --
 
-CREATE TABLE IF NOT EXISTS `mobile_list` (
+CREATE TABLE IF NOT EXISTS `task` (
   `id` int(255) NOT NULL AUTO_INCREMENT,
   `creator` varchar(255) NOT NULL,
   `date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  'status' int(255) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
 
 --
--- Tabellenstruktur für Tabelle `mobile_list_entries`
+-- Tabellenstruktur für Tabelle `task_entries`
 --
 
-CREATE TABLE IF NOT EXISTS `mobile_list_entries` (
+CREATE TABLE IF NOT EXISTS `task_entries` (
   `id` int(255) NOT NULL AUTO_INCREMENT,
   `list_id` int(255) NOT NULL,
   `stock_id` int(255) NOT NULL,
@@ -214,11 +215,12 @@ ALTER TABLE `keyword_list`
   ADD CONSTRAINT `keyword_list_ibfk_2` FOREIGN KEY (`keyword_id`) REFERENCES `keyword` (`id`);
 
 --
--- Constraints der Tabelle `mobile_list_entries`
+-- Constraints der Tabelle `task_entries`
 --
-ALTER TABLE `mobile_list_entries`
-  ADD CONSTRAINT `mobile_list_entries_ibfk_1` FOREIGN KEY (`stock_id`) REFERENCES `stock` (`id`),
-  ADD CONSTRAINT `mobile_list_entries_ibfk_2` FOREIGN KEY (`list_id`) REFERENCES `mobile_list` (`id`);
+ALTER TABLE `task_entries`
+  ADD CONSTRAINT `task_entries_ibfk_2` FOREIGN KEY (`list_id`) REFERENCES `task` (`id`),
+  ADD CONSTRAINT `task_entries_ibfk_3` FOREIGN KEY (`stock_id`) REFERENCES `stock` (`id`);
+COMMIT;
 
 --
 -- Constraints der Tabelle `stock`

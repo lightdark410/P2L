@@ -111,6 +111,9 @@
 
           //find and show the new row
           table.order([1, "desc"]).draw();
+
+          $("#rootUL").text("");
+          appendLocationRootNodes();
         });
       }else{
         $.ajax({
@@ -127,6 +130,9 @@
             
             //find and show the new row
             table.order([1, "desc"]).draw();
+
+            $("#rootUL").text("");
+            appendLocationRootNodes();
           }
         });
       }

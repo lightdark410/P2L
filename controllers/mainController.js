@@ -3,9 +3,8 @@ const config = require('config');
 const ldap = require("ldapjs");
 const functions = require("./functions");
 const masterdataDB = require("./masterdataDB"); //import sql functions for handling masterdata database changes
-const listDB = require("./listDB");
 const fs = require('fs');
-const http = require('http');
+const path = require("path");
 
 
 //read config with fs to delete database in case it doesn´t exist yet 
@@ -165,19 +164,7 @@ module.exports = function (app) {
     //mobile list view
     app.get("/mobileList/:id", async (req, res) => {
       if (req.session.loggedin) {
-        let data = await listDB.get_mobile_list(req.params.id);
-        for(let i = 0; i < data.length; i++){
-          let stock_data = await functions.getStockById(data[i].stock_id);
-          data[i].articleName = stock_data.name;
-          data[i].number = stock_data.number;
-          let storage_data = await masterdataDB.getStorageByStockId(data[i].stock_id);
-          data[i].storage = storage_data.name;
-          data[i].storage_place = storage_data.place;
-        }
- 
-        let color = await getledColor(req.params.id);
-        console.log(color);
-        res.render("mobileList", { session: req.session, data: JSON.stringify(data) });
+        res.sendFile(path.join(__dirname+"/../views/mobileList.html"));
 
       } else {
        req.session.redirectTo = `/mobileList/${req.params.id}`;
@@ -185,41 +172,5 @@ module.exports = function (app) {
       }
     })
   // 
-
-    //sends get request to the color api
-    function getledColor(auftragsId){
-      const options = {
-        hostname: config.get("led.hostname"),
-        port: config.get("led.port"),
-        path: `/color/api/v1?id=${auftragsId}`,
-        method: 'GET',
-        timeout: 500,
-      }
-      
-      return new Promise((resolve, reject) => {
-        const req = http.request(options, res => {
-        
-          let result = '';
-          res.on('data', (d) => {
-            result += d;
-          })
-    
-          res.on('end', () => {
-            resolve(result);
-          })
-        })
-        
-        req.on('timeout', () => {
-          req.destroy();
-        });
-  
-        req.on('error', error => {
-          resolve(error);
-        })
-        
-        req.end()
-      })
-  
-    }
   
 }

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.css">
+    <link rel="stylesheet" href="../assets/css/mobileList.css">
+    <link rel="shortcut icon" href="../assets/favicon.jpg" />
+    <title>Inventur</title>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="../assets/bootstrap/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+
+    <title>Document</title>
+</head>
+<body>
+
+    <div id="itemDiv">
+        <div class="ml-3 mt-3 mr-3 p-3 border border-dark border-2">
+            <div class="row">
+                <div class="col-6">
+                    <b>Lagerort</b>
+                </div>
+                <div class="col-6 text-right">
+                
+                        <span id="storage"></span>
+                        <div id="led"></div>
+           
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col-6 ">
+                    <b>Lagerplatz</b>
+                </div>
+                <div class="col-3">
+    
+                </div>
+                <div class="col-3 text-right">
+                    <b id="storage_place"></b>
+                </div>
+            </div>
+        </div>
+     
+    
+        <div id="itemlist_div" class="container-fluid" data-index="0">
+            <div class="row mt-3 mb-3">
+                <div class="col-7 font-weight-bold pl-4">Artikelnummer</div>
+                <div id="id" class="col-5 text-right pr-4"></div>
+            </div>
+            <div class="row mt-3 mb-3">
+                <div class="col-3 font-weight-bold pl-4">Name</div>
+                <div id="name" class="text-right pr-3 col-9 pr-4"></div>
+            </div>
+            <div id="amountDiv" class="row mt-3 mb-3 pt-1 pb-1">
+                <div id="amountTh" class="col-7 font-weight-bold pl-4"></div>
+                <div id="amount" class="col-5 text-right pr-4"></div>
+            </div>
+ 
+        </div>
+    
+        <div id="switch" class="d-flex justify-content-center">
+            <img class="" src="../assets/svg/cross.svg">
+        </div>
+    
+        <div class="fixed-bottom mb-4">
+            <div id="page_div" class="row mb-2">
+                <div class="col-1"></div>
+                <div id="arrow_back" class="col-3 text-center" onclick="renderItemData($('#itemlist_div').attr(`data-index`) - 1)"> <img src="../assets/svg/arrow_left.svg" alt=""> </div>
+                <div id="view_all" class="col-4 text-center" onclick="toggleView(); renderListTableData();">Alle</div>
+                <div id="arrow_forward" class="col-3 text-center" onclick="renderItemData(parseInt($('#itemlist_div').attr(`data-index`)) + 1)"> <img src="../assets/svg/arrow_right.svg" alt=""> </div>         
+            </div>
+            <div class="row">
+                <div class="col text-center">
+                    Artikel <span id="curr_page"></span> von <span id="total_pages"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+  
+    <div id="listDiv" class="container">
+        <table class="table table-hover table-fixed">
+            <thead>
+                <tr class="d-flex">
+                    <th class="col-4 text-center">Artikel</th>
+                    <th class="col-4 text-center">Lagerort</th>
+                    <th class="col-4 text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody class="border">
+              
+            </tbody>
+          </table>
+          <button type="button" class="btn btn-success">Auftrag abschließen</button>
+    </div>
+    <footer></footer>
+
+    <script src="../assets/js/jquery/jquery-3.2.1.js"></script>
+    <script src="../assets/bootstrap/js/bootstrap.min.js"></script>
+    <script src="../assets/js/mobileList.js"></script>
+</body>
+</html>

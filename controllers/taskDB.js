@@ -4,10 +4,10 @@ const config = require('config');
 var con = mysql.createConnection(config.get('dbConfig'));
 
 
-function insert_mobile_list(username) {
+function insert_task(username) {
     return new Promise((resolve, reject) => {
         con.query(
-            "INSERT INTO mobile_list (creator) VALUES (?);", [username],
+            "INSERT INTO task (creator) VALUES (?);", [username],
             function (err, result) {
                 //send results
                 if (err) {
@@ -20,10 +20,10 @@ function insert_mobile_list(username) {
     });
 }
 
-function getUnfinishedListEntries(list_id){
+function getUnfinishedTaskEntries(list_id){
     return new Promise((resolve, reject) => {
         con.query(
-            "SELECT * FROM mobile_list_entries WHERE list_id = ? AND status != 1;", [list_id],
+            "SELECT * FROM task_entries WHERE list_id = ? AND status != 1;", [list_id],
             function (err, result){
                 if(err){
                     reject(err);
@@ -35,7 +35,7 @@ function getUnfinishedListEntries(list_id){
     });
 }
 
-function get_latest_mobile_list_id(){
+function get_latest_task_id(){
     return new Promise((resolve, reject) => {
         con.query(
             "SELECT LAST_INSERT_ID() as id;",
@@ -51,10 +51,10 @@ function get_latest_mobile_list_id(){
     });
 }
 
-function insert_list_entry(list_id, stock_id, lay_in, amount, status){
+function insert_task_entry(list_id, stock_id, lay_in, amount, status){
     return new Promise((resolve, reject) => {
         con.query(
-            "INSERT INTO mobile_list_entries (list_id, stock_id, lay_in, amount, status) VALUES (?, ?, ?, ?, ?);", [list_id, stock_id, lay_in, amount, status],
+            "INSERT INTO task_entries (list_id, stock_id, lay_in, amount, status) VALUES (?, ?, ?, ?, ?);", [list_id, stock_id, lay_in, amount, status],
             function (err, result){
                 if(err){
                     reject(err);
@@ -66,10 +66,10 @@ function insert_list_entry(list_id, stock_id, lay_in, amount, status){
     });
 }
 
-function update_list_entry_status(list_id, stock_id, status){
+function update_task_entry_status(list_id, stock_id, status){
     return new Promise((resolve, reject) => {
         con.query(
-            "UPDATE mobile_list_entries SET status = ? WHERE list_id = ? AND stock_id = ?", [status, list_id, stock_id],
+            "UPDATE task_entries SET status = ? WHERE list_id = ? AND stock_id = ?", [status, list_id, stock_id],
             function (err, result){
                 if(err){
                     reject(err);
@@ -81,10 +81,10 @@ function update_list_entry_status(list_id, stock_id, status){
     })
 }
 
-function get_mobile_list(id){
+function get_task(id){
     return new Promise((resolve, reject) => {
         con.query(
-            "SELECT * FROM mobile_list INNER JOIN mobile_list_entries ON mobile_list_entries.list_id = mobile_list.id WHERE mobile_list.id = ?;", [id],
+            "SELECT *, task.status as task_status FROM task INNER JOIN task_entries ON task_entries.list_id = task.id WHERE task.id = ?;", [id],
             function (err, result) {
                 //send results
                 if (err) {
@@ -97,11 +97,30 @@ function get_mobile_list(id){
     });
 }
 
+function finish_task(id){
+    return new Promise((resolve, reject) => {
+        con.query(
+            "UPDATE task SET status = 1 WHERE id = ?;", [id],
+            function (err, result) {
+                //send results
+                if (err) {
+                    reject(err);
+                    console.log(err);
+                }
+                resolve(result);
+            }
+        );
+    });
+}
+
+
+
 module.exports = {
-    insert_mobile_list,
-    get_latest_mobile_list_id,
-    insert_list_entry,
-    update_list_entry_status,
-    get_mobile_list,
-    getUnfinishedListEntries
+    insert_task,
+    get_latest_task_id,
+    insert_task_entry,
+    update_task_entry_status,
+    get_task,
+    getUnfinishedTaskEntries,
+    finish_task
 }

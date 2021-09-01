@@ -1,5 +1,5 @@
-// $(function () {
-  let stammdaten = function () {
+
+  function stammdaten() {
     var location = null;
     var category = null;
     var unit = null;
@@ -45,7 +45,7 @@
       }
     });
     return {"category": category.data, "keyword": keyword.data, "unit": unit.data, "storage_location": location};
-  }();
+  };
 
   //create stock Popup
   let popup = $(`
@@ -78,7 +78,7 @@
             </td>
             <td>Mindestanzahl:</td>
             <td>
-              <input type="number" id="minimum_number" name="minimum_number" min="0" max="10000" required />
+              <input type="number" id="minimum_number" value="0" name="minimum_number" min="0" max="10000" required />
             </td>
           </tr>
           <tr>
@@ -114,27 +114,24 @@
 
   //BROKEN
   //handles clicks on the location tab in the popup
-  $("body").on("click", "#location span", function(){
-    //checks if there every 'emptyPlaces' property is 0 
-    if(stammdaten.storage_location.every(emptyPlaceIsZero)){
-      $("#location").parent().append(
-        $("<span/>", {"id": "LocationNotification", "text": "Es sind keine freien Lagerplätze verfügbar."})
-      );
-    };
+  $("body").on("click", ".location_caret:first-child", function(e){
+    checkForEmptyStoragePlaces();
   })
 
 let rootUL = popup.find("#rootUL");
 
- //load all root locations in the popup
-  $.each(stammdaten.storage_location, function(i, p){
-    if(p.parent == 0){
-      $(rootUL[0]).append(
-        $('<li/>', {'text': p.name, 'data-id': p.id, 'data-parent': p.parent, 'data-places': p.places, 'data-empty_places': p.empty_places})
-      );
-      appendChild(p.id);
-    }
-  });
-
+  appendLocationRootNodes();
+  //load all root locations in the popup
+  function appendLocationRootNodes(){
+    $.each(stammdaten().storage_location, function(i, p){
+      if(p.parent == 0){
+        $(rootUL[0]).append(
+          $('<li/>', {'text': p.name, 'data-id': p.id, 'data-parent': p.parent, 'data-places': p.places, 'data-empty_places': p.empty_places})
+        );
+        appendChild(p.id);
+      }
+    });
+  }
    //append children locations in the popup
   function appendChild(parentId){
     $.get(`/api/storageLocation/parent/${parentId}`, function(data){
@@ -181,11 +178,11 @@ let rootUL = popup.find("#rootUL");
   }
   
   //apply option tags for selection
-  $.each(stammdaten.category, function(i, p) {
+  $.each(stammdaten().category, function(i, p) {
     popup.find('#category').append($('<option></option>').val(p.category).html(p.category));
   });
 
-  $.each(stammdaten.unit, function(i, p) {
+  $.each(stammdaten().unit, function(i, p) {
     popup.find('#unit').append($('<option></option>').val(p.unit).html(p.unit));
   });
 
@@ -215,7 +212,9 @@ let rootUL = popup.find("#rootUL");
 
   //toggle location classes on click
   $("body").on("click", ".location_caret", function() {
-    this.parentElement.querySelector(".location_nested").classList.toggle("active");
+    if($("#rootUL").children().length > 0){
+      this.parentElement.querySelector(".location_nested").classList.toggle("active");
+    }
   })
 
   //close location dropdown on outside click
@@ -290,12 +289,12 @@ let rootUL = popup.find("#rootUL");
     selectHandler();
     $('#tableDiv').after(popup);
     popup.fadeIn();
-
+    checkForEmptyStoragePlaces();
 
     //apply multi dropdown field for keywords
     $('.select-pure__select').remove();
     $.ajax({
-      url: 'api/stammdaten/keyword',
+      url: '/api/stammdaten/keyword',
       success: function(data) {
           var optionsArr = [];
           for(var i = 0; i < data.data.length; i ++){
@@ -376,7 +375,7 @@ let rootUL = popup.find("#rootUL");
     //apply multi dropdown field for keywords
     $('.select-pure__select').remove();
     $.ajax({
-      url: 'stammdaten/keyword',
+      url: '/api/stammdaten/keyword',
       success: function(data) {
           var optionsArr = [];
           for(var i = 0; i < data.data.length; i ++){
@@ -458,6 +457,17 @@ let rootUL = popup.find("#rootUL");
     return popup;
   }
 
+  function checkForEmptyStoragePlaces(){
+    //checks if every 'emptyPlaces' property is 0 
+    if(stammdaten().storage_location.every(emptyPlaceIsZero)){
+      $("#LocationNotification").remove();
+      //add error message
+      $("#myUL").parent().append(
+        $("<span/>", {"id": "LocationNotification", "text": "Es sind keine freien Lagerplätze verfügbar."})
+      );
+    };
+  }
+
   //triggers when click on the cover, navbar or close button on popup
   $("body").on("click", "#cover, .navbar, #mdiv",function () {
     //only do smth if the keyword dropdown in the stock popup is closed 
@@ -474,6 +484,9 @@ let rootUL = popup.find("#rootUL");
 
       //close location dropdown
       $("#myUL ul").removeClass("active");
+      $("#LocationNotification").remove();
+      $("#myUL").find("div").first().attr("style", "color: inherit");
+
 
       $("#myUL").find("div").first().removeAttr("data-id");
       $("#myUL").find("div").first().removeAttr("data-parent");

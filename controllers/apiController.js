@@ -2,9 +2,10 @@ const logger = require("../logger/logger");
 const config = require('config'); 
 const functions = require("./functions");
 const masterdataDB = require("./masterdataDB"); //import sql functions for handling masterdata database changes
-const listDB = require("./listDB");
+const taskDB = require("./taskDB");
 const logDB = require("./logDB");
 const http = require('http');
+const { data } = require("../logger/logger");
 
 module.exports = function(app){
     
@@ -40,6 +41,33 @@ module.exports = function(app){
     }
   })
 
+  app.get("/api/mobileList/:id", async (req, res) => {
+
+      try {
+        let list = await taskDB.get_task(req.params.id);
+        for(let i = 0; i < list.length; i++){
+          let stock_data = await functions.getStockById(list[i].stock_id);
+          list[i].articleName = stock_data.name;
+          list[i].number = stock_data.number;
+          let storage_data = await masterdataDB.getStorageByStockId(list[i].stock_id);
+          list[i].storage = storage_data.name;
+          list[i].storage_place = storage_data.place;
+        }
+        
+        let color = await getledColor(req.params.id);
+        let data = {
+          "data": list,
+          "color": color,
+          "status": list[0].task_status
+        };
+        res.send(JSON.stringify(data));
+      } catch (error) {
+        res.status(400).send("Bad Request");
+        logger.error(`User: ${req.session.username} - Method: Get - Route: /api/mobileList/${req.params.table} - Body: ${JSON.stringify(req.body)} - Error: ${error}`);
+      }
+
+  })
+
   app.post("/api/mobileList", async (req, res) => {
     if (req.session.loggedin) {
       try {
@@ -48,12 +76,12 @@ module.exports = function(app){
         let username = req.session.username;
         let data = JSON.parse(req.body.list);
         //create new mobileList
-        await listDB.insert_mobile_list(username);
-        let list_id = await listDB.get_latest_mobile_list_id();
+        await taskDB.insert_task(username);
+        let list_id = await taskDB.get_latest_task_id();
 
         //fill mobileListEntries
         data.forEach(async obj => {
-          await listDB.insert_list_entry(list_id, obj.stock_id, obj.lay_in, obj.amount, 0);
+          await taskDB.insert_task_entry(list_id, obj.stock_id, obj.lay_in, obj.amount, 0);
         })
 
         //Build Json for led post request
@@ -70,8 +98,7 @@ module.exports = function(app){
         let lagerData = {};
         lagerData.auftrag = list_id;
         lagerData.lager = locationData;
-        let ledRes = await ledRequest(lagerData, "POST");
-        console.log(ledRes);
+        await ledRequest(lagerData, "POST");
         //send qr code link
         res.send(`${config.get("qr.domain")}/mobileList/${list_id}`);
       } catch (error) {
@@ -89,10 +116,10 @@ module.exports = function(app){
   app.put("/api/mobileList", async (req, res) => {
     if(req.session.loggedin){
       try {
-        logger.info(`User: ${req.session.username} - Method: Put - Route: /api/mobilelist - Body: ${JSON.stringify(req.body)}`);
+        logger.info(`User: ${req.session.username} - Method: Put - Route: /api/mobileList - Body: ${JSON.stringify(req.body)}`);
       
-        await listDB.update_list_entry_status(req.body.list_id, req.body.stock_id, req.body.status);
-        let unfinishedEntries = await listDB.getUnfinishedListEntries(req.body.list_id);
+        await taskDB.update_task_entry_status(req.body.list_id, req.body.stock_id, req.body.status);
+        let unfinishedEntries = await taskDB.getUnfinishedTaskEntries(req.body.list_id);
         let locationData = [];
 
         if(unfinishedEntries.length != 0){
@@ -109,13 +136,12 @@ module.exports = function(app){
         lagerData.auftrag = parseInt(req.body.list_id);
         lagerData.lager = locationData;
 
-        let ledres = await ledRequest(lagerData, "PUT");
-        console.log(ledres);
+        await ledRequest(lagerData, "PUT");
         res.send("Status updated");
 
       } catch (error) {
         res.status(400).send("Bad Request");
-        logger.error(`User: ${req.session.username} - Method: Put - Route: /api/mobilelist - Body: ${JSON.stringify(req.body)} - Error: ${error}`);
+        logger.error(`User: ${req.session.username} - Method: Put - Route: /api/mobileList - Body: ${JSON.stringify(req.body)} - Error: ${error}`);
 
       }
     }else{
@@ -124,18 +150,18 @@ module.exports = function(app){
     }
   })
 
-  app.delete("/api/mobilelist", async (req, res) => {
+  app.delete("/api/mobileList", async (req, res) => {
     if(req.session.loggedin){
       try {
-        logger.info(`User: ${req.session.username} - Method: Delete - Route: /api/mobilelist - Body: ${JSON.stringify(req.body)}`);
-        if(typeof req.body.auftrag == 'number'){
-          ledRequest(`{"auftrag": ${req.body.autrag}}`, "DELETE");
-        }
-        res.send("Deleted");
+        logger.info(`User: ${req.session.username} - Method: Delete - Route: /api/mobileList - Body: ${JSON.stringify(req.body)}`);
 
+        ledRequest(`{"auftrag": ${req.body.autrag}}`, "DELETE");
+        taskDB.finish_task(req.body.auftrag);
+      
+        res.send("Deleted");
       } catch (error) {
         res.status(400).send("Bad Request");
-        logger.error(`User: ${req.session.username} - Method: Delete - Route: /api/mobilelist - Body: ${JSON.stringify(req.body)} - Error: ${error}`);
+        logger.error(`User: ${req.session.username} - Method: Delete - Route: /api/mobileList - Body: ${JSON.stringify(req.body)} - Error: ${error}`);
 
       }
     }else{
@@ -143,46 +169,6 @@ module.exports = function(app){
       res.render("login", { err: req.query.err}); //redirect to login page if not logged in
     }
   })
-
-  //send request to the led api
-  function ledRequest(RequestData, method){
-    const data = JSON.stringify(RequestData);
-    const options = {
-      hostname: config.get("led.hostname"),
-      port: config.get("led.port"),
-      path: '/anfrage/api/v1',
-      method: method,
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': data.length,
-      },
-      timeout: 500
-    }
-
-    return new Promise((resolve, reject) => {
-      const req = http.request(options, (res) => {  
-        let result = '';
-        res.on('data', (d) => {
-          result += d;
-        })
-  
-        res.on('end', () => {
-          resolve(result);
-        })
-      })
-
-      req.on('timeout', () => {
-        req.destroy();
-      });
-      
-      req.on('error', (error) => {
-        console.error(error)
-      })
-      
-      req.write(data)
-      req.end()
-    })
-  }
 
   //stock related data for the home page
     app.get("/api/stock", async (req, res) => {
@@ -616,25 +602,103 @@ module.exports = function(app){
     })
   //
 
-  //Updates the stock number
-  app.patch("/api/storagePlace", async (req, res) => {
-    if (req.session.loggedin) {
-      try{
-        console.log(req.body);
-        if(req.body.number < 0){
-          res.status("400").send("Bad Request");
-          return;
+    //Updates the stock number
+    app.patch("/api/storagePlace", async (req, res) => {
+      if (req.session.loggedin) {
+        try{
+          logger.info(`User: ${req.session.username} - Method: Patch - Route: /api/storagePlace - Body: ${JSON.stringify(req.body)}`);
+
+          if(req.body.number < 0){
+            return;
+          }
+          await functions.updateStockNumber(req.body.id, req.body.number, req.session.username);
+          await logDB.log(req.body.id, "change");
+          res.send("updated");
+        }catch(e){
+          logger.error(`User: ${req.session.username} - Method: Patch - Route: /api/storagePlace - Body: ${JSON.stringify(req.body)} - Error: ${error}`);
+          res.send(e);
         }
-        await functions.updateStockNumber(req.body.id, req.body.number, req.session.username);
-        await logDB.log(req.body.id, "change");
-        res.send("updated");
-      }catch(e){
-        res.send(e);
+      } else {
+        
+        req.session.redirectTo = `/storagePlace`;
+        res.render("login", { err: req.query.err}); //redirect to login page if not logged in
       }
-    } else {
-      req.session.redirectTo = `/storagePlace`;
-      res.render("login", { err: req.query.err}); //redirect to login page if not logged in
+    })
+    //
+
+    //send request to the led api
+    function ledRequest(RequestData, method){
+      const data = JSON.stringify(RequestData);
+      const options = {
+        hostname: config.get("led.hostname"),
+        port: config.get("led.port"),
+        path: '/anfrage/api/v1',
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': data.length,
+        },
+        timeout: 500
+      }
+  
+      return new Promise((resolve, reject) => {
+        const req = http.request(options, (res) => {  
+          let result = '';
+          res.on('data', (d) => {
+            result += d;
+          })
+    
+          res.on('end', () => {
+            resolve(result);
+          })
+        })
+  
+        req.on('timeout', () => {
+          req.destroy();
+        });
+        
+        req.on('error', (error) => {
+          console.error(error)
+        })
+        
+        req.write(data)
+        req.end()
+      })
     }
-  })
-  //
+  
+    //sends get request to the color api
+    function getledColor(auftragsId){
+      const options = {
+        hostname: config.get("led.hostname"),
+        port: config.get("led.port"),
+        path: `/color/api/v1?id=${auftragsId}`,
+        method: 'GET',
+        timeout: 500,
+      }
+      
+      return new Promise((resolve, reject) => {
+        const req = http.request(options, res => {
+        
+          let result = '';
+          res.on('data', (d) => {
+            result += d;
+          })
+    
+          res.on('end', () => {
+            resolve(result);
+          })
+        })
+        
+        req.on('timeout', () => {
+          req.destroy();
+        });
+  
+        req.on('error', error => {
+          resolve(error);
+        })
+        
+        req.end()
+      })
+  
+    }
 }
