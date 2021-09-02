@@ -40,6 +40,7 @@ function renderItemData(tableIndex){
         $("#itemlist_div").attr("data-index", tableIndex); //updates the data property of the table
         $("#curr_page").text(tableIndex + 1);      //updates page number
 
+        checkLocalStorage();
         loadSvg(tableIndex);
 
         let obj = data[tableIndex];
@@ -71,7 +72,7 @@ function renderListTableData(){
             <tr class="d-flex pr-1" data-index="${i}">
                 <td class="col-4">${data[i].articleName}</td>
                 <td class="col-4">${data[i].storage}</td>
-                <td class="col-4" style="padding-left: 0; padding-right: 0;"><img src="${svg_noborder_paths[storageStates[i]]}" alt=""></td>
+                <td class="col-4" style="padding-left: 0; padding-right: 0;"><img src="${svg_noborder_paths[storageStates[i]]}" data-index="${storageStates[i]}" alt=""></td>
             </tr>
         `)
 
@@ -90,14 +91,29 @@ function renderListTableData(){
 function loadSvg(tableIndex){
     let storage = localStorage.getItem("mobileList");
 
-    if(storage === null || JSON.parse(storage).id != id){
-        let states = new Array(data.length).fill(0);
-        let json = {"id": id, "states": states};
-        localStorage.setItem("mobileList", JSON.stringify(json));
-    }else if(JSON.parse(storage).id == id){
-        let state = JSON.parse(storage).states[tableIndex];
-        $("#switch img").attr("src", svg_paths[state]);
+    let state = JSON.parse(storage).states[tableIndex];
+    let path = svg_paths[state];
+    $("#switch img").attr("src", path);
+    $("#switch img").attr("data-index", state);
+}
+
+function checkLocalStorage(){
+    let storage = localStorage.getItem("mobileList");
+    try {
+        JSON.parse(storage);
+    } catch (error) {
+        setLocalStorage();
+        location.reload();
     }
+    if(storage === null || JSON.parse(storage).id != id){
+        setLocalStorage();
+    }
+}
+
+function setLocalStorage(){
+    let states = new Array(data.length).fill(0);
+    let json = {"id": id, "states": states};
+    localStorage.setItem("mobileList", JSON.stringify(json));
 }
 
 function loadLedColor(color){
@@ -110,6 +126,7 @@ function loadLedColor(color){
 
 //switch svg when button was clicked
 $("#switch img").click(function(){
+    checkLocalStorage();
     let curr_path = $(this).attr("src");
     let curr_index = svg_paths.findIndex(ele => ele == curr_path);
     let next_index;
@@ -126,7 +143,7 @@ $("#switch img").click(function(){
     $.ajax({
         url: '/api/mobileList',
         type: 'PUT',
-        data: `list_id=${data[table_index].list_id}&stock_id=${ data[table_index].stock_id}&status=${next_index}`,
+        data: `task_id=${data[table_index].task_id}&stock_id=${ data[table_index].stock_id}&status=${next_index}`,
         success: function(data) {
         }
     });
@@ -145,28 +162,66 @@ $("body").on("click", "#listDiv tbody tr", function(){
 //submit finished list
 $("body").on("click", "#listDiv button", function() {
     for(let i = 0; i < data.length; i++){
-        let number;
+        let stock_id = data[i].stock_id;
+        let task_id = data[i].task_id;
+        let name = data[i].articleName;
+        let storage_location = data[i].storage;
+        let storage_place = data[i].storage_place;
+        let amount_pre = data[i].number;
+        let amount_post;
+        let status = $($("#listDiv img")[i]).attr("data-index");
+        //calculate new stock amount
         if(data[i].lay_in == 0){
-            number = data[i].number - data[i].amount;
+            amount_post = data[i].number - data[i].amount;
         }else{
-            number = data[i].number + data[i].amount;
+            amount_post = data[i].number + data[i].amount;
         }
+        if(amount_post < 0){
+            amount_post = 0;
+        }
+
+        let task_status;
+        $.ajax({
+            async: false,
+            type: "GET",
+            url: `/api/taskstatus/${task_id}`,
+            dataType: "json",
+            success: function(data){
+              task_status = data.status;
+            }
+          })
+          console.log(task_status);
+          if(task_status == 1){
+            break;
+        }
+        //update stock number for the current entry
         $.ajax({
             url: '/api/storagePlace',
             type: 'PATCH',
-            data: `id=${data[i].stock_id}&number=${number}&username=${data[i].creator}`,
-            success: function(data){
-
-            }
+            data: `id=${data[i].stock_id}&number=${amount_post}&username=${data[i].creator}`,
+            success: function(data){}
         })
+
+        //save entry to task log
+        let postdata = {
+            "stock_id": stock_id,
+            "task_id": task_id,
+            "name": name,
+            "storage_location": storage_location,
+            "storage_place": storage_place,
+            "amount_pre": amount_pre,
+            "amount_post": amount_post,
+            "status": status
+        }
+        $.post('/api/tasklog', postdata, function (response) {});
     }
+
+    //finish this task
     $.ajax({
         url: '/api/mobileList',
         type: 'DELETE',
-        data: `auftrag=${data[0].list_id}`,
-        success: function(data){
-
-        }
+        data: `auftrag=${data[0].task_id}`,
+        success: function(data){}
     })
 
     $("#listDiv button").attr("disabled", true);

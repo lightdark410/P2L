@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../assets/css/semantic.min.css">
+    <link rel="stylesheet" href="../assets/css/dataTables.semanticui.min.css">
+
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/task.css">
+    <link rel="stylesheet" href="../assets/css/bundle.css">
+
+    <link rel="stylesheet" href="../assets/fontawesome/css/all.css">
+
+    <link rel="shortcut icon" href="../assets/favicon.jpg" />
+    <title>Inventur</title>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="../assets/bootstrap/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+
+    <title>Document</title>
+</head>
+
+<body>
+    <%- include('navbar'); %>
+
+    <div class="container-fluid mt-3 mb-3 d-flex justify-content-center">
+        <h1><u>Aufträge</u></h1>
+    </div>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-5 p-0">
+                <table id="task" class="ui celled table display">
+                    <thead>
+                        <th>Auftrag</th>
+                        <th>Datum</th>
+                        <th>Erstellt von</th>
+                        <th>Status</th>
+                    </thead>
+                </table>
+            </div>
+            <div class="col-sm-7 p-0">
+                <table id="task_entries" class=" w-100 ui celled table display">
+                    <thead>
+                        <th>Art. Nummer</th>
+                        <th>Name</th>
+                        <th>Lagerort</th>
+                        <th>Lagerplatz</th>
+                        <th>Bestand(davor)</th>
+                        <th>Bestand(danach)</th>
+                        <th>Status</th>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <footer>
+
+    </footer>
+
+    <%- include('scripts'); %>
+    <script src="../assets/js/task.js"></script>
+
+</body>
+
+</html>

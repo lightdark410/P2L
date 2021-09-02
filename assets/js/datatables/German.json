@@ -9,6 +9,7 @@
     "sLoadingRecords": "Wird geladen...",
     "sProcessing": "Bitte warten...",
     "sSearch": "",
+    "searchPlaceholder": "Suchen...",
     "sZeroRecords": "Keine Einträge vorhanden.",
     "oPaginate": {
         "sFirst": "Erste",

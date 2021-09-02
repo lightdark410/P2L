@@ -76,15 +76,25 @@ module.exports = function (app) {
   //Page Routing
     app.get("/", async (req, res) => {
       if (req.session.loggedin) {
-        res.render("index", { session: req.session }); //load index
+        res.render("index"); //load index
       } else {
+        req.session.redirectTo = `/`;
         res.render("login"); //redirect to login page if not logged in
+      }
+    })
+
+    app.get("/auftraege", async (req, res) => {
+      if (req.session.loggedin){
+        res.render("task");
+      }else{
+        req.session.redirectTo = `/auftraege`;
+        res.render("login");
       }
     })
 
     app.get("/stammdaten", async (req, res) => {
       if (req.session.loggedin) {
-          res.render("stammdaten", { session: req.session });
+          res.render("stammdaten");
       } else {
         req.session.redirectTo = `/stammdaten`;
         res.render("login"); //redirect to login page if not logged in
@@ -100,7 +110,7 @@ module.exports = function (app) {
     app.get("/logs", async (req, res) => {
       if (req.session.loggedin) {
         try {
-          res.render("logs", { session: req.session });
+          res.render("logs");
         } catch (error) {
           res.status("500").send("Internal Server Error");
           console.log(error);
@@ -115,7 +125,7 @@ module.exports = function (app) {
     app.get("/logs/:stockId", async (req, res) => {
       if(req.session.loggedin){
         try {
-          res.render("logs", { session: req.session });
+          res.render("logs");
         } catch (error) {
           res.status("500").send("Internal Server Error");
           console.log(error);
@@ -128,7 +138,7 @@ module.exports = function (app) {
 
     app.get("/qr", async (req, res) => {
       if (req.session.loggedin) {
-        res.render("qr", { session: req.session })
+        res.render("qr")
       } else {
        req.session.redirectTo = `/qr`;
        res.render("login"); //redirect to login page if not logged in
@@ -151,7 +161,7 @@ module.exports = function (app) {
           result.storage_location = storage_place.name;
           result.storage_place = storage_place.place;
     
-          res.render("item", { session: req.session, item: result});
+          res.render("item", { item: result});
         }else{
           res.status("404").send("404 Not Found");
         }

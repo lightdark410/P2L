@@ -125,14 +125,14 @@ CREATE TABLE IF NOT EXISTS `task` (
 
 CREATE TABLE IF NOT EXISTS `task_entries` (
   `id` int(255) NOT NULL AUTO_INCREMENT,
-  `list_id` int(255) NOT NULL,
+  `task_id` int(255) NOT NULL,
   `stock_id` int(255) NOT NULL,
   `lay_in` tinyint(1) NOT NULL,
   `amount` int(255) NOT NULL,
   `status` int(255) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `artikelnummer` (`stock_id`),
-  KEY `list_id` (`list_id`)
+  KEY `task_id` (`task_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
@@ -218,8 +218,7 @@ ALTER TABLE `keyword_list`
 -- Constraints der Tabelle `task_entries`
 --
 ALTER TABLE `task_entries`
-  ADD CONSTRAINT `task_entries_ibfk_2` FOREIGN KEY (`list_id`) REFERENCES `task` (`id`),
-  ADD CONSTRAINT `task_entries_ibfk_3` FOREIGN KEY (`stock_id`) REFERENCES `stock` (`id`);
+  ADD CONSTRAINT `task_entries_ibfk_2` FOREIGN KEY (`task_id`) REFERENCES `task` (`id`)
 COMMIT;
 
 --

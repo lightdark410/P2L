@@ -112,7 +112,6 @@
 
   const emptyPlaceIsZero = (currentValue) => currentValue.empty_places === 0;
 
-  //BROKEN
   //handles clicks on the location tab in the popup
   $("body").on("click", ".location_caret:first-child", function(e){
     checkForEmptyStoragePlaces();
@@ -514,7 +513,8 @@ let rootUL = popup.find("#rootUL");
       $("#number , #minimum_number").css("border", "none");
       $("#number , #minimum_number").css("border-bottom", "1px solid rgb(0,60,121)");
 
-      $("#keywords , #minimum_number").val("");
+      $("#keywords").val("");
+      $("#minimum_number").val("0");
   }
 
   });
@@ -538,7 +538,7 @@ let rootUL = popup.find("#rootUL");
           <div class="PopUp_topBar">${name} in Liste speichern<div id="mdiv"><div class="mdiv"><div class="md"></div></div></div></div>
           <div class="PopUp_middle">
             <br>
-            <input type="number" name="value" min="0" max="${num}"/>
+            <input type="number" name="value" min="1" max="${num}"/>
             <br/>
             <div>
               <span>Einlagern</span>
@@ -632,7 +632,7 @@ let rootUL = popup.find("#rootUL");
     }else{
       //fills tableData
       for(let i = 0; i < list.length; i++){
-        let list_id = list[i]["id"];
+        let task_id = list[i]["id"];
         let select_in = "selected";
         let select_out ="selected";
         let out = list[i]["change"] < 0;
@@ -641,7 +641,7 @@ let rootUL = popup.find("#rootUL");
         table.rows().every( function ( rowIdx, tableLoop, rowLoop ) {
           var data = this.data();
           //if a table row matches with the session storage
-          if(list_id == data.id){
+          if(task_id == data.id){
             //adds a tr to tableData
             tableData += `
               <tr>

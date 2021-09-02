@@ -80,8 +80,7 @@
     },
     stateSave: true,
     language: {
-      "url": "/assets/js/datatables/German.json",
-      "searchPlaceholder": "Suchen..."
+      "url": "/assets/js/datatables/German.json"
     },
     "oLanguage": { "sSearch": "" }
 });
@@ -100,11 +99,73 @@ let url = window.location.pathname;
 let id = url.substring(url.lastIndexOf('/') + 1);
 let ajax_url;
 (!isNaN(id)) ? ajax_url = `/api/logs/${id}` : ajax_url = "/api/logs";
+let taskTable = $("#task").DataTable({
+  "processing": true,
+  "ajax":{
+    "url": "/api/task",
+    "type": "GET"
+  },
+  "columns": [
+    { data: "id" }, //mock data for saveIcon
+    { data: "date" }, 
+    { data: "creator" }, 
+    { data: "status" },
+  ],
+  "columnDefs": [
+    {width: "30%", targets: 3},
+  ],
+  "order": [[1, "desc"]],
+  initComplete: function() {
+    //get first task id
+    let taskId = $('#task tbody tr:eq(0)').find("td").first().text();
+    //load task entries for the first task
+    task_entriesTable.ajax.url( `/api/tasklog/${taskId}` ).load();
+    //select first task row
+    $('#task tbody tr:eq(0)').click();
+
+    let tr = $('#task tbody tr');
+    if($(tr).find("td").length == 1){return};
+    $(tr).each(function(i){
+      let td = $(this).find("td").last();
+      let status = parseInt(td.text());
+      if(status == 0){
+        td.html("<span>In Bearbeitung </span><img src='../assets/loading.png'/>");
+      }else{
+        td.html("<span>Abgeschlossen </span><img src='../assets/check-mark.png'/>");
+      }
+    })
+  },
+  language: {
+    "url": "/assets/js/datatables/German.json"
+  }
+});
+
+let task_entriesTable = $("#task_entries").DataTable({
+  "processing": true,
+  language: {
+    "url": "/assets/js/datatables/German.json"
+  },
+  "columns":[
+    { data: "stock_id"},
+    { data: "name"},
+    { data: "storage_location"},
+    { data: "storage_place"},
+    { data: "amount_pre"},
+    { data: "amount_post"},
+    { data: "status"}
+  ],
+  "columnDefs": [
+    {width: "15%", targets: 0},
+    {width: "30%", targets: 1},
+    {width: "20%", targets: 2},
+    {width: "15%", targets: 3}
+  ]
+})
+
 $('#logsTable').DataTable({
     "ordering": false,
     language: {
-      "url": "/assets/js/datatables/German.json",
-      "searchPlaceholder": "Suchen..."
+      "url": "/assets/js/datatables/German.json"
     },
     "processing": true,
     "ajax": {
@@ -141,71 +202,68 @@ $('#logsTable').DataTable({
             break;
         }
     },
-  });
+});
 
-  $('#kategorieTable').DataTable({
-    "processing": true,
-    "ajax":{
-      "url": "/api/stammdaten/category",
-      "type": "GET"
-    },
-    "columns":  [
-      { data: "category",
-      render : function(data, type, row) {
-        return ''+data+'<i class="fas fa-trash"></i>'
-    }  },
-    ],
-    language: {
-      "url": "/assets/js/datatables/German.json",
-      "searchPlaceholder": "Suchen..."
-    },
-    "scrollY":        "300px",
-    "scrollCollapse": true,
-    "paging":         false
-  });
-  
-  $('#keywordsTable').DataTable({
-    "processing": true,
-    "ajax":{
-      "url": "/api/stammdaten/keyword",
-      "type": "GET"
-    },
-    "columns":  [
-      { data: "keyword",
-      render : function(data, type, row) {
-        return ''+data+'<i class="fas fa-trash"></i>'
-    }  },
-    ],
-    language: {
-      "url": "/assets/js/datatables/German.json",
-      "searchPlaceholder": "Suchen..."
-    },
-    "scrollY":        "300px",
-    "scrollCollapse": true,
-    "paging":         false
-  });
+$('#kategorieTable').DataTable({
+  "processing": true,
+  "ajax":{
+    "url": "/api/stammdaten/category",
+    "type": "GET"
+  },
+  "columns":  [
+    { data: "category",
+    render : function(data, type, row) {
+      return ''+data+'<i class="fas fa-trash"></i>'
+  }  },
+  ],
+  language: {
+    "url": "/assets/js/datatables/German.json"
+  },
+  "scrollY":        "300px",
+  "scrollCollapse": true,
+  "paging":         false
+});
 
-  $('#unitTable').DataTable({
-    "processing": true,
-    "ajax":{
-      "url": "/api/stammdaten/unit",
-      "type": "GET"
-    },
-    "columns":  [
-      { data: "unit",
-      render : function(data, type, row) {
-        return ''+data+'<i class="fas fa-trash"></i>'
-    }  },
-    ],
-    language: {
-      "url": "/assets/js/datatables/German.json",
-      "searchPlaceholder": "Suchen..."
-    },
-    "scrollY":        "300px",
-    "scrollCollapse": true,
-    "paging":         false
-  });
-  //save all rows with errors in array warnArr
+$('#keywordsTable').DataTable({
+  "processing": true,
+  "ajax":{
+    "url": "/api/stammdaten/keyword",
+    "type": "GET"
+  },
+  "columns":  [
+    { data: "keyword",
+    render : function(data, type, row) {
+      return ''+data+'<i class="fas fa-trash"></i>'
+  }  },
+  ],
+  language: {
+    "url": "/assets/js/datatables/German.json"
+  },
+  "scrollY":        "300px",
+  "scrollCollapse": true,
+  "paging":         false
+});
+
+$('#unitTable').DataTable({
+  "processing": true,
+  "ajax":{
+    "url": "/api/stammdaten/unit",
+    "type": "GET"
+  },
+  "columns":  [
+    { data: "unit",
+    render : function(data, type, row) {
+      return ''+data+'<i class="fas fa-trash"></i>'
+  }  },
+  ],
+  language: {
+    "url": "/assets/js/datatables/German.json"
+  },
+  "scrollY":        "300px",
+  "scrollCollapse": true,
+  "paging":         false
+});
+//save all rows with errors in array warnArr
 
 
   //search for warn rows
@@ -301,14 +359,43 @@ $('#logsTable').DataTable({
   //----------Delete Entry---------------
 
   $("#Delete").click(function () {
+    let deleteRows = table.rows(".selected").data().to$();
+    let taskentries = [];
+    for(let i = 0; i< deleteRows.length; i++){
+      let id = table.rows(".selected").data().to$()[i].id;
+      $.ajax({
+        async: false,
+        type: "GET",
+        url: `/api/taskentries/stock/${id}`,
+        dataType: "json",
+        success: function(data){
+          if(data.length > 0){
+            taskentries.push(data);
+          }
+        }
+      })
+    }
+    console.log(taskentries);
     var counter = table.rows(".selected").data().length;
     $("#PopUpDelete").show();
     $("#cover").show();
     if (counter > 1) {
-      $(".PopUpDelete_middle").html(`<span>Sind Sie sicher, dass Sie ${counter} Einträge <u><b>unwiderruflich</b></u> löschen möchten?<span>`);
+      if(taskentries.length > 0){
+        $(".PopUpDelete_middle").html(`<span>Diese Artikel können zurzeit nicht gelöscht werden, da mindestens einer teil eines aktiven Auftrags ist.<span>`);
+        $(".PopUp_footer button").hide(0);
+      }else{
+        $(".PopUpDelete_middle").html(`<span>Sind Sie sicher, dass Sie ${counter} Einträge <u><b>unwiderruflich</b></u> löschen möchten?<span>`);
+        $(".PopUp_footer button").show(0);
+      }
     } else {
-      var artikel = table.rows(".selected").data()[0].name;
-      $(".PopUpDelete_middle").html(`<span>Sind Sie sicher, dass Sie "${artikel}" <u><b>unwiderruflich</b></u> löschen möchten?<span>`);
+      if(taskentries.length > 0){
+        $(".PopUpDelete_middle").html(`<span>Dieser Artikel kann zurzeit nicht gelöscht werden, da er teil eines aktiven Auftrags ist.<span>`);
+        $(".PopUp_footer button").hide(0);
+      }else{
+        var artikel = table.rows(".selected").data()[0].name;
+        $(".PopUpDelete_middle").html(`<span>Sind Sie sicher, dass Sie "${artikel}" <u><b>unwiderruflich</b></u> löschen möchten?<span>`);
+        $(".PopUp_footer button").show(0);
+      }
     }
   });
 

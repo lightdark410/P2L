@@ -1,0 +1,22 @@
+.sixteen{
+    padding: 0 !important;
+}
+
+#task{
+    text-align: center;
+}
+
+#task tr.selected {
+    background-color: rgba(0, 149, 199, 0.452);
+}
+
+#task img, #task_entries img{
+    width: 25px;
+    margin-top: -5px;
+}
+
+#task_entries{
+    text-align: center;
+}
+
+

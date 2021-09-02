@@ -856,6 +856,10 @@ input:checked + .slider_list:before {
   padding: 10px;
 }
 
+#deleteForm .PopUp_topBar{
+  text-align: center;
+}
+
 #notification{
   color: orange;
   font-weight: normal;

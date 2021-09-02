@@ -20,10 +20,25 @@ function insert_task(username) {
     });
 }
 
-function getUnfinishedTaskEntries(list_id){
+function getUnfinishedTaskEntries(task_id){
     return new Promise((resolve, reject) => {
         con.query(
-            "SELECT * FROM task_entries WHERE list_id = ? AND status != 1;", [list_id],
+            "SELECT * FROM task_entries WHERE task_id = ? AND status != 1;", [task_id],
+            function (err, result){
+                if(err){
+                    reject(err);
+                    console.log(err);
+                }
+                resolve(result);
+            }
+        );
+    });
+}
+
+function get_task_entries_by_stock_id(stock_id){
+    return new Promise((resolve, reject) => {
+        con.query(
+            "SELECT * FROM task_entries WHERE stock_id = ?;", [stock_id],
             function (err, result){
                 if(err){
                     reject(err);
@@ -51,10 +66,10 @@ function get_latest_task_id(){
     });
 }
 
-function insert_task_entry(list_id, stock_id, lay_in, amount, status){
+function insert_task_entry(task_id, stock_id, lay_in, amount, status){
     return new Promise((resolve, reject) => {
         con.query(
-            "INSERT INTO task_entries (list_id, stock_id, lay_in, amount, status) VALUES (?, ?, ?, ?, ?);", [list_id, stock_id, lay_in, amount, status],
+            "INSERT INTO task_entries (task_id, stock_id, lay_in, amount, status) VALUES (?, ?, ?, ?, ?);", [task_id, stock_id, lay_in, amount, status],
             function (err, result){
                 if(err){
                     reject(err);
@@ -66,10 +81,10 @@ function insert_task_entry(list_id, stock_id, lay_in, amount, status){
     });
 }
 
-function update_task_entry_status(list_id, stock_id, status){
+function update_task_entry_status(task_id, stock_id, status){
     return new Promise((resolve, reject) => {
         con.query(
-            "UPDATE task_entries SET status = ? WHERE list_id = ? AND stock_id = ?", [status, list_id, stock_id],
+            "UPDATE task_entries SET status = ? WHERE task_id = ? AND stock_id = ?", [status, task_id, stock_id],
             function (err, result){
                 if(err){
                     reject(err);
@@ -81,10 +96,67 @@ function update_task_entry_status(list_id, stock_id, status){
     })
 }
 
-function get_task(id){
+function delete_task_entries_by_task_id(task_id){
     return new Promise((resolve, reject) => {
         con.query(
-            "SELECT *, task.status as task_status FROM task INNER JOIN task_entries ON task_entries.list_id = task.id WHERE task.id = ?;", [id],
+            "DELETE FROM task_entries WHERE task_id = ?",
+            [task_id],
+            function (err, result) {
+                if (err) {
+                    reject(err);
+                    console.log(err);
+                }
+                resolve(result);
+            }
+        );
+    });
+}
+
+function get_task(){
+    return new Promise((resolve, reject) => {
+        var res = {"data":[]};
+
+        con.query(
+            "SELECT * FROM task ORDER BY date DESC",
+            function (err, result) {
+                //send results
+                if (err) {
+                    reject(err);
+                    console.log(err);
+                }
+                //correct timezone from date string
+                if(typeof result !== 'undefined'){
+                    for(let i = 0; i < result.length; i++){
+                        result[i].date = result[i].date.toLocaleString();
+                    }
+                }
+                res.data = result;
+                resolve(res);
+            }
+        );
+    });
+}
+
+function get_task_status(id){
+    return new Promise((resolve, reject) => {
+        con.query(
+            "SELECT status FROM task WHERE id = ? LIMIT 1;", [id],
+            function (err, result) {
+                //send results
+                if (err) {
+                    reject(err);
+                    console.log(err);
+                }
+                resolve(result[0]);
+            }
+        );
+    });
+}
+
+function get_task_by_id(id){
+    return new Promise((resolve, reject) => {
+        con.query(
+            "SELECT *, task.status as task_status FROM task INNER JOIN task_entries ON task_entries.task_id = task.id WHERE task.id = ?;", [id],
             function (err, result) {
                 //send results
                 if (err) {
@@ -92,6 +164,24 @@ function get_task(id){
                     console.log(err);
                 }
                 resolve(result);
+            }
+        );
+    });
+}
+
+function get_tasklog(task_id){
+    return new Promise((resolve, reject) => {
+        var res = {"data":[]};
+        con.query(
+            "SELECT * FROM task_log WHERE task_id = ?;", [task_id],
+            function (err, result) {
+                //send results
+                if (err) {
+                    reject(err);
+                    console.log(err);
+                }
+                res.data = result;
+                resolve(res);
             }
         );
     });
@@ -113,6 +203,22 @@ function finish_task(id){
     });
 }
 
+function insert_tasklog(stock_id, task_id, name, storage_location, storage_place, amount_pre, amount_post, status){
+    return new Promise((resolve, reject) => {
+        console.log(task_id);
+        con.query(
+            "INSERT INTO task_log (stock_id, task_id, name, storage_location, storage_place, amount_pre, amount_post, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?);", [stock_id, task_id, name, storage_location, storage_place, amount_pre, amount_post, status],
+            function (err, result){
+                if(err){
+                    reject(err);
+                    console.log(err);
+                }
+                resolve(result);
+            }
+        );
+    });
+}
+
 
 
 module.exports = {
@@ -121,6 +227,12 @@ module.exports = {
     insert_task_entry,
     update_task_entry_status,
     get_task,
+    get_task_by_id,
     getUnfinishedTaskEntries,
-    finish_task
+    finish_task,
+    insert_tasklog,
+    get_tasklog,
+    delete_task_entries_by_task_id,
+    get_task_entries_by_stock_id,
+    get_task_status
 }
