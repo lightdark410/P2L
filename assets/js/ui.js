@@ -114,17 +114,18 @@
 
   //handles clicks on the location tab in the popup
   $("body").on("click", ".location_caret:first-child", function(e){
+    console.log("click");
     checkForEmptyStoragePlaces();
   })
 
-let rootUL = popup.find("#rootUL");
+let rootUL = popup.find("#myUL");
 
   appendLocationRootNodes();
   //load all root locations in the popup
   function appendLocationRootNodes(){
     $.each(stammdaten().storage_location, function(i, p){
       if(p.parent == 0){
-        $(rootUL[0]).append(
+        $(rootUL[0]).find(".location_nested").append(
           $('<li/>', {'text': p.name, 'data-id': p.id, 'data-parent': p.parent, 'data-places': p.places, 'data-empty_places': p.empty_places})
         );
         appendChild(p.id);
@@ -134,7 +135,7 @@ let rootUL = popup.find("#rootUL");
    //append children locations in the popup
   function appendChild(parentId){
     $.get(`/api/storageLocation/parent/${parentId}`, function(data){
-
+      // console.log(data);
       if(data.length > 0){
         let parentLI = $(rootUL).find(`*[data-id=${parentId}]`);
         let LIText = parentLI.text();
@@ -159,20 +160,23 @@ let rootUL = popup.find("#rootUL");
 
   //remove child nodes without free storage places
   function removeEndNode(nodeDataId){
-
-    let endNode = popup.find(`[data-id='${nodeDataId}']`);
+    console.log(nodeDataId);
+    let endNode = popup.find(`[data-id='${nodeDataId}']`).first();
     let endNodeParent = $(endNode).data("parent");
     let parentUl = $(endNode).parent();
-
+    console.log($(endNode).has("ul").length);
     if($(endNode).data("empty_places") == 0){
-      $(endNode).remove();
-
-      if(parentUl.children().length == 0){
-        $(parentUl).remove();
-
-        let parentNode = popup.find(`[data-id="${endNodeParent}"]`);
-        removeEndNode(endNodeParent);
+      if(!$(endNode).has("ul").length){
+        $(endNode).remove();
       }
+      if(parentUl.children().length == 0){
+        let parentNode = popup.find(`[data-id="${endNodeParent}"]`);
+        let nodeText = parentNode.find("div").first().text();
+        parentNode.html(nodeText);
+      }
+      removeEndNode(endNodeParent);
+
+     
     }
   }
   
@@ -186,7 +190,7 @@ let rootUL = popup.find("#rootUL");
   });
 
   //apply selected location to popup
-  $("body").on("click", "#rootUL li", function(e){
+  $("body").on("click", "#myUL li", function(e){
     let locationHasFreeStoragePlaces = $(this).data("empty_places") > 0;
     if(locationHasFreeStoragePlaces){
       let locationHasChildren = $(e.target).is("div");
@@ -211,7 +215,7 @@ let rootUL = popup.find("#rootUL");
 
   //toggle location classes on click
   $("body").on("click", ".location_caret", function() {
-    if($("#rootUL").children().length > 0){
+    if($("#myUL").children().length > 0){
       this.parentElement.querySelector(".location_nested").classList.toggle("active");
     }
   })
@@ -219,13 +223,13 @@ let rootUL = popup.find("#rootUL");
   //close location dropdown on outside click
   $("body").on("click", "#PopUp", function(e){
     let target = $(e.target);
-    if(!target.is(".location_caret") && target.closest("#rootUL").length == 0){
-      $("#rootUL").removeClass("active");
+    if(!target.is(".location_caret") && target.closest("#myUL").length == 0){
+      $("#myUL").removeClass("active");
     }
   })
 
   //change cursor if no empty places are available 
-  $("body").on("mouseenter", "#rootUL li div", function(e){
+  $("body").on("mouseenter", "#myUL li div", function(e){
     if($(this).parent().data("empty_places") == 0){
       $(this).css("cursor", "default"); 
     }
@@ -298,7 +302,7 @@ let rootUL = popup.find("#rootUL");
     selectHandler();
     $('#tableDiv').after(popup);
     popup.fadeIn();
-    checkForEmptyStoragePlaces();
+    // checkForEmptyStoragePlaces();
 
     //apply multi dropdown field for keywords
     $('.select-pure__select').remove();

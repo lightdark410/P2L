@@ -114,6 +114,22 @@ function getStorageLocation(){
     });
 }
 
+function getStorageParentById(id){
+    return new Promise((resolve, reject) => {
+        con.query(
+            `SELECT * FROM storage_location WHERE parent = ? LIMIT 1`,
+            [id],
+            function (err, result){
+                if(err){
+                    console.log(err);
+                    reject(err);
+                }
+                resolve(result[0]);
+            }
+        );
+    });
+}
+
 function getStorageLocationById(id){
     return new Promise((resolve, reject) => {
         con.query(
@@ -484,6 +500,7 @@ module.exports = {
     deleteMasterdata,
     countMasterdataById,
     getStorageLocation,
+    getStorageParentById,
     getStorageLocationById,
     getStorageLocationByParentId,
     insertStorageLocation,

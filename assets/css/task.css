@@ -19,4 +19,8 @@
     text-align: center;
 }
 
+#task_entries tbody td{
+    padding-right: 20px;
+}
+
 

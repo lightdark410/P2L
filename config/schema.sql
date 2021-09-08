@@ -113,7 +113,7 @@ CREATE TABLE IF NOT EXISTS `task` (
   `id` int(255) NOT NULL AUTO_INCREMENT,
   `creator` varchar(255) NOT NULL,
   `date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  'status' int(255) NOT NULL,
+  `status` int(255) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
@@ -136,6 +136,21 @@ CREATE TABLE IF NOT EXISTS `task_entries` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- --------------------------------------------------------
+-- Tabellenstruktur für Tabelle `task_log`
+--
+
+CREATE TABLE IF NOT EXISTS `task_log` (
+  `id` int(255) NOT NULL AUTO_INCREMENT,
+  `task_id` int(255) NOT NULL,
+  `stock_id` int(255) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `storage_location` varchar(255) NOT NULL,
+  `storage_place` int(255) NOT NULL,
+  `amount_pre` int(255) NOT NULL,
+  `amount_post` int(255) NOT NULL,
+  `status` int(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
 -- Tabellenstruktur für Tabelle `stock`
@@ -218,8 +233,7 @@ ALTER TABLE `keyword_list`
 -- Constraints der Tabelle `task_entries`
 --
 ALTER TABLE `task_entries`
-  ADD CONSTRAINT `task_entries_ibfk_2` FOREIGN KEY (`task_id`) REFERENCES `task` (`id`)
-COMMIT;
+  ADD CONSTRAINT `task_entries_ibfk_2` FOREIGN KEY (`task_id`) REFERENCES `task` (`id`);
 
 --
 -- Constraints der Tabelle `stock`

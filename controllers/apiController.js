@@ -109,7 +109,7 @@ module.exports = function(app){
         let lagerData = {};
         lagerData.auftrag = task_id;
         lagerData.lager = locationData;
-        await ledRequest(lagerData, "POST");
+        let ledReq = await ledRequest(lagerData, "POST");
         //send qr code link
         res.send(`${config.get("qr.domain")}/mobileList/${task_id}`);
       } catch (error) {
@@ -192,9 +192,10 @@ module.exports = function(app){
         result.data[i].keyword = keywordlist.keyword;
 
         //add storage place
-        let storage_place = await masterdataDB.getStorageByStockId(result.data[i].id);
-        result.data[i].storage_location = storage_place.name;
-        result.data[i].storage_place = storage_place.place;
+        let storage = await masterdataDB.getStorageByStockId(result.data[i].id);
+        let storage_name = await getFullStorageName(storage, storage.name);
+        result.data[i].storage_location = storage_name;
+        result.data[i].storage_place = storage.place;
       }
       res.send(result);
     } else {
@@ -202,6 +203,35 @@ module.exports = function(app){
       res.redirect("/"); //redirect to login page if not logged in
     }
   });
+
+  async function getFullStoragePath(id, path){
+    let current_id = id;
+    let current_path = path;
+
+    let res = await masterdataDB.getStorageLocationById(parentId);
+    if(typeof res === 'undefined'){
+
+      return fullName;
+    }else{
+      fullName = res.name + "/" + fullName;
+      return await getFullStorageName(res, fullName);    
+    }
+  }
+
+  async function getFullStorageName(storage, name){
+    let parentId = storage.parent;
+    let fullName = name;
+
+    let res = await masterdataDB.getStorageLocationById(parentId);
+    if(typeof res === 'undefined'){
+
+      return fullName;
+    }else{
+      fullName = res.name + "/" + fullName;
+      return await getFullStorageName(res, fullName);    
+    }
+    
+  }
 
   app.get("/api/stock/:id", async (req, res) => {
     if(req.session.loggedin){

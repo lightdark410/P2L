@@ -190,7 +190,6 @@ $("body").on("click", "#listDiv button", function() {
               task_status = data.status;
             }
           })
-          console.log(task_status);
           if(task_status == 1){
             break;
         }
@@ -225,6 +224,9 @@ $("body").on("click", "#listDiv button", function() {
     })
 
     $("#listDiv button").attr("disabled", true);
+    $("#listDiv button").html("Auftrag abgeschlossen");
+    $("#listDiv button").removeClass("btn-success");
+    $("#listDiv button").addClass("btn-outline-success");
 })
 
 function toggleView(){
