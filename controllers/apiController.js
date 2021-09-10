@@ -57,9 +57,11 @@ module.exports = function(app){
           let stock_data = await functions.getStockById(task[i].stock_id);
           task[i].articleName = stock_data.name;
           task[i].number = stock_data.number;
-          let storage_data = await masterdataDB.getStorageByStockId(task[i].stock_id);
-          task[i].storage = storage_data.name;
-          task[i].storage_place = storage_data.place;
+          let storage = await masterdataDB.getStorageByStockId(task[i].stock_id);
+          let storage_name = await getFullStorageName(storage, storage.name);
+
+          task[i].storage = storage_name;
+          task[i].storage_place = storage.place;
         }
         
         let color = await getledColor(req.params.id);
@@ -98,6 +100,7 @@ module.exports = function(app){
         //Build Json for led post request
         let stock_ids = data.map((d) => d.stock_id).join(", ");
         let locationIds = await masterdataDB.getLocationIdAndGroupPlaceIdsByStockIds(stock_ids);
+        let locations = await masterdataDB.getLocationByStockIds(stock_ids);
         let locationData = [];
         locationIds.forEach(obj => {
           let json = {};
@@ -106,10 +109,19 @@ module.exports = function(app){
           locationData.push(json);
         });
 
+        let locationArr = [];
+        for(let ele of locations){
+          let res = await getFullStoragePath(ele.parent, ele.storage_location_id);
+          let resArr = JSON.parse("[" + res + "]");
+          locationArr = locationArr.concat(resArr);
+        }
+
         let lagerData = {};
         lagerData.auftrag = task_id;
-        lagerData.lager = locationData;
-        let ledReq = await ledRequest(lagerData, "POST");
+        // lagerData.lager = locationData;
+        lagerData.lager = locationArr;
+        console.log(lagerData);
+        //let ledReq = await ledRequest(lagerData, "POST");
         //send qr code link
         res.send(`${config.get("qr.domain")}/mobileList/${task_id}`);
       } catch (error) {
@@ -204,17 +216,14 @@ module.exports = function(app){
     }
   });
 
-  async function getFullStoragePath(id, path){
-    let current_id = id;
-    let current_path = path;
-
+  async function getFullStoragePath(parentId, path){
+    
     let res = await masterdataDB.getStorageLocationById(parentId);
     if(typeof res === 'undefined'){
-
-      return fullName;
+      return path;
     }else{
-      fullName = res.name + "/" + fullName;
-      return await getFullStorageName(res, fullName);    
+      path = res.id + "," + path;
+      return await getFullStoragePath(res.parent, path);    
     }
   }
 

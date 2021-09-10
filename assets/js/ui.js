@@ -175,8 +175,6 @@ let rootUL = popup.find("#myUL");
         parentNode.html(nodeText);
       }
       removeEndNode(endNodeParent);
-
-     
     }
   }
   
@@ -536,6 +534,10 @@ let rootUL = popup.find("#myUL");
     let name = $(this).parent().children().eq(2).html().trim();
     let num = $(this).parent().children().eq(3).html().trim();
 
+    let errMsg = "Kann nicht ausgelagert werden, da kein ausreichender Bestand vorliegt";
+    if(num > 0){
+      errMsg = "";
+    }
     let list_number_popup = $(`
       <div id="list_number_popup">
         <form data-id="${id}">
@@ -552,6 +554,7 @@ let rootUL = popup.find("#myUL");
               </label>
               <span>Auslagern</span>
             </div>
+            <span style="color:red">${errMsg}</span>
           </div>
           <div class="PopUp_footer">
             <button type="submit">
@@ -568,17 +571,21 @@ let rootUL = popup.find("#myUL");
     input.focus();
     input.val(1);
     $("#cover").fadeIn();
-
-
   });
 
   //updates the max attribute in the list_number popup
   function updateMaxval(ele, max){
-    let input = $(ele).parent().parent().parent().find("input[type=number]");
+    let middle = $(ele).parent().parent().parent();
+    let input = middle.find("input[type=number]");
+    let span = middle.find("span").last();
     if(ele.checked){
       $(input).attr({"max": max});
+      if(max == 0){
+        span.html("Kann nicht ausgelagert werden, da kein ausreichender Bestand vorliegt");
+      }
     }else{
       $(input).attr({"max": 9999});
+      span.html("");
     };
   }
 

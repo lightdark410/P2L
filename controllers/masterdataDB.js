@@ -493,6 +493,26 @@ function getLocationIdAndGroupPlaceIdsByStockIds(stock_ids){
     });
 }
 
+function getLocationByStockIds(stock_ids){
+    return new Promise((resolve, reject) => {
+        con.query(
+            `select distinct storage_place.storage_location_id, storage_location.parent from storage_place
+            inner join storage_location ON storage_location.id = storage_place.storage_location_id
+            where storage_place.stock_id in (${stock_ids});`,
+            function (err, result) {
+                if (err){
+                    reject(err);
+                    console.log(err);
+                } 
+                resolve(result);
+
+            }
+        );      
+    });
+}
+
+
+
 module.exports = {
     getMasterdata,
     getMasterdataByName,
@@ -520,5 +540,6 @@ module.exports = {
     insertKeywordList,
     countKeywordlistById,
     deleteKeywordList,
-    getLocationIdAndGroupPlaceIdsByStockIds
+    getLocationIdAndGroupPlaceIdsByStockIds,
+    getLocationByStockIds
 }
