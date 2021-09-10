@@ -155,7 +155,7 @@ module.exports = function (app) {
           if(typeof result === 'undefined'){
             res.status("404").send("Item Not Found");
             return;
-          }
+          } 
           //add storage place
           let storage_place = await masterdataDB.getStorageByStockId(result.id);
           result.storage_location = storage_place.name;
