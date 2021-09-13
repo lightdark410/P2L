@@ -570,14 +570,18 @@ thead input {
 
 #qrcode{
   position: absolute;
+  border-width: 15px 15px 0px 15px;
+  border-style: solid;
+  border-color: white;
+  border-radius: 5px;
   top: 25%;
   left: calc(50% - 150px);
   z-index: 9999;
 }
 
-#qrcode img{
-  border: 18px solid white;
-  border-radius: 25px;
+#qrcode div{
+  width: 256px;
+  background-color: white;
 }
 
 #list_popup .PopUp_middle{

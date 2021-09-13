@@ -114,7 +114,6 @@
 
   //handles clicks on the location tab in the popup
   $("body").on("click", ".location_caret:first-child", function(e){
-    console.log("click");
     checkForEmptyStoragePlaces();
   })
 
@@ -160,11 +159,9 @@ let rootUL = popup.find("#myUL");
 
   //remove child nodes without free storage places
   function removeEndNode(nodeDataId){
-    console.log(nodeDataId);
     let endNode = popup.find(`[data-id='${nodeDataId}']`).first();
     let endNodeParent = $(endNode).data("parent");
     let parentUl = $(endNode).parent();
-    console.log($(endNode).has("ul").length);
     if($(endNode).data("empty_places") == 0){
       if(!$(endNode).has("ul").length){
         $(endNode).remove();
@@ -176,6 +173,17 @@ let rootUL = popup.find("#myUL");
       }
       removeEndNode(endNodeParent);
     }
+  }
+
+  function checkForEmptyStoragePlaces(){
+    //checks if every 'emptyPlaces' property is 0 
+    if(stammdaten().storage_location.every(emptyPlaceIsZero)){
+      $("#LocationNotification").remove();
+      //add error message
+      $("#myUL").parent().append(
+        $("<span/>", {"id": "LocationNotification", "text": "Es sind keine freien Lagerplätze verfügbar."})
+      );
+    };
   }
   
   //apply option tags for selection
@@ -468,17 +476,6 @@ let rootUL = popup.find("#myUL");
     return popup;
   }
 
-  function checkForEmptyStoragePlaces(){
-    //checks if every 'emptyPlaces' property is 0 
-    if(stammdaten().storage_location.every(emptyPlaceIsZero)){
-      $("#LocationNotification").remove();
-      //add error message
-      $("#myUL").parent().append(
-        $("<span/>", {"id": "LocationNotification", "text": "Es sind keine freien Lagerplätze verfügbar."})
-      );
-    };
-  }
-
   //triggers when click on the cover, navbar or close button on popup
   $("body").on("click", "#cover, .navbar, #mdiv",function () {
     //only do smth if the keyword dropdown in the stock popup is closed 
@@ -710,7 +707,6 @@ let rootUL = popup.find("#myUL");
     $("body").on("click", "#list_popup", function(e){
       if(!$(e.target).is("img")){
         $("#qrcode").text("");
-        
       }
     })
 

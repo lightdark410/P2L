@@ -28,6 +28,25 @@ html, body{
   ::-webkit-scrollbar-thumb:hover {
     background: rgb(102, 168, 255) !important; 
   }
+
+@media only screen and (min-width: 768px) {
+    /* For desktop: */
+    #itemDiv{
+        width: 50%;
+        position: absolute;
+        left: 25%;
+    }
+
+    .fixed-bottom{
+        width: 60%;
+        left: 20% !important;
+    }
+
+    #listDiv{
+        font-size: 2vw !important;
+        width: 50% !important;
+    }
+}
  
 #itemlist_div{
     margin-top: calc(1vh * 25 - 149px);

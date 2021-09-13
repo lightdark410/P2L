@@ -94,11 +94,25 @@ if (table.state.loaded()) {
 
 }
 
+/* Formatting function for row details of task table */
+function format ( d ) {
+  // `d` is the original data object for the row
+  return `<table cellpadding="0" cellspacing="0" border="0">
+      <tr>
+          <td style="padding: 0 5px 0 0">
+            <button class="btn btn-danger">
+              Auftrag löschen
+            </button>
+          </td>
+          <td style="padding: 0">
+            <button class="btn btn-primary" id="qr">
+              QR-Code
+            </button>
+          </td>
+      </tr>
+  </table>`;
+}
 
-let url = window.location.pathname;
-let id = url.substring(url.lastIndexOf('/') + 1);
-let ajax_url;
-(!isNaN(id)) ? ajax_url = `/api/logs/${id}` : ajax_url = "/api/logs";
 let taskTable = $("#task").DataTable({
   "processing": true,
   "ajax":{
@@ -106,15 +120,21 @@ let taskTable = $("#task").DataTable({
     "type": "GET"
   },
   "columns": [
+    {
+      'className':      'details-control',
+      'orderable':      false,
+      'data':           null,
+      'defaultContent': ''
+    },
     { data: "id" }, //mock data for saveIcon
     { data: "date" }, 
     { data: "creator" }, 
     { data: "status" },
   ],
   "columnDefs": [
-    {width: "30%", targets: 3},
+    {width: "30%", targets: 4},
   ],
-  "order": [[1, "desc"]],
+  "order": [[2, "desc"]],
   initComplete: function() {
     //get first task id
     let taskId = $('#task tbody tr:eq(0)').find("td").first().text();
@@ -140,6 +160,23 @@ let taskTable = $("#task").DataTable({
   }
 });
 
+// Add event listener for opening and closing details
+$('#task tbody').on('click', 'td.details-control', function(){
+  var tr = $(this).closest('tr');
+  var row = taskTable.row( tr );
+
+  if(row.child.isShown()){
+      // This row is already open - close it
+      row.child.hide();
+      tr.removeClass('shown');
+  } else {
+      // Open this row
+      console.log(row.data());
+      row.child(format(row.data())).show();
+      tr.addClass('shown');
+  }
+});
+
 let task_entriesTable = $("#task_entries").DataTable({
   "processing": true,
   language: {
@@ -162,6 +199,10 @@ let task_entriesTable = $("#task_entries").DataTable({
   ]
 })
 
+let url = window.location.pathname;
+let id = url.substring(url.lastIndexOf('/') + 1);
+let ajax_url;
+(!isNaN(id)) ? ajax_url = `/api/logs/${id}` : ajax_url = "/api/logs";
 $('#logsTable').DataTable({
     "ordering": false,
     language: {
@@ -375,7 +416,6 @@ $('#unitTable').DataTable({
         }
       })
     }
-    console.log(taskentries);
     var counter = table.rows(".selected").data().length;
     $("#PopUpDelete").show();
     $("#cover").show();

@@ -205,7 +205,6 @@ function finish_task(id){
 
 function insert_tasklog(stock_id, task_id, name, storage_location, storage_place, amount_pre, amount_post, status){
     return new Promise((resolve, reject) => {
-        console.log(task_id);
         con.query(
             "INSERT INTO task_log (stock_id, task_id, name, storage_location, storage_place, amount_pre, amount_post, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?);", [stock_id, task_id, name, storage_location, storage_place, amount_pre, amount_post, status],
             function (err, result){

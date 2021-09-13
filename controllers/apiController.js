@@ -120,8 +120,8 @@ module.exports = function(app){
         lagerData.auftrag = task_id;
         // lagerData.lager = locationData;
         lagerData.lager = locationArr;
-        console.log(lagerData);
-        //let ledReq = await ledRequest(lagerData, "POST");
+        // console.log(lagerData);
+        let ledReq = await ledRequest(lagerData, "POST");
         //send qr code link
         res.send(`${config.get("qr.domain")}/mobileList/${task_id}`);
       } catch (error) {

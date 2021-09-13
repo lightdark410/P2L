@@ -1,11 +1,13 @@
-
 $("#task tbody").on("click", "tr", function (e) {
+    if(typeof $(this).attr("role") == 'undefined'){return};
+    console.log(typeof $(this).attr("role"));
     taskTable.rows().every(function (rowIdx, tableLoop, rowLoop) {
         this.nodes().to$().removeClass("selected");
     });
     $(this).toggleClass("selected");
 
-    let task_id = parseInt($(this).find("td").first().text());
+    let task_id = parseInt($(this).find("td:nth-child(2)").text());
+    if(isNaN(task_id)){return};
     task_entriesTable.ajax.url( `/api/tasklog/${task_id}` ).load(function(){
         loadEntryStatus();
     });
@@ -23,5 +25,5 @@ $("#task tbody").on("click", "tr", function (e) {
         }
         })
       }
-    
 });
+
