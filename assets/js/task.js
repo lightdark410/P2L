@@ -23,7 +23,7 @@ $("#task tbody").on("click", "tr", function (e) {
         }else{
             td.html("<img src='../assets/svg/warning_noborder.svg'/>");
         }
-        })
+        }) 
       }
 });
 
