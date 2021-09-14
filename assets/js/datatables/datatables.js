@@ -134,7 +134,7 @@ let taskTable = $("#task").DataTable({
   "columnDefs": [
     {width: "30%", targets: 4},
   ],
-  "order": [[2, "desc"]],
+  "order": [[1, "desc"]],
   initComplete: function() {
     //get first task id
     let taskId = $('#task tbody tr:eq(0)').find("td").first().text();
