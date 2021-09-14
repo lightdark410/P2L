@@ -4,3 +4,4 @@ node_modules/
 /ESP8266_Firmware/.pio
 /cypress
 cypress.json
+/logs
