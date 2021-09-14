@@ -82,7 +82,7 @@ module.exports = function(app){
   })
 
   app.post("/api/mobileList", async (req, res) => {
-    if (req.session.loggedin) {
+    // if (req.session.loggedin) {
       try {
         logger.info(`User: ${req.session.username} - Method: Post - Route: /api/mobileList - Body: ${JSON.stringify(req.body)}`);
 
@@ -91,7 +91,6 @@ module.exports = function(app){
         //create new mobileList
         await taskDB.insert_task(username);
         let task_id = await taskDB.get_latest_task_id();
-
         //fill mobileListEntries
         data.forEach(async obj => {
           await taskDB.insert_task_entry(task_id, obj.stock_id, obj.lay_in, obj.amount, 0);
@@ -122,18 +121,19 @@ module.exports = function(app){
         lagerData.lager = locationArr;
         // console.log(lagerData);
         let ledReq = await ledRequest(lagerData, "POST");
+
         //send qr code link
         res.send(`${config.get("qr.domain")}/mobileList/${task_id}`);
       } catch (error) {
         res.status(400).send("Bad Request");
-        logger.error(`User: ${req.session.username} - Method: Post - Route: /api/mobileList/${req.params.table} - Body: ${JSON.stringify(req.body)} - Error: ${error}`);
+        logger.error(`User: ${req.session.username} - Method: Post - Route: /api/mobileList - Body: ${JSON.stringify(req.body)} - Error: ${error}`);
         
       }
   
-    } else {
-      req.session.redirectTo = `/`;
-      res.redirect("/"); //redirect to login page if not logged in
-    }      
+    // } else {
+    //   req.session.redirectTo = `/`;
+    //   res.redirect("/"); //redirect to login page if not logged in
+    // }      
   })
 
   app.put("/api/mobileList", async (req, res) => {
@@ -774,10 +774,14 @@ module.exports = function(app){
 
       req.on('timeout', () => {
         req.destroy();
+        resolve("");
       });
       
       req.on('error', (error) => {
+        req.destroy();
         console.error(error)
+        resolve("");
+
       })
       
       req.write(data)

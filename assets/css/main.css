@@ -570,6 +570,7 @@ thead input {
 
 #qrcode{
   position: absolute;
+  display: none;
   border-width: 15px 15px 0px 15px;
   border-style: solid;
   border-color: white;

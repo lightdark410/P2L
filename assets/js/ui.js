@@ -707,6 +707,7 @@ let rootUL = popup.find("#myUL");
     $("body").on("click", "#list_popup", function(e){
       if(!$(e.target).is("img")){
         $("#qrcode").text("");
+        $("#qrcode").hide();
       }
     })
 
