@@ -1,4 +1,3 @@
-
   function stammdaten() {
     var location = null;
     var category = null;
@@ -199,18 +198,24 @@ let rootUL = popup.find("#myUL");
   $("body").on("click", "#myUL li", function(e){
     let locationHasFreeStoragePlaces = $(this).data("empty_places") > 0;
     if(locationHasFreeStoragePlaces){
-      let locationHasChildren = $(e.target).is("div");
-      let name = $(this).text();
       let dataId = $(this).data("id");
       let dataParent = $(this).data("parent");
 
-      if(locationHasChildren){
-        name = $(this).find("div").first().text();
-      }
+      var path = [];
+      var el = $(this);
+
+      do {
+          if(el.children().length == 0){
+            path.unshift(el.text());
+          }else{
+            path.unshift(el.find("div").first().text());
+          }
+          el = el.parent().parent();
+      } while(el.parent().attr("id") != "myUL");
 
       let location = $("#myUL").find("div").first();
 
-      location.text(name);
+      location.text(path.join('/'));
       location.attr("data-id", dataId);
       location.attr("data-parent", dataParent);
       location.attr("style", "color: black !important");
@@ -308,7 +313,7 @@ let rootUL = popup.find("#myUL");
     selectHandler();
     $('#tableDiv').after(popup);
     popup.fadeIn();
-    // checkForEmptyStoragePlaces();
+    checkForEmptyStoragePlaces();
 
     //apply multi dropdown field for keywords
     $('.select-pure__select').remove();

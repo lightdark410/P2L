@@ -583,6 +583,7 @@ thead input {
 #qrcode div{
   width: 256px;
   background-color: white;
+  text-align: center;
 }
 
 #list_popup .PopUp_middle{

@@ -18,7 +18,7 @@ module.exports = function(app){
   })
 
   app.get("/api/logs", async (req, res) => {
-    // if (req.session.loggedin) {
+    if (req.session.loggedin) {
       try {
         var logs = await logDB.getLog();
 
@@ -27,11 +27,10 @@ module.exports = function(app){
         res.status("500").send("Internal Server Error");
         console.log(error);
       }
-
-    // } else {
-    //   req.session.redirectTo = `/api/logs`;
-    //   res.redirect("/"); //redirect to login page if not logged in
-    // }
+    } else {
+      req.session.redirectTo = `/api/logs`;
+      res.redirect("/"); //redirect to login page if not logged in
+    }
   })
 
   app.get("/api/logs/:stockId", async (req, res) => {
@@ -82,7 +81,7 @@ module.exports = function(app){
   })
 
   app.post("/api/mobileList", async (req, res) => {
-    // if (req.session.loggedin) {
+    if (req.session.loggedin) {
       try {
         logger.info(`User: ${req.session.username} - Method: Post - Route: /api/mobileList - Body: ${JSON.stringify(req.body)}`);
 
@@ -128,12 +127,11 @@ module.exports = function(app){
         res.status(400).send("Bad Request");
         logger.error(`User: ${req.session.username} - Method: Post - Route: /api/mobileList - Body: ${JSON.stringify(req.body)} - Error: ${error}`);
         
-      }
-  
-    // } else {
-    //   req.session.redirectTo = `/`;
-    //   res.redirect("/"); //redirect to login page if not logged in
-    // }      
+      }  
+    } else {
+      req.session.redirectTo = `/`;
+      res.redirect("/"); //redirect to login page if not logged in
+    }      
   })
 
   app.put("/api/mobileList", async (req, res) => {
@@ -258,11 +256,12 @@ module.exports = function(app){
         result.keyword = keywordlist.keyword;
 
         //add storage place
-        let storage_place = await masterdataDB.getStorageByStockId(result.id);
-        result.storage_location = storage_place.name;
-        result.storage_place = storage_place.place;
-        result.storage_location_id = storage_place.storage_location_id;
-        result.storage_parent = storage_place.parent;
+        let storage = await masterdataDB.getStorageByStockId(result.id);
+        let storage_name = await getFullStorageName(storage, storage.name);
+        result.storage_location = storage_name;
+        result.storage_place = storage.place;
+        result.storage_location_id = storage.storage_location_id;
+        result.storage_parent = storage.parent;
 
         res.send(result);
       }else{

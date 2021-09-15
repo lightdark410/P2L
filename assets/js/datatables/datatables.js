@@ -135,25 +135,22 @@ let taskTable = $("#task").DataTable({
     {width: "30%", targets: 4},
   ],
   "order": [[1, "desc"]],
+  "rowCallback": function (row, data, index) {
+    //add status to last column
+    let td = $(row).find("td").last();
+    let status = parseInt(td.text());
+    if(status == 0){
+      td.html("<span>In Bearbeitung </span><img src='../assets/loading.png'/>");
+    }else{
+      td.html("<span>Abgeschlossen </span><img src='../assets/check-mark.png'/>");
+    }
+
+  },
   initComplete: function() {
     //get first task id
-    let taskId = $('#task tbody tr:eq(0)').find("td").first().text();
+    let taskId = $('#task tbody tr:eq(0)').find("td:nth-child(2)").text();
     //load task entries for the first task
     task_entriesTable.ajax.url( `/api/tasklog/${taskId}` ).load();
-    //select first task row
-    $('#task tbody tr:eq(0)').click();
-
-    let tr = $('#task tbody tr');
-    if($(tr).find("td").length == 1){return};
-    $(tr).each(function(i){
-      let td = $(this).find("td").last();
-      let status = parseInt(td.text());
-      if(status == 0){
-        td.html("<span>In Bearbeitung </span><img src='../assets/loading.png'/>");
-      }else{
-        td.html("<span>Abgeschlossen </span><img src='../assets/check-mark.png'/>");
-      }
-    })
   },
   language: {
     "url": "/assets/js/datatables/German.json"
@@ -162,16 +159,26 @@ let taskTable = $("#task").DataTable({
 
 // Add event listener for opening and closing details
 $('#task tbody').on('click', 'td.details-control', function(){
-  var tr = $(this).closest('tr');
-  var row = taskTable.row( tr );
+  let tr = $(this).closest('tr');
+  let row = taskTable.row( tr );
+  let childIsShown = row.child.isShown();
 
-  if(row.child.isShown()){
+  //Close all open rows
+  taskTable.rows().every(function(){
+    // If row has details expanded
+    if(this.child.isShown()){
+        // Collapse row details
+        this.child.hide();
+        $(this.node()).removeClass('shown');
+    }
+  });
+
+  if(childIsShown){
       // This row is already open - close it
       row.child.hide();
       tr.removeClass('shown');
   } else {
       // Open this row
-      console.log(row.data());
       row.child(format(row.data())).show();
       tr.addClass('shown');
   }

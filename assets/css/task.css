@@ -23,6 +23,27 @@
     padding-right: 20px;
 }
 
+#qrcode{
+    position: absolute;
+    display: none;
+    border-width: 20px 20px 5px 20px;
+    border-style: solid;
+    border-color: #0096c7;
+    border-radius: 5px;
+    top: 22%;
+    left: calc(50% - 150px);
+    z-index: 9999;
+  }
+  
+  #qrcode div{
+    width: 256px;
+    background-color: #0096c7;
+    text-align: center;
+  }
+
+  #qrcode div a{
+      color: black;
+  }
 
 td.details-control {
     background: url('https://cdn.rawgit.com/DataTables/DataTables/6c7ada53ebc228ea9bc28b1b216e793b1825d188/examples/resources/details_open.png') no-repeat center center;
