@@ -32,22 +32,6 @@ $("#locationUL").on("focusin", "input", function(){
 });
 
 $("body").on("focusin", ".StammInput", function(){
-    //handles scrolling if inputs were clicked on tablet to add master data
-    //if(screen.width < 1400){
-        // let height = $(this).closest(".dt-table").height();
-
-        // if($(this).attr("placeholder") != "Kategorie..."){
-        //     $(this).focusout(function(){
-        //         $(".Stamm_div").parent().last().attr("style", `padding-bottom: 0`);
-        //     });
-            
-        //     $(".Stamm_div").parent().last().attr("style", `padding-bottom: ${height}px !important`);
-        //     this.scrollIntoView();
-        // }else{
-        //     window.scrollTo(0, height);
-        // }        
-    //}
-
     //submits on enter
     $(document).on('keyup', '.StammInput',function(e) {
         if(e.which == 13) {

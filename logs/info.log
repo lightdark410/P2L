@@ -1,1 +1,4 @@
- 
+ 2021-09-15 14:40:19 info: User: wmacher - Method: Post - Route: /api/mobileList - Body: {"list":"[{\"stock_id\":\"59\",\"lay_in\":false,\"amount\":\"1\"}]"}
+2021-09-15 14:40:58 info: User: wmacher - Method: Post - Route: /api/mobileList - Body: {"list":"[{\"stock_id\":\"59\",\"lay_in\":false,\"amount\":\"1\"}]"}
+2021-09-15 14:41:29 info: User: wmacher - Method: Post - Route: /api/mobileList - Body: {"list":"[{\"stock_id\":\"59\",\"lay_in\":false,\"amount\":\"1\"}]"}
+2021-09-15 15:51:34 info: User: wmacher - Method: Post - Route: /api/mobileList - Body: {"list":"[{\"stock_id\":\"59\",\"lay_in\":false,\"amount\":\"1\"}]"}

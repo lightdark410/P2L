@@ -133,7 +133,6 @@ let rootUL = popup.find("#myUL");
    //append children locations in the popup
   function appendChild(parentId){
     $.get(`/api/storageLocation/parent/${parentId}`, function(data){
-      // console.log(data);
       if(data.length > 0){
         let parentLI = $(rootUL).find(`*[data-id=${parentId}]`);
         let LIText = parentLI.text();
@@ -215,7 +214,7 @@ let rootUL = popup.find("#myUL");
 
       let location = $("#myUL").find("div").first();
 
-      location.text(path.join('/'));
+      location.text(path.join('-'));
       location.attr("data-id", dataId);
       location.attr("data-parent", dataParent);
       location.attr("style", "color: black !important");

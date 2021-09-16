@@ -118,9 +118,9 @@ module.exports = function(app){
         lagerData.auftrag = task_id;
         // lagerData.lager = locationData;
         lagerData.lager = locationArr;
-        // console.log(lagerData);
+        console.log(JSON.stringify(lagerData));
         let ledReq = await ledRequest(lagerData, "POST");
-
+        console.log(ledReq);
         //send qr code link
         res.send(`${config.get("qr.domain")}/mobileList/${task_id}`);
       } catch (error) {
@@ -234,7 +234,7 @@ module.exports = function(app){
 
       return fullName;
     }else{
-      fullName = res.name + "/" + fullName;
+      fullName = res.name + "-" + fullName;
       return await getFullStorageName(res, fullName);    
     }
     

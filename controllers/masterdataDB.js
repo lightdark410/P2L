@@ -105,7 +105,7 @@ function countMasterdataById(table, id){
 function getStorageLocation(){
     return new Promise((resolve, reject) => {
         con.query(
-            `SELECT * FROM storage_location`,
+            `SELECT * FROM storage_location ORDER BY name asc`,
             function (err, result) {
                 if (err) reject(err);
                 resolve(result);
@@ -149,7 +149,7 @@ function getStorageLocationById(id){
 function getStorageLocationByParentId(parentId){
     return new Promise((resolve, reject) => {
         con.query(
-            `SELECT * FROM storage_location WHERE parent = ?`,
+            `SELECT * FROM storage_location WHERE parent = ? ORDER BY name asc`,
             [parentId],
             function (err, result){
                 if(err){

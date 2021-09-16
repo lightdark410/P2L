@@ -28,7 +28,7 @@
     display: none;
     border-width: 20px 20px 5px 20px;
     border-style: solid;
-    border-color: #0096c7;
+    border-color: #008ec7;
     border-radius: 5px;
     top: 22%;
     left: calc(50% - 150px);
@@ -37,7 +37,7 @@
   
   #qrcode div{
     width: 256px;
-    background-color: #0096c7;
+    background-color: #008ec7;
     text-align: center;
   }
 

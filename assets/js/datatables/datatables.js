@@ -148,9 +148,11 @@ let taskTable = $("#task").DataTable({
   },
   initComplete: function() {
     //get first task id
-    let taskId = $('#task tbody tr:eq(0)').find("td:nth-child(2)").text();
+    let taskId = parseInt($('#task tbody tr:eq(0)').find("td:nth-child(2)").text());
     //load task entries for the first task
-    task_entriesTable.ajax.url( `/api/tasklog/${taskId}` ).load();
+    if(!isNaN(taskId)){
+      task_entriesTable.ajax.url( `/api/tasklog/${taskId}` ).load();
+    }
   },
   language: {
     "url": "/assets/js/datatables/German.json"
