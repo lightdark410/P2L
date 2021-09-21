@@ -7,7 +7,7 @@ var con = mysql.createConnection(config.get('dbConfig'));
 function insert_task(username) {
     return new Promise((resolve, reject) => {
         con.query(
-            "INSERT INTO task (creator) VALUES (?);", [username],
+            "INSERT INTO task (creator, status) VALUES (?, 0);", [username],
             function (err, result) {
                 //send results
                 if (err) {

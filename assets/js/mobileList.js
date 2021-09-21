@@ -17,6 +17,7 @@ let tableIndex = $("#itemlist_div").data("index");
 let svg_paths = ["../assets/svg/cross.svg", "../assets/svg/check.svg", "../assets/svg/warning.svg"];
 let svg_noborder_paths = ["../assets/svg/cross_noborder.svg", "../assets/svg/check_noborder.svg", "../assets/svg/warning_noborder.svg"];
 let data = req.data;
+console.log(data);
 if(req.status == 0){
     let ledColor;
     try {

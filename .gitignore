@@ -5,3 +5,4 @@ node_modules/
 /cypress
 cypress.json
 /logs
+logs/info.log
