@@ -8,6 +8,7 @@ const http = require('http');
 
 module.exports = function(app){
     
+  //get user information
   app.get("/api/user", async (req, res) => {
     if(req.session.loggedin){
       res.send(req.session);
@@ -17,11 +18,11 @@ module.exports = function(app){
     }
   })
 
+  //get all user log data
   app.get("/api/logs", async (req, res) => {
     if (req.session.loggedin) {
       try {
-        var logs = await logDB.getLog();
-
+        let logs = await logDB.getLog();
         res.send(logs);
       } catch (error) {
         res.status("500").send("Internal Server Error");
@@ -33,6 +34,7 @@ module.exports = function(app){
     }
   })
 
+  //get all user log data by stock id
   app.get("/api/logs/:stockId", async (req, res) => {
     if(req.session.loggedin){
       try {
@@ -48,22 +50,28 @@ module.exports = function(app){
     }
   })
 
+  //get data for mobile list by id
   app.get("/api/mobileList/:id", async (req, res) => {
     if(req.session.loggedin){
       try {
+        //get all data from this task id
         let task = await taskDB.get_task_by_id(req.params.id);
+        //for every task entry..
         for(let i = 0; i < task.length; i++){
           let stock_data = await functions.getStockById(task[i].stock_id);
-          task[i].articleName = stock_data.name;
-          task[i].number = stock_data.number;
           let storage = await masterdataDB.getStorageByStockId(task[i].stock_id);
           let storage_name = await getFullStorageName(storage, storage.name);
 
+          task[i].articleName = stock_data.name;
+          task[i].number = stock_data.number;
           task[i].storage = storage_name;
           task[i].storage_place = storage.place;
         }
         
+        //get color from led api
         let color = await getledColor(req.params.id);
+
+        //build final json
         let data = {
           "data": task,
           "color": color,
@@ -80,9 +88,11 @@ module.exports = function(app){
     }
   })
 
+  //creates new task/mobileList
   app.post("/api/mobileList", async (req, res) => {
     if (req.session.loggedin) {
       try {
+        //log request
         logger.info(`User: ${req.session.username} - Method: Post - Route: /api/mobileList - Body: ${JSON.stringify(req.body)}`);
 
         let username = req.session.username;
@@ -95,18 +105,10 @@ module.exports = function(app){
           await taskDB.insert_task_entry(task_id, obj.stock_id, obj.lay_in, obj.amount, 0);
         })
 
-        //Build Json for led post request
         let stock_ids = data.map((d) => d.stock_id).join(", ");
-        let locationIds = await masterdataDB.getLocationIdAndGroupPlaceIdsByStockIds(stock_ids);
         let locations = await masterdataDB.getLocationByStockIds(stock_ids);
-        let locationData = [];
-        locationIds.forEach(obj => {
-          let json = {};
-          json.id = obj.storage_location_id;
-          json.plaetze = JSON.parse(`[${obj.places}]`);
-          locationData.push(json);
-        });
 
+        //Build array with storage id´s 
         let locationArr = [];
         for(let ele of locations){
           let res = await getFullStoragePath(ele.parent, ele.storage_location_id);
@@ -114,12 +116,11 @@ module.exports = function(app){
           locationArr = locationArr.concat(resArr);
         }
 
+        //Build Json for led post request
         let storageData = {};
         storageData.auftrag = task_id;
         storageData.lager = locationArr;
-        console.log(JSON.stringify(storageData));
         let ledReq = await ledRequest(storageData, "POST"); //post storage data to led api
-        console.log(ledReq);
         //send qr code link
         res.send(`${config.get("qr.domain")}/mobileList/${task_id}`);
       } catch (error) {
@@ -133,6 +134,7 @@ module.exports = function(app){
     }      
   })
 
+  //updates mobileList
   app.put("/api/mobileList", async (req, res) => {
     if(req.session.loggedin){
       try {
@@ -140,8 +142,9 @@ module.exports = function(app){
       
         await taskDB.update_task_entry_status(req.body.task_id, req.body.stock_id, req.body.status);
         let unfinishedEntries = await taskDB.getUnfinishedTaskEntries(req.body.task_id);
-        let locationData = [];
 
+        //OUTDATED - Needs to be changed 
+        let locationData = [];
         if(unfinishedEntries.length != 0){
           let locationIds = await masterdataDB.getLocationIdAndGroupPlaceIdsByStockIds(unfinishedEntries.map(obj => obj.stock_id));
           locationIds.forEach(obj => {
@@ -170,12 +173,15 @@ module.exports = function(app){
     }
   })
 
+  //finishes a task
   app.delete("/api/mobileList", async (req, res) => {
     if(req.session.loggedin){
       try {
         logger.info(`User: ${req.session.username} - Method: Delete - Route: /api/mobileList - Body: ${JSON.stringify(req.body)}`);
 
+        //send a delete request to the led api to turn off all led´s 
         ledRequest(`{"auftrag": ${req.body.autrag}}`, "DELETE");
+        //mark task as finished
         taskDB.finish_task(req.body.auftrag);
       
         res.send("Deleted");
@@ -213,37 +219,43 @@ module.exports = function(app){
     }
   });
 
+  //Build a full path of storage id´s
   async function getFullStoragePath(parentId, path){
     
     let res = await masterdataDB.getStorageLocationById(parentId);
     if(typeof res === 'undefined'){
       return path;
     }else{
+      //adds the current id to the path
       path = res.id + "," + path;
+      //recursively run the function with the current parent as the new id
       return await getFullStoragePath(res.parent, path);    
     }
   }
 
+  //Build a full path of storage names
   async function getFullStorageName(storage, name){
     let parentId = storage.parent;
     let fullName = name;
 
     let res = await masterdataDB.getStorageLocationById(parentId);
     if(typeof res === 'undefined'){
-
       return fullName;
     }else{
+      //adds the current name to the full Name
       fullName = res.name + "-" + fullName;
+      //recursively run the function with the current path/fullname as the new name
       return await getFullStorageName(res, fullName);    
     }
     
   }
 
+  //get full stock data by id
   app.get("/api/stock/:id", async (req, res) => {
     if(req.session.loggedin){
       var id = req.params.id;
       var num = /\d/.test(id);
-  
+      //if id is a number
       if(num){
         const result = await functions.getStockById(id);
         if(!result){
@@ -277,7 +289,7 @@ module.exports = function(app){
   //get stock entries by name
   app.get("/api/stock/name/:name", async (req, res) => {
     if(req.session.loggedin){
-        const result = await functions.getArticleByName(req.params.name);
+        const result = await functions.getStockByName(req.params.name);
         res.send(result);
     }else{
       req.session.redirectTo = `/api/stock/name/${req.params.name}`;
@@ -285,13 +297,11 @@ module.exports = function(app){
     }
   });
 
+  //creates stock entry
   app.post("/api/stock", async (req, res) => {
-    //create entry in db
     if(req.session.loggedin){
       var username = req.session.username;
-  
       try {
-
           let category = await masterdataDB.getMasterdataByName("category", req.body.category);
           await functions.insertArticle(req.body.name, 1, category.id);
 
@@ -312,6 +322,7 @@ module.exports = function(app){
             }
           } 
 
+          //add user log
           await logDB.log(latestStock.id, "create");
           res.send("Entry Created");
       } catch (err) {
@@ -321,10 +332,9 @@ module.exports = function(app){
       req.session.redirectTo = `/`;
       res.redirect("/"); //redirect to login page if not logged in
     }
-
-
   });
 
+  //update stock entry
   app.patch("/api/stock", async (req, res) => {
     if(req.session.loggedin){
       try {
@@ -389,6 +399,7 @@ module.exports = function(app){
         var emptyStorageSpace = await masterdataDB.getEmptyStoragePlace(req.body.location);
         await masterdataDB.updateStoragePlace(emptyStorageSpace.id, req.body.id);
   
+        //add user log
         await logDB.log(req.body.id, "change");
 
         res.send("updated");
@@ -404,10 +415,10 @@ module.exports = function(app){
     
   });
 
+  //delets stock entry by id
   app.delete("/api/stock/:id", async (req, res) => {
     if (req.session.loggedin) {
       try {
-        await logDB.log(req.params.id, "delete");
 
         await masterdataDB.deleteKeywordList(req.params.id);
         await masterdataDB.setStoragePlaceToNull(req.params.id);
@@ -415,6 +426,9 @@ module.exports = function(app){
         let result = await functions.deleteStock(req.params.id);
 
         await functions.deleteArticle(stock.id);
+
+        //add user log
+        await logDB.log(req.params.id, "delete");
         res.send(result);
       } catch (err) {
         console.log(err);
@@ -426,7 +440,7 @@ module.exports = function(app){
   });
   //
 
-  //task
+  //get task entries by stock id
   app.get("/api/taskentries/stock/:stockId", async (req, res) => {
     if(req.session.loggedin){
       let result = await taskDB.get_task_entries_by_stock_id(req.params.stockId);
@@ -437,6 +451,7 @@ module.exports = function(app){
     }
   })
 
+  //get all tasks
   app.get("/api/task", async (req, res) => {
     if(req.session.loggedin){
       let task = await taskDB.get_task();
@@ -447,16 +462,18 @@ module.exports = function(app){
     }
   })
 
+  //get tasklog by task id
   app.get("/api/tasklog/:taskId", async (req, res) => {
-    // if(req.session.loggedin){
+    if(req.session.loggedin){
       let task = await taskDB.get_tasklog(req.params.taskId);
       res.send(task);
-    // }else{
-    //   req.session.redirectTo = `/api/taskentries/${req.params.taskId}`;
-    //   res.redirect("/"); //redirect to login page if not logged in
-    // }
+    }else{
+      req.session.redirectTo = `/api/taskentries/${req.params.taskId}`;
+      res.redirect("/"); //redirect to login page if not logged in
+    }
   })
 
+  //creates new tasklog
   app.post("/api/tasklog", async (req, res) => {
     if(req.session.loggedin){
       try {
@@ -480,8 +497,9 @@ module.exports = function(app){
     }
   })
 
+  //get task status by id
   app.get("/api/taskstatus/:id", async (req, res) =>  {
-    // if(req.session.loggedin){
+    if(req.session.loggedin){
       try {
         let task_status = await taskDB.get_task_status(req.params.id);
         res.send(task_status);
@@ -489,14 +507,14 @@ module.exports = function(app){
         console.log(error);
         res.status("400").send("Bad Request");
       }
-    // }else{
-      // req.session.redirectTo = "/";
-      // res.redirect("/");
-    // }
+    }else{
+      req.session.redirectTo = "/";
+      res.redirect("/");
+    }
   })
   //
 
-  //Masterdata
+  //get masterdata by table
   app.get("/api/stammdaten/:table", async (req, res) => {
     if(req.session.loggedin){
       try {
@@ -511,6 +529,7 @@ module.exports = function(app){
     }
   })
 
+  //get masterdata by name 
   app.get("/api/stammdaten/:table/:name", async (req, res) => {
     if(req.session.loggedin){
         let table;
@@ -555,6 +574,7 @@ module.exports = function(app){
     }
   })
 
+  //creats masterdata entry
   app.post("/api/stammdaten/:table", async (req, res) => {
     if(req.session.loggedin){
       try {
@@ -578,6 +598,7 @@ module.exports = function(app){
     
   })
 
+  //delete masterdata entry by name
   app.delete("/api/stammdaten/:table/:name", async (req, res) => {
     if(req.session.loggedin){
       try {
@@ -609,10 +630,9 @@ module.exports = function(app){
       req.session.redirectTo = `/`;
       res.redirect("/"); //redirect to login page if not logged in
     }
-
-
   })  
 
+  //get storage location
   app.get("/api/storageLocation", async (req, res) => {
     if(req.session.loggedin){
       try {
@@ -629,10 +649,9 @@ module.exports = function(app){
       req.session.redirectTo = `/api/storageLocation`;
       res.redirect("/"); //redirect to login page if not logged in
     }
-
-
   });
   
+  //get storage location by id
   app.get("/api/storageLocation/:id", async (req, res) => {
     if (req.session.loggedin) {
       let storage_location = await masterdataDB.getStorageLocationById(req.params.id);
@@ -649,6 +668,7 @@ module.exports = function(app){
     }
   })
 
+  //get storage location by parent id
   app.get("/api/storageLocation/parent/:id", async (req,res) => {
     if (req.session.loggedin) {
       var results = await masterdataDB.getStorageLocationByParentId(req.params.id);
@@ -663,6 +683,7 @@ module.exports = function(app){
     }
   });
 
+  //creats new storage location
   app.post("/api/storageLocation", async (req, res) => {
     if (req.session.loggedin){
       try{
@@ -696,6 +717,7 @@ module.exports = function(app){
     }
   });
 
+  //updates storage location
   app.patch("/api/storageLocation", async (req,res) => {
     if(req.session.loggedin){
       try {
@@ -719,7 +741,7 @@ module.exports = function(app){
   })
   //
 
-  //Updates the stock number
+  //Updates number/amount of a stock entry
   app.patch("/api/storagePlace", async (req, res) => {
     if (req.session.loggedin) {
       try{
@@ -736,7 +758,6 @@ module.exports = function(app){
         res.send(e);
       }
     } else {
-      
       req.session.redirectTo = `/storagePlace`;
       res.redirect("/"); //redirect to login page if not logged in
     }
