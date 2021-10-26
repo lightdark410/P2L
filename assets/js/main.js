@@ -163,6 +163,7 @@
     console.log(list);
     $.post("/api/mobileList", {"list" : JSON.stringify(list)}, function(data){
       $("#qrcode").text("");
+      console.log(data);
       new QRCode(document.getElementById("qrcode"), data);
       $("#qrcode").append(`<div><a href="${data}">${data}</a></div>`);
       $("#qrcode").show();
