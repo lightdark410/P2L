@@ -143,21 +143,25 @@ module.exports = function(app){
         await taskDB.update_task_entry_status(req.body.task_id, req.body.stock_id, req.body.status);
         let unfinishedEntries = await taskDB.getUnfinishedTaskEntries(req.body.task_id);
 
-        //OUTDATED - Needs to be changed 
-        let locationData = [];
+        let locationArr = [];
+
         if(unfinishedEntries.length != 0){
-          let locationIds = await masterdataDB.getLocationIdAndGroupPlaceIdsByStockIds(unfinishedEntries.map(obj => obj.stock_id));
-          locationIds.forEach(obj => {
-            let json = {};
-            json.id = obj.storage_location_id;
-            json.plaetze = JSON.parse(`[${obj.places}]`);
-            locationData.push(json);
-          });
+          let stock_ids = [];
+          for(let obj of unfinishedEntries){
+            stock_ids.push(obj.stock_id);
+          }
+          let locations = await masterdataDB.getLocationByStockIds(stock_ids);
+          //Build array with storage id´s 
+          for(let ele of locations){
+            let res = await getFullStoragePath(ele.parent, ele.storage_location_id);
+            let resArr = JSON.parse("[" + res + "]");
+            locationArr = locationArr.concat(resArr);
+          }
         }
 
         let lagerData = {};
         lagerData.auftrag = parseInt(req.body.task_id);
-        lagerData.lager = locationData;
+        lagerData.lager = locationArr;
 
         await ledRequest(lagerData, "PUT");
         res.send("Status updated");
