@@ -23,7 +23,7 @@ function insert_task(username) {
 function getUnfinishedTaskEntries(task_id){
     return new Promise((resolve, reject) => {
         con.query(
-            "SELECT * FROM task_entries WHERE task_id = ? AND status != 1;", [task_id],
+            "SELECT * FROM task_entries WHERE task_id = ? AND status = 0;", [task_id],
             function (err, result){
                 if(err){
                     reject(err);

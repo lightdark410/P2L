@@ -144,7 +144,6 @@ module.exports = function(app){
         let unfinishedEntries = await taskDB.getUnfinishedTaskEntries(req.body.task_id);
 
         let locationArr = [];
-
         if(unfinishedEntries.length != 0){
           let stock_ids = [];
           for(let obj of unfinishedEntries){
@@ -162,7 +161,7 @@ module.exports = function(app){
         let lagerData = {};
         lagerData.auftrag = parseInt(req.body.task_id);
         lagerData.lager = locationArr;
-
+        console.log(lagerData);
         await ledRequest(lagerData, "PUT");
         res.send("Status updated");
 
