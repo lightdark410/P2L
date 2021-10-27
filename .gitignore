@@ -6,4 +6,3 @@ node_modules/
 cypress.json
 /logs
 logs/info.log
-/config/default.json
