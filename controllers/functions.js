@@ -4,7 +4,7 @@ const config = require('config');
 var con = mysql.createConnection(config.get('dbConfig'));
 
 
-//get full stock data with every foreign key
+//gets full stock data with every foreign key
 function getStock() {
     return new Promise((resolve, reject) => {
         var res = {"data":[]};
@@ -35,6 +35,7 @@ function getStock() {
     });
 }
 
+//gets full stock data by stock id
 function getStockById(id) {
     return new Promise((resolve, reject) => {
         con.query(
@@ -55,6 +56,7 @@ function getStockById(id) {
     });
 }
 
+//gets full stock data by storagePlace id
 function getStockByStoragePlaceId(storage_place_id){
     return new Promise((resolve, reject) => {
         con.query(
@@ -78,7 +80,8 @@ function getStockByStoragePlaceId(storage_place_id){
     });
 }
 
-function getArticleByName(Name){
+
+function getStockByName(Name){
     return new Promise((resolve, reject) => {
         con.query(
             `SELECT article.name
@@ -94,6 +97,7 @@ function getArticleByName(Name){
     });
 }
 
+//deletes article by id
 function deleteArticle(id){
     return new Promise((resolve, reject) => {
         con.query(
@@ -110,6 +114,7 @@ function deleteArticle(id){
     });
 }
 
+//deletes stock by id
 function deleteStock(id) {
     return new Promise((resolve, reject) => {
         con.query(
@@ -126,6 +131,7 @@ function deleteStock(id) {
     });
 }
 
+//creates new Stock 
 function insertStock(article_id, number, minimum_number, creator, change_by) {
     return new Promise((resolve, reject) => {
         con.query(
@@ -157,6 +163,7 @@ function insertStock(article_id, number, minimum_number, creator, change_by) {
     });
 }
 
+//gets article with highest id
 function getLatestArticle(){
     return new Promise((resolve, reject) => {
         con.query(
@@ -172,6 +179,7 @@ function getLatestArticle(){
     });
 }
 
+//gets stock with highest id
 function getLatestStock() {
     return new Promise((resolve, reject) => {
         con.query(
@@ -187,6 +195,7 @@ function getLatestStock() {
     });
 }
 
+//creates article
 function insertArticle(name, unit_id, category_id) {
     return new Promise((resolve, reject) => {
         con.query(
@@ -207,6 +216,7 @@ function insertArticle(name, unit_id, category_id) {
     });
 }
 
+//Searches user in ldap
 function UserSearch(client, base, search_options) {
     return new Promise(function (resolve, reject) {
 
@@ -222,6 +232,7 @@ function UserSearch(client, base, search_options) {
     })
 }
 
+//updates article by article id
 function updateArticle(article_id, name, unit_id, category_id) {
     return new Promise((resolve, reject) => {
         con.query(`UPDATE article SET name="${name}", unit_id="${unit_id}", category_id="${category_id}" WHERE id = ?`,
@@ -236,10 +247,11 @@ function updateArticle(article_id, name, unit_id, category_id) {
     });
 }
 
-function updateStock(number, minimum_number, username, id) {
+//updates stock number & minimum_number 
+function updateStock(number, minimum_number, username, stock_id) {
     return new Promise((resolve, reject) => {
         con.query("UPDATE stock SET number = ?, minimum_number = ?, change_by = ? WHERE id = ?",
-            [number, minimum_number, username, id],
+            [number, minimum_number, username, stock_id],
             function (err, result) {
                 if (err) {
                     reject(err);
@@ -250,6 +262,7 @@ function updateStock(number, minimum_number, username, id) {
     });
 }
 
+//updates stock number
 function updateStockNumber(stock_id, number, username){
     return new Promise((resolve, reject) => {
         con.query("UPDATE stock SET number = ?, change_by = ? WHERE id = ?",
@@ -290,7 +303,7 @@ module.exports = {
     getLatestStock,
     updateArticle,
     updateStock,
-    getArticleByName,
+    getStockByName,
     getStoragePlaceByStockId,
     getLatestArticle,
     getStockByStoragePlaceId,
