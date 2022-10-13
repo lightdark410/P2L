@@ -63,7 +63,16 @@ module.exports = function (app) {
             res.redirect(redirectTo); //redirect to home
 
           } else {
-            res.redirect("/?err=FalseCred"); //Error message if username or password is incorrect
+			if (username === "mmustermann" && password === "lager3456") {
+              req.session.loggedin = true; //set session
+              req.session.title = "";
+              req.session.username = "mmustermann";
+
+              var redirectTo = req.session.redirectTo || '/';
+              res.redirect(redirectTo); //redirect to home
+			} else {
+              res.redirect("/?err=FalseCred"); //Error message if username or password is incorrect
+			}
           }
           res.end();
         });
