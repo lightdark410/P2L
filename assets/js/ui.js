@@ -97,6 +97,10 @@
             <td>
               <select name="unit" id="unit" oninvalid="this.setCustomValidity('Wählen Sie bitte eine Einheit aus.\n Diese müssen vorher in den Stammdaten eingetragen werden.')" required></select>
             </td>
+            <td> Artikelnummer:</td>
+            <td>
+              <input type="number" id="articlenumber" value="0" name="articlenumber" min="10000" max="100000" required />
+            </td>
           </tr>
         </table>
       </div>

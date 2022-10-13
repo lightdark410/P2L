@@ -91,6 +91,7 @@
     }
 
     //get all values from popup
+    var articlenumber = $("#articlenumber").val();
     var name = $("#name").val();
     var location = $("#myUL").find("div").first().attr("data-id");
     var number = $("#number").val();
@@ -105,7 +106,7 @@
 
     //only submit if a location was selected
     if(location > 0){
-      var formdata = `id=${id}&name=${name}&location=${location}&number=${number}&minimum_number=${minimum_number}&category=${category}&keywords=${keywordArr}&unit=${unit}`;
+      var formdata = `id=${id}&articlenumber=${articlenumber}&name=${name}&location=${location}&number=${number}&minimum_number=${minimum_number}&category=${category}&keywords=${keywordArr}&unit=${unit}`;
       if(typeof id === 'undefined'){ 
         $.post('/api/stock', formdata, function (response) {
           //load new data

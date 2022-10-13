@@ -10,8 +10,10 @@
     "lengthMenu": [[5, 10, 25, 50, 100], [5, 10, 25, 50, 100]],
     responsive: false,
     "columns": [
+      //{ data: "hidden" },
       { data: "id" }, //mock data for saveIcon
-      { data: "id" }, 
+      { data: "id"},
+      { data: "articlenumber" }, 
       { data: "name" }, 
       { data: "number" },
       { data: "minimum_number" },
@@ -25,14 +27,15 @@
       { data: "keyword" },
       { data: "id"} //mock data for logs
     ],
-    "rowCallback": function (row, data, index) {
+    "rowCallback": function (row, rowdata, index) {
       //add icons at the first and last column
+      //$(row).find("td").first().data("articlenumber", "Zukünftige");
       $(row).find("td").first().html('<img class="save" src="assets/iconfinder_add.png" alt="" title="Artikel speichern">');
       $(row).find("td").last().html('<img class="log" src="assets/iconfinder_link.svg" alt="" title="Zu den Logs..">');
 
       //add background colors if number is less that the minimum number
-      if (parseInt(data.number) < parseInt(data.minimum_number)) {
-        if (parseInt(data.number) > 0) {
+      if (parseInt(rowdata.number) < parseInt(rowdata.minimum_number)) {
+        if (parseInt(rowdata.number) > 0) {
           $(row).find("td:nth-child(4)").addClass("notEnough_left");
           $(row).find("td:nth-child(5)").addClass("notEnough_right");
         } else {
@@ -42,11 +45,11 @@
 
       }
       
-      table_ids.push(data.article_id);
+      table_ids.push(rowdata.article_id);
 
     },
     "order": [[1, "asc"]],
-    "columnDefs": [{ "targets": [0, 13], "orderable": false }],
+    "columnDefs": [{ "targets": [0, 13], "orderable": false }, ],//{target: 5, visible: false}
     "initComplete": function () {      
       
       // Apply the search

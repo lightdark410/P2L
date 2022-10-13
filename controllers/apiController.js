@@ -304,12 +304,13 @@ module.exports = function(app){
   app.post("/api/stock", async (req, res) => {
     if(req.session.loggedin){
       var username = req.session.username;
+      console.log(req.body)
       try {
           let category = await masterdataDB.getMasterdataByName("category", req.body.category);
           await functions.insertArticle(req.body.name, 1, category.id);
 
           const item = await functions.getLatestArticle();
-          await functions.insertStock(item.id, req.body.number, req.body.minimum_number, username, username);
+          await functions.insertStock(item.id, req.body.articlenumber, req.body.number, req.body.minimum_number, username, username);
 
           var latestStock = await functions.getLatestStock();
     
@@ -769,6 +770,7 @@ module.exports = function(app){
 
   //send request to the led api
   function ledRequest(RequestData, method){
+    console.log(RequestData)
     const data = JSON.stringify(RequestData);
     const options = {
       hostname: config.get("led.hostname"),
@@ -781,6 +783,7 @@ module.exports = function(app){
       },
       timeout: 500
     }
+
 
     return new Promise((resolve, reject) => {
       const req = http.request(options, (res) => {  

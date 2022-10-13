@@ -132,20 +132,22 @@ function deleteStock(id) {
 }
 
 //creates new Stock 
-function insertStock(article_id, number, minimum_number, creator, change_by) {
+function insertStock(article_id, articlenumber, number, minimum_number, creator, change_by) {
     return new Promise((resolve, reject) => {
         con.query(
             `INSERT INTO stock 
         (
             article_id,
+            articlenumber,
             number,
             minimum_number,
             creator,
             change_by
         )
-           VALUES (?, ?, ?, ?, ?)`,
+           VALUES (?, ?, ?, ?, ?, ?)`,
             [
                 article_id,
+                articlenumber,
                 number,
                 minimum_number,
                 creator,

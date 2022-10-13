@@ -51,7 +51,7 @@ module.exports = function (app) {
               scope: 'sub',
               filter: '(&(objectClass=user)(sAMAccountName=' + username + '))',
               attrs: 'memberOf'
-            };
+            }; 
 
             var searchRes = await functions.UserSearch(client, base, search_options);
 

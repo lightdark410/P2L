@@ -1,8 +1,8 @@
 {
     "dbConfig": {
         "host": "localhost",
-        "user": "wmacher",
-        "password": "test",
+        "user": "newuser",
+        "password": "test1234",
         "database": "inventur",
         "multipleStatements": true
     },
