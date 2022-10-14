@@ -8,7 +8,8 @@ function getMasterdata(table) {
     return new Promise((resolve, reject) => {
         var res = {"data":[]};
         con.query(
-            `SELECT * FROM ${table}`,
+            `SELECT * FROM ??`,
+			[table],
             function (err, result) {
                 if (err) {
                     reject(err);
@@ -25,8 +26,12 @@ function getMasterdata(table) {
 function getMasterdataByName(table, name){
     return new Promise((resolve, reject) => {
         con.query(
-            `SELECT * FROM ${table} WHERE ${table} = ? LIMIT 1`,
-            [name],
+            `SELECT * FROM ?? WHERE ?? = ? LIMIT 1`,
+            [
+				table,
+				table,
+				name
+			],
             function (err, result) {
                 if (err){
                     reject(err);
@@ -38,10 +43,31 @@ function getMasterdataByName(table, name){
     }); 
 }
 
+function getUnitById(id){
+    return new Promise((resolve, reject) => {
+        con.query(
+            `SELECT * FROM unit WHERE id = ? LIMIT 1`,
+            [id],
+            function (err, result){
+                if(err){
+                    console.log(err);
+                    reject(err);
+                }
+                resolve(result[0]);
+            }
+        );
+    });
+}
+
 function insertMasterdata(table, value) {
     return new Promise((resolve, reject) => {
         con.query(
-            'INSERT INTO ' + table + ' (' + table + ') VALUES ("' + value + '")',
+            'INSERT INTO ?? ( ?? ) VALUES ("?")',
+			[
+				table,
+				table,
+				value
+			],
             function (err, result) {
                 if (err) {
                     reject(err)
@@ -60,8 +86,12 @@ function insertMasterdata(table, value) {
 function deleteMasterdata(table, value) {
     return new Promise((resolve, reject) => {
         con.query(
-            `DELETE FROM ${table} WHERE ${table} = ?`,
-            [value],
+            `DELETE FROM ?? WHERE ?? = ?`,
+            [
+				table,
+				table,
+				value
+			],
             function (err, result) {
                 if (err) {
                     reject(err)
@@ -81,7 +111,7 @@ function countMasterdataById(table, id){
     return new Promise((resolve, reject) => {
         con.query(
             `
-            SELECT count(${table}_id) as number
+            SELECT count(${con.escapeId(table+"_id")}) as number
             FROM article
             LEFT JOIN stock on article_id = article.id 
             WHERE ${table}_id = ?
@@ -268,8 +298,11 @@ function deleteStoragePlaces(storage_location_id, places, start){
         try{
             for(var i = start; i > places; i--){
                 con.query(
-                    `DELETE FROM storage_place WHERE storage_location_id = ${storage_location_id} AND place = ? AND stock_id IS NULL`,
-                    [i],
+                    `DELETE FROM storage_place WHERE storage_location_id = ? AND stock_id IS NULL`,
+                    [
+						storage_location_id,
+						i
+					],
                     function (err, result){
                         if(err){
                             console.log(err);
@@ -437,14 +470,19 @@ function insertKeywordList(stock_id, keyword_id){
 
 function countKeywordlistById(table, id){
     return new Promise((resolve, reject) => {
+		let table_id = table + "_id";
         con.query(
             `
-            SELECT count(${table}_id) as number
+            SELECT count(??) as number
             FROM keyword_list
             LEFT JOIN stock on stock.id = stock_id 
-            WHERE ${table}_id = ?
+            WHERE ?? = ?
             `,
-            [id],
+            [
+				table_id,
+				table_id,
+				id
+			],
             function (err, result) {
                 if (err) {
                     reject(err)
@@ -480,7 +518,8 @@ function deleteKeywordList(stock_id){
 function getLocationIdAndGroupPlaceIdsByStockIds(stock_ids){
     return new Promise((resolve, reject) => {
         con.query(
-            `select storage_location_id, group_concat(id separator ",") as "places" from storage_place WHERE stock_id in (${stock_ids}) group by storage_location_id;`,
+            `select storage_location_id, group_concat(id separator ",") as "places" from storage_place WHERE stock_id in (?) group by storage_location_id;`,
+			[stock_ids],
             function (err, result) {
                 if (err){
                     reject(err);
@@ -498,7 +537,8 @@ function getLocationByStockIds(stock_ids){
         con.query(
             `select distinct storage_place.storage_location_id, storage_location.parent from storage_place
             inner join storage_location ON storage_location.id = storage_place.storage_location_id
-            where storage_place.stock_id in (${stock_ids});`,
+            where storage_place.stock_id in (?);`,
+			[stock_ids],
             function (err, result) {
                 if (err){
                     reject(err);
@@ -516,6 +556,7 @@ function getLocationByStockIds(stock_ids){
 module.exports = {
     getMasterdata,
     getMasterdataByName,
+	getUnitById,
     insertMasterdata,
     deleteMasterdata,
     countMasterdataById,

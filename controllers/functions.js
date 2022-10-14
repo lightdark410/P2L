@@ -237,8 +237,13 @@ function UserSearch(client, base, search_options) {
 //updates article by article id
 function updateArticle(article_id, name, unit_id, category_id) {
     return new Promise((resolve, reject) => {
-        con.query(`UPDATE article SET name="${name}", unit_id="${unit_id}", category_id="${category_id}" WHERE id = ?`,
-            [article_id],
+        con.query(`UPDATE article SET name = ?, unit_id = ?, category_id = ? WHERE id = ?`,
+            [
+				name,
+				unit_id,
+				category_id,
+				article_id
+			],
             function (err, result) {
                 if (err) {
                     reject(err);
