@@ -194,7 +194,7 @@ let rootUL = popup.find("#myUL");
   });
 
   $.each(stammdaten().unit, function(i, p) {
-    popup.find('#unit').append($('<option></option>').val(p.unit).html(p.unit));
+    popup.find('#unit').append($('<option></option>').val(p.id).html(p.unit));
   });
 
   //apply selected location to popup
@@ -238,7 +238,7 @@ let rootUL = popup.find("#myUL");
   $("body").on("click", "#PopUp", function(e){
     let target = $(e.target);
     if(!target.is(".location_caret") && target.closest("#myUL").length == 0){
-      $("#myUL").removeClass("active");
+      $("#rootUL").removeClass("active");
     }
   })
 
@@ -388,10 +388,11 @@ let rootUL = popup.find("#myUL");
           "storage_parent": data.storage_parent,
           "storage_location_id": data.storage_location_id,
           "number": data.number,
+		  "articlenumber": data.articlenumber,
           "minimum_number": data.minimum_number,
           "category": data.category,
           "keywords": data.keyword,
-          "unit": data.unit
+          "unit": data.unit_id
         };
       }
     })
@@ -448,6 +449,7 @@ let rootUL = popup.find("#myUL");
     $(location).attr("data-id", result.storage_location_id);
     $(location).attr("data-parent", result.storage_parent);
     $("#number").val(result.number);
+    $("#articlenumber").val(result.articlenumber);
     $("#minimum_number").val(result.minimum_number);
     $("#category").val(result.category);
     $("#unit").val(result.unit);
@@ -536,8 +538,8 @@ let rootUL = popup.find("#myUL");
 
     //gets id of clicked row
     let id = $(this).parent().children().eq(1).html().trim();
-    let name = $(this).parent().children().eq(2).html().trim();
-    let num = $(this).parent().children().eq(3).html().trim();
+    let name = $(this).parent().children().eq(3).html().trim();
+    let num = $(this).parent().children().eq(4).html().trim();
 
     let errMsg = "Kann nicht ausgelagert werden, da kein ausreichender Bestand vorliegt";
     if(num > 0){

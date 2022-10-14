@@ -40,7 +40,7 @@ function getStockById(id) {
     return new Promise((resolve, reject) => {
         con.query(
             `
-            SELECT article.name, unit.unit, category.category, stock.*
+            SELECT article.name, unit.id as unit_id, category.category, stock.*
             FROM stock
             LEFT JOIN article ON article.id = stock.article_id
             LEFT JOIN category ON category.id = article.category_id

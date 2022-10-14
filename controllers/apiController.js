@@ -307,7 +307,7 @@ module.exports = function(app){
       console.log(req.body)
       try {
           let category = await masterdataDB.getMasterdataByName("category", req.body.category);
-          await functions.insertArticle(req.body.name, 1, category.id);
+          await functions.insertArticle(req.body.name, req.body.unit, category.id);
 
           const item = await functions.getLatestArticle();
           await functions.insertStock(item.id, req.body.articlenumber, req.body.number, req.body.minimum_number, username, username);
@@ -381,7 +381,7 @@ module.exports = function(app){
           }
         //
         //update article and stock
-        let unit = await masterdataDB.getMasterdataByName("unit", req.body.unit);        
+        let unit = await masterdataDB.getUnitById(req.body.unit);
         let category = await masterdataDB.getMasterdataByName("category", req.body.category);
         await functions.updateArticle(entry.article_id, req.body.name, unit.id, category.id);
         await functions.updateStock(req.body.number, req.body.minimum_number, req.session.username, req.body.id);
@@ -423,6 +423,8 @@ module.exports = function(app){
   app.delete("/api/stock/:id", async (req, res) => {
     if (req.session.loggedin) {
       try {
+        //add user log
+        await logDB.log(req.params.id, "delete");
 
         await masterdataDB.deleteKeywordList(req.params.id);
         await masterdataDB.setStoragePlaceToNull(req.params.id);
@@ -431,8 +433,6 @@ module.exports = function(app){
 
         await functions.deleteArticle(stock.id);
 
-        //add user log
-        await logDB.log(req.params.id, "delete");
         res.send(result);
       } catch (err) {
         console.log(err);

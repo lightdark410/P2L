@@ -164,6 +164,7 @@ CREATE TABLE IF NOT EXISTS `stock` (
   `creator` varchar(255) NOT NULL,
   `change_by` varchar(255) NOT NULL,
   `date` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `articlenumber` int(255),
   PRIMARY KEY (`id`),
   KEY `artikelid` (`article_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

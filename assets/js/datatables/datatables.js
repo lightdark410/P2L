@@ -138,7 +138,7 @@ let taskTable = $("#task").DataTable({
     {width: "30%", targets: 4},
   ],
   "order": [[1, "desc"]],
-  "rowCallback": function (row, data, index) {
+  "createdRow": function (row, data, index) {
     //add status to last column
     let td = $(row).find("td").last();
     let status = parseInt(td.text());
