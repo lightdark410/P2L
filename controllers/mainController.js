@@ -1,24 +1,8 @@
-const mysql = require("mysql2");
 const config = require("config");
 const ldap = require("ldapjs");
 const functions = require("./functions");
 const masterdataDB = require("./masterdataDB"); //import sql functions for handling masterdata database changes
-const fs = require("fs");
 const path = require("path");
-
-//read config with fs to delete database in case it doesn´t exist yet
-let rawConfig = fs.readFileSync("./config/default.json");
-let dbConfig = JSON.parse(rawConfig).dbConfig;
-delete dbConfig["database"];
-let con = mysql.createPool(dbConfig);
-
-//checks if required Database exists and if not creates it
-fs.readFile("./config/schema.sql", "utf8", function (err, data) {
-  // data = data.replace(/\r|\n/g, ' ');
-  con.query(data, function (err, result) {
-    con.end();
-  });
-});
 
 module.exports = function (app) {
   //ldap authentication
