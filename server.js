@@ -29,7 +29,7 @@ app.use(express.json());
 mainController(app);
 apiController(app);
 
-app.listen(PORT, () => {
+server = app.listen(PORT, () => {
   console.log("Server is listening on port %d", PORT);
 });
 
