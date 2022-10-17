@@ -10,13 +10,13 @@ const path = require("path");
 let rawConfig = fs.readFileSync("./config/default.json");
 let dbConfig = JSON.parse(rawConfig).dbConfig;
 delete dbConfig["database"];
-let con = mysql.createConnection(dbConfig);
+let con = mysql.createPool(dbConfig);
 
 //checks if required Database exists and if not creates it
 fs.readFile("./config/schema.sql", "utf8", function (err, data) {
   // data = data.replace(/\r|\n/g, ' ');
   con.query(data, function (err, result) {
-    con = mysql.createConnection(config.get("dbConfig"));
+    con.end();
   });
 });
 
