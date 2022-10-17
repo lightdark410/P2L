@@ -1,7 +1,7 @@
 var mysql = require("mysql");
 const config = require('config'); 
 
-var con = mysql.createConnection(config.get('dbConfig'));
+var con = mysql.createPool(config.get('dbConfig'));
 
 
 //gets full stock data with every foreign key

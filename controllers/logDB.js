@@ -3,7 +3,7 @@ let masterdataDB = require("./masterdataDB"); //import sql functions for handlin
 let functions = require("./functions.js");
 const config = require('config'); 
 
-var con = mysql.createConnection(config.get('dbConfig'));
+var con = mysql.createPool(config.get('dbConfig'));
 
 
 async function log(id, event) {

@@ -1,7 +1,7 @@
 let mysql = require("mysql");
 const config = require('config'); 
 
-var con = mysql.createConnection(config.get('dbConfig'));
+var con = mysql.createPool(config.get('dbConfig'));
 
 
 function getMasterdata(table) {
