@@ -1,39 +1,38 @@
-$(function(){
-    $(".input-group-text").on("click", function(){
-        checkValue();
-    });
+$(function () {
+  $(".input-group-text").on("click", function () {
+    checkValue();
+  });
 
-    $("input[type='number'").on("change keyup", function(){
-        checkValue();
-    });
+  $("input[type='number'").on("change keyup", function () {
+    checkValue();
+  });
 
-    function checkValue(){
-        let val = parseInt($("input[type='number']").val());
-        let number = parseInt($("#Anzahl").text());
-        
-        if((number + val) < 0){
-            $("#Speichern").prop("disabled", true);
-            $("#ErrorMsg").html(`Sie können nur maximal ${number} Artikel entnehmen.`);
-        }else if(val == 0){
-            $("#Speichern").prop("disabled", true);
-        }
-        else{
-            $("#ErrorMsg").html("");    
-            $("#Speichern").prop("disabled", false);
-        }
-        
+  function checkValue() {
+    let val = parseInt($("input[type='number']").val());
+    let number = parseInt($("#Anzahl").text());
+
+    if (number + val < 0) {
+      $("#Speichern").prop("disabled", true);
+      $("#ErrorMsg").html(
+        `Sie können nur maximal ${number} Artikel entnehmen.`
+      );
+    } else if (val == 0) {
+      $("#Speichern").prop("disabled", true);
+    } else {
+      $("#ErrorMsg").html("");
+      $("#Speichern").prop("disabled", false);
     }
+  }
 
-    $("#Speichern").on("click", function(){
+  $("#Speichern").on("click", function () {
+    let val = parseInt($("input[type='number']").val());
+    let number = parseInt($("#Anzahl").text());
+    let name = $("#Name").text();
+    let sum = val + number;
 
-        let val = parseInt($("input[type='number']").val());
-        let number = parseInt($("#Anzahl").text());
-        let name = $("#Name").text();
-        let sum = val + number;
+    let store = val < 0 ? "Auslagern" : "Einlagern";
 
-        let store = val < 0 ? "Auslagern" : "Einlagern";
-
-        let popUp = `
+    let popUp = `
             <div class="popup">
                 <form>
                 <div class="popup_top">
@@ -79,41 +78,44 @@ $(function(){
             </div>
         `;
 
-        let cover = '<div class="cover"></div>';
+    let cover = '<div class="cover"></div>';
 
-        $("body").prepend($(cover + popUp).hide().fadeIn());
+    $("body").prepend(
+      $(cover + popUp)
+        .hide()
+        .fadeIn()
+    );
 
-        $(".popup_mid > .cancel").click(function () {
-            $(".cover").fadeOut();
-            $(".popup").fadeOut();
-        })
-
+    $(".popup_mid > .cancel").click(function () {
+      $(".cover").fadeOut();
+      $(".popup").fadeOut();
     });
+  });
 });
 
-$("body").on("click", ".save", function(){
-    let val = parseInt($("input[type='number']").val());
-    let number = parseInt($("#Anzahl").text());
+$("body").on("click", ".save", function () {
+  let val = parseInt($("input[type='number']").val());
+  let number = parseInt($("#Anzahl").text());
 
-    if((number + val) >= 0){
-        let id = $("#id").text();
-        number = number + val;
-        let formdata = `id=${id}&number=${number}`;
+  if (number + val >= 0) {
+    let id = $("#id").text();
+    number = number + val;
+    let formdata = `id=${id}&number=${number}`;
 
-        $.ajax({
-            type: 'PATCH',
-            url: "/api/storagePlace",
-            data: formdata,
-            processData: false,
-            contentType: 'application/x-www-form-urlencoded',
-            success: function () {
-              history.go(0);          
-            }
-            /* success and error handling omitted for brevity */
-          });
-    }
-})
-$("body").on("click", ".cover, #mdiv", function(){
-    $(".cover").fadeOut();
-    $(".popup").fadeOut();
-})
+    $.ajax({
+      type: "PATCH",
+      url: "/api/storagePlace",
+      data: formdata,
+      processData: false,
+      contentType: "application/x-www-form-urlencoded",
+      success: function () {
+        history.go(0);
+      },
+      /* success and error handling omitted for brevity */
+    });
+  }
+});
+$("body").on("click", ".cover, #mdiv", function () {
+  $(".cover").fadeOut();
+  $(".popup").fadeOut();
+});

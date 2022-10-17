@@ -1,25 +1,25 @@
 {
-    "dbConfig": {
-        "host": "localhost",
-        "user": "newuser",
-        "password": "test1234",
-        "database": "inventur",
-        "multipleStatements": true
-    },
-    "qr":{
-        "domain": "http://ainventar01.bbw-azubi.local:8090"
-    },
-    "led":{
-        "hostname": "192.168.138.146",
-        "port": "8081"
-    },
-    "ldap": {
-        "url": "ldap://192.168.138.51",
-        "domain": "dc=bbw-azubi, dc=local",
-        "reconnect": {
-            "initialDelay": 100,
-            "maxDelay": 1000,
-            "failAfter": 10
-        }
+  "dbConfig": {
+    "host": "localhost",
+    "user": "newuser",
+    "password": "test1234",
+    "database": "inventur",
+    "multipleStatements": true
+  },
+  "qr": {
+    "domain": "http://ainventar01.bbw-azubi.local:8090"
+  },
+  "led": {
+    "hostname": "192.168.138.146",
+    "port": "8081"
+  },
+  "ldap": {
+    "url": "ldap://192.168.138.51",
+    "domain": "dc=bbw-azubi, dc=local",
+    "reconnect": {
+      "initialDelay": 100,
+      "maxDelay": 1000,
+      "failAfter": 10
     }
+  }
 }

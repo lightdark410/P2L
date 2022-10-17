@@ -1,5 +1,5 @@
 {
-    "http.proxy": "http://192.168.136.1:8080",
-    "http.proxyStrictSSL": false,
-    "git.ignoreLimitWarning": true
+  "http.proxy": "http://192.168.136.1:8080",
+  "http.proxyStrictSSL": false,
+  "git.ignoreLimitWarning": true
 }

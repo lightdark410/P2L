@@ -1,54 +1,55 @@
-.sixteen{
-    padding: 0 !important;
+.sixteen {
+  padding: 0 !important;
 }
 
-#task{
-    text-align: center;
+#task {
+  text-align: center;
 }
 
 #task tr.selected {
-    background-color: rgba(0, 149, 199, 0.452);
+  background-color: rgba(0, 149, 199, 0.452);
 }
 
-#task img, #task_entries img{
-    width: 25px;
-    margin-top: -5px;
+#task img,
+#task_entries img {
+  width: 25px;
+  margin-top: -5px;
 }
 
-#task_entries{
-    text-align: center;
+#task_entries {
+  text-align: center;
 }
 
-#task_entries tbody td{
-    padding-right: 20px;
+#task_entries tbody td {
+  padding-right: 20px;
 }
 
-#qrcode{
-    position: absolute;
-    display: none;
-    border-width: 20px 20px 5px 20px;
-    border-style: solid;
-    border-color: #008ec7;
-    border-radius: 5px;
-    top: 22%;
-    left: calc(50% - 150px);
-    z-index: 9999;
-  }
-  
-  #qrcode div{
-    width: 256px;
-    background-color: #008ec7;
-    text-align: center;
-  }
+#qrcode {
+  position: absolute;
+  display: none;
+  border-width: 20px 20px 5px 20px;
+  border-style: solid;
+  border-color: #008ec7;
+  border-radius: 5px;
+  top: 22%;
+  left: calc(50% - 150px);
+  z-index: 9999;
+}
 
-  #qrcode div a{
-      color: black;
-  }
+#qrcode div {
+  width: 256px;
+  background-color: #008ec7;
+  text-align: center;
+}
+
+#qrcode div a {
+  color: black;
+}
 
 td.details-control {
-    background: url('../details_open.png') no-repeat center center;
-    cursor: pointer;
+  background: url("../details_open.png") no-repeat center center;
+  cursor: pointer;
 }
 tr.shown td.details-control {
-    background: url('../details_close.png') no-repeat center center;
+  background: url("../details_close.png") no-repeat center center;
 }

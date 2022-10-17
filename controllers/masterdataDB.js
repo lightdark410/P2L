@@ -1,586 +1,532 @@
 let mysql = require("mysql");
-const config = require('config'); 
+const config = require("config");
 
-var con = mysql.createPool(config.get('dbConfig'));
-
+var con = mysql.createPool(config.get("dbConfig"));
 
 function getMasterdata(table) {
-    return new Promise((resolve, reject) => {
-        var res = {"data":[]};
-        con.query(
-            `SELECT * FROM ??`,
-			[table],
-            function (err, result) {
-                if (err) {
-                    reject(err);
-                } else {
-                    res.data = result;
-                    resolve(res);
-                }
-
-            }
-        );
+  return new Promise((resolve, reject) => {
+    var res = { data: [] };
+    con.query(`SELECT * FROM ??`, [table], function (err, result) {
+      if (err) {
+        reject(err);
+      } else {
+        res.data = result;
+        resolve(res);
+      }
     });
+  });
 }
 
-function getMasterdataByName(table, name){
-    return new Promise((resolve, reject) => {
-        con.query(
-            `SELECT * FROM ?? WHERE ?? = ? LIMIT 1`,
-            [
-				table,
-				table,
-				name
-			],
-            function (err, result) {
-                if (err){
-                    reject(err);
-                }else{
-                    resolve(result[0]);
-                }
-            }
-        );
-    }); 
+function getMasterdataByName(table, name) {
+  return new Promise((resolve, reject) => {
+    con.query(
+      `SELECT * FROM ?? WHERE ?? = ? LIMIT 1`,
+      [table, table, name],
+      function (err, result) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(result[0]);
+        }
+      }
+    );
+  });
 }
 
-function getUnitById(id){
-    return new Promise((resolve, reject) => {
-        con.query(
-            `SELECT * FROM unit WHERE id = ? LIMIT 1`,
-            [id],
-            function (err, result){
-                if(err){
-                    console.log(err);
-                    reject(err);
-                }
-                resolve(result[0]);
-            }
-        );
-    });
+function getUnitById(id) {
+  return new Promise((resolve, reject) => {
+    con.query(
+      `SELECT * FROM unit WHERE id = ? LIMIT 1`,
+      [id],
+      function (err, result) {
+        if (err) {
+          console.log(err);
+          reject(err);
+        }
+        resolve(result[0]);
+      }
+    );
+  });
 }
 
 function insertMasterdata(table, value) {
-    return new Promise((resolve, reject) => {
-        con.query(
-            'INSERT INTO ?? ( ?? ) VALUES ("?")',
-			[
-				table,
-				table,
-				value
-			],
-            function (err, result) {
-                if (err) {
-                    reject(err)
-                    console.log(err);
-
-                } else {
-                    resolve(result);
-
-                }
-
-            }
-        );
-    });
+  return new Promise((resolve, reject) => {
+    con.query(
+      'INSERT INTO ?? ( ?? ) VALUES ("?")',
+      [table, table, value],
+      function (err, result) {
+        if (err) {
+          reject(err);
+          console.log(err);
+        } else {
+          resolve(result);
+        }
+      }
+    );
+  });
 }
 
 function deleteMasterdata(table, value) {
-    return new Promise((resolve, reject) => {
-        con.query(
-            `DELETE FROM ?? WHERE ?? = ?`,
-            [
-				table,
-				table,
-				value
-			],
-            function (err, result) {
-                if (err) {
-                    reject(err)
-                    console.log(err);
-                } else {
-                    resolve(result);
-
-                }
-
-            }
-        );
-    });
+  return new Promise((resolve, reject) => {
+    con.query(
+      `DELETE FROM ?? WHERE ?? = ?`,
+      [table, table, value],
+      function (err, result) {
+        if (err) {
+          reject(err);
+          console.log(err);
+        } else {
+          resolve(result);
+        }
+      }
+    );
+  });
 }
 
-function countMasterdataById(table, id){
-
-    return new Promise((resolve, reject) => {
-        con.query(
-            `
-            SELECT count(${con.escapeId(table+"_id")}) as number
+function countMasterdataById(table, id) {
+  return new Promise((resolve, reject) => {
+    con.query(
+      `
+            SELECT count(${con.escapeId(table + "_id")}) as number
             FROM article
             LEFT JOIN stock on article_id = article.id 
             WHERE ${table}_id = ?
             `,
-            [id],
-            function (err, result) {
-                if (err) {
-                    reject(err)
-                    console.log(err);
-
-                } else {
-                    resolve(result);
-
-                }
-
-            }
-        );
-    });
+      [id],
+      function (err, result) {
+        if (err) {
+          reject(err);
+          console.log(err);
+        } else {
+          resolve(result);
+        }
+      }
+    );
+  });
 }
 
-function getStorageLocation(){
-    return new Promise((resolve, reject) => {
-        con.query(
-            `SELECT * FROM storage_location ORDER BY name asc`,
-            function (err, result) {
-                if (err) reject(err);
-                resolve(result);
-            }
-        );
-    });
+function getStorageLocation() {
+  return new Promise((resolve, reject) => {
+    con.query(
+      `SELECT * FROM storage_location ORDER BY name asc`,
+      function (err, result) {
+        if (err) reject(err);
+        resolve(result);
+      }
+    );
+  });
 }
 
-function getStorageParentById(id){
-    return new Promise((resolve, reject) => {
-        con.query(
-            `SELECT * FROM storage_location WHERE parent = ? LIMIT 1`,
-            [id],
-            function (err, result){
-                if(err){
-                    console.log(err);
-                    reject(err);
-                }
-                resolve(result[0]);
-            }
-        );
-    });
+function getStorageParentById(id) {
+  return new Promise((resolve, reject) => {
+    con.query(
+      `SELECT * FROM storage_location WHERE parent = ? LIMIT 1`,
+      [id],
+      function (err, result) {
+        if (err) {
+          console.log(err);
+          reject(err);
+        }
+        resolve(result[0]);
+      }
+    );
+  });
 }
 
-function getStorageLocationById(id){
-    return new Promise((resolve, reject) => {
-        con.query(
-            `SELECT * FROM storage_location WHERE id = ? LIMIT 1`,
-            [id],
-            function (err, result){
-                if(err){
-                    console.log(err);
-                    reject(err);
-                }
-                resolve(result[0]);
-            }
-        );
-    });
+function getStorageLocationById(id) {
+  return new Promise((resolve, reject) => {
+    con.query(
+      `SELECT * FROM storage_location WHERE id = ? LIMIT 1`,
+      [id],
+      function (err, result) {
+        if (err) {
+          console.log(err);
+          reject(err);
+        }
+        resolve(result[0]);
+      }
+    );
+  });
 }
 
-function getStorageLocationByParentId(parentId){
-    return new Promise((resolve, reject) => {
-        con.query(
-            `SELECT * FROM storage_location WHERE parent = ? ORDER BY name asc`,
-            [parentId],
-            function (err, result){
-                if(err){
-                    console.log(err);
-                    reject(err);
-                }
-                resolve(result);
-            }
-        );
-    });
+function getStorageLocationByParentId(parentId) {
+  return new Promise((resolve, reject) => {
+    con.query(
+      `SELECT * FROM storage_location WHERE parent = ? ORDER BY name asc`,
+      [parentId],
+      function (err, result) {
+        if (err) {
+          console.log(err);
+          reject(err);
+        }
+        resolve(result);
+      }
+    );
+  });
 }
 
-function getStorageByStockId(stock_id){
-    return new Promise((resolve, reject) => {
-        con.query(
-            `
+function getStorageByStockId(stock_id) {
+  return new Promise((resolve, reject) => {
+    con.query(
+      `
             SELECT storage_place.place, storage_place.storage_location_id, storage_location.name, storage_location.parent
             FROM storage_place
             LEFT JOIN storage_location ON storage_place.storage_location_id = storage_location.id
             WHERE stock_id = ? LIMIT 1
             `,
-            [stock_id],
-            function (err, result){
-                if(err){
-                    console.log(err);
-                    reject(err);
-                }
-                resolve(result[0]);
-            }
-        );
-    });
-}
-
-function insertStorageLocation(name, parent, places){
-    return new Promise((resolve, reject) => {
-        con.query(
-            `INSERT INTO storage_location (name, parent, places) VALUES (?, ?, ?)`,
-            [name, parent, places],
-            function (err, result){
-                if(err){
-                    console.log(err);
-                    reject(err);
-                }
-                resolve(result);
-            }
-        );
-    });
-}
-
-function updateStorageLocation(id, name, places){
-    return new Promise((resolve, reject) => {
-        con.query(
-            `UPDATE storage_location SET name = ?, places = ? WHERE id = ?`,
-            [name, places, id],
-            function (err, result){
-                if(err){
-                    console.log(err);
-                    reject(err);
-                }
-                resolve(result);
-            }
-        );
-    });
-}
-
-function deleteStorageLocation(storage_location_id){
-    return new Promise((resolve, reject) => {
-        con.query(
-            `DELETE FROM storage_location WHERE id = ?`,
-            [storage_location_id],
-            function (err, result) {
-                if (err) {
-                    reject(err)
-                    console.log(err);
-                } else {
-                    resolve(result);
-                }
-
-            }
-        );
-    });
-}
-
-function getEmptyStoragePlace(storage_location_id){
-    return new Promise((resolve, reject) => {
-        con.query(
-            `SELECT * FROM storage_place WHERE storage_location_id = ? AND stock_id IS NULL LIMIT 1`,
-            [storage_location_id],
-            function (err, result){
-                if(err){
-                    console.log(err);
-                    reject(err);
-                }
-                resolve(result[0]);
-            }
-        );
-    });
-}
-
-function setStoragePlaceToNull(stock_id){
-    return new Promise((resolve, reject) => {
-        con.query("UPDATE storage_place SET stock_id = NULL WHERE stock_id = ?",
-            [stock_id],
-            function (err, result) {
-                if (err) {
-                    reject(err);
-                    console.log(err);
-                }
-                resolve(result);
-            });
-    });
-}
-
-function deleteStoragePlaces(storage_location_id, places, start){
-    return new Promise((resolve, reject) => {
-        try{
-            for(var i = start; i > places; i--){
-                con.query(
-                    `DELETE FROM storage_place WHERE storage_location_id = ? AND stock_id IS NULL`,
-                    [
-						storage_location_id,
-						i
-					],
-                    function (err, result){
-                        if(err){
-                            console.log(err);
-                            reject(err);
-                        }
-                    }
-                );
-            };
-            resolve("done");
-
-        }catch(error){
-            reject(error);
-
+      [stock_id],
+      function (err, result) {
+        if (err) {
+          console.log(err);
+          reject(err);
         }
-    
-    });
+        resolve(result[0]);
+      }
+    );
+  });
 }
 
-function countEmptyStoragePlacesByLocationId(storage_location_id){
-    return new Promise((resolve, reject) => {
-        con.query(
-            `SELECT COUNT(*) as empty_places FROM storage_place WHERE storage_location_id = ? AND stock_id IS NULL LIMIT 1`,
-            [storage_location_id],
-            function (err, result){
-                if(err){
-                    console.log(err);
-                    reject(err);
-                }
-                resolve(result[0].empty_places);
-            }
-        );
-    });
-}
-
-function getStorageLocationByNameAndParent(name, parent){
-    return new Promise((resolve, reject) => {
-        con.query(
-            `SELECT * FROM storage_location WHERE name = ? AND parent = ?`,
-            [name, parent],
-            function (err, result){
-                if(err){
-                    console.log(err);
-                    reject(err);
-                }
-                resolve(result);
-            }
-        );
-    });
-}
-
-function insertStoragePlaces(storage_location_id, places, start){
-    return new Promise((resolve, reject) => {
-        try{
-            for(var i = start; i < places; i++){
-                con.query(
-                    `INSERT INTO storage_place (storage_location_id, place) VALUES (?, ?)`,
-                    [storage_location_id, i+1],
-                    function (err, result){
-                        if(err){
-                            console.log(err);
-                            reject(err);
-                        }
-                    }
-                );
-            };
-            resolve("done");
-
-        }catch(error){
-            reject(error);
-
+function insertStorageLocation(name, parent, places) {
+  return new Promise((resolve, reject) => {
+    con.query(
+      `INSERT INTO storage_location (name, parent, places) VALUES (?, ?, ?)`,
+      [name, parent, places],
+      function (err, result) {
+        if (err) {
+          console.log(err);
+          reject(err);
         }
-    
-    });
+        resolve(result);
+      }
+    );
+  });
 }
 
-function updateStoragePlace(id, stock_id){
-    return new Promise((resolve, reject) => {
+function updateStorageLocation(id, name, places) {
+  return new Promise((resolve, reject) => {
+    con.query(
+      `UPDATE storage_location SET name = ?, places = ? WHERE id = ?`,
+      [name, places, id],
+      function (err, result) {
+        if (err) {
+          console.log(err);
+          reject(err);
+        }
+        resolve(result);
+      }
+    );
+  });
+}
+
+function deleteStorageLocation(storage_location_id) {
+  return new Promise((resolve, reject) => {
+    con.query(
+      `DELETE FROM storage_location WHERE id = ?`,
+      [storage_location_id],
+      function (err, result) {
+        if (err) {
+          reject(err);
+          console.log(err);
+        } else {
+          resolve(result);
+        }
+      }
+    );
+  });
+}
+
+function getEmptyStoragePlace(storage_location_id) {
+  return new Promise((resolve, reject) => {
+    con.query(
+      `SELECT * FROM storage_place WHERE storage_location_id = ? AND stock_id IS NULL LIMIT 1`,
+      [storage_location_id],
+      function (err, result) {
+        if (err) {
+          console.log(err);
+          reject(err);
+        }
+        resolve(result[0]);
+      }
+    );
+  });
+}
+
+function setStoragePlaceToNull(stock_id) {
+  return new Promise((resolve, reject) => {
+    con.query(
+      "UPDATE storage_place SET stock_id = NULL WHERE stock_id = ?",
+      [stock_id],
+      function (err, result) {
+        if (err) {
+          reject(err);
+          console.log(err);
+        }
+        resolve(result);
+      }
+    );
+  });
+}
+
+function deleteStoragePlaces(storage_location_id, places, start) {
+  return new Promise((resolve, reject) => {
+    try {
+      for (var i = start; i > places; i--) {
         con.query(
-            `UPDATE storage_place SET stock_id = ? WHERE id = ?`,
-            [stock_id, id],
-            function (err, result){
-                if(err){
-                    console.log(err);
-                    reject(err);
-                }
-                resolve(result);
+          `DELETE FROM storage_place WHERE storage_location_id = ? AND stock_id IS NULL`,
+          [storage_location_id, i],
+          function (err, result) {
+            if (err) {
+              console.log(err);
+              reject(err);
             }
+          }
         );
-    });
+      }
+      resolve("done");
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+function countEmptyStoragePlacesByLocationId(storage_location_id) {
+  return new Promise((resolve, reject) => {
+    con.query(
+      `SELECT COUNT(*) as empty_places FROM storage_place WHERE storage_location_id = ? AND stock_id IS NULL LIMIT 1`,
+      [storage_location_id],
+      function (err, result) {
+        if (err) {
+          console.log(err);
+          reject(err);
+        }
+        resolve(result[0].empty_places);
+      }
+    );
+  });
+}
+
+function getStorageLocationByNameAndParent(name, parent) {
+  return new Promise((resolve, reject) => {
+    con.query(
+      `SELECT * FROM storage_location WHERE name = ? AND parent = ?`,
+      [name, parent],
+      function (err, result) {
+        if (err) {
+          console.log(err);
+          reject(err);
+        }
+        resolve(result);
+      }
+    );
+  });
+}
+
+function insertStoragePlaces(storage_location_id, places, start) {
+  return new Promise((resolve, reject) => {
+    try {
+      for (var i = start; i < places; i++) {
+        con.query(
+          `INSERT INTO storage_place (storage_location_id, place) VALUES (?, ?)`,
+          [storage_location_id, i + 1],
+          function (err, result) {
+            if (err) {
+              console.log(err);
+              reject(err);
+            }
+          }
+        );
+      }
+      resolve("done");
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+function updateStoragePlace(id, stock_id) {
+  return new Promise((resolve, reject) => {
+    con.query(
+      `UPDATE storage_place SET stock_id = ? WHERE id = ?`,
+      [stock_id, id],
+      function (err, result) {
+        if (err) {
+          console.log(err);
+          reject(err);
+        }
+        resolve(result);
+      }
+    );
+  });
 }
 
 function getKeywordsByStockId(id) {
-    return new Promise((resolve, reject) => {
-        con.query(
-            `SELECT GROUP_CONCAT(keyword.keyword) FROM keyword INNER JOIN keyword_list ON keyword_list.keyword_id = keyword.id WHERE keyword_list.stock_id = ?`,
-            [id],
-            function (err, result) {
-                if (err) {
-                    reject(err)
-                    console.log(err);
-                } else {
-                    resolve(result);
-                }
-
-            }
-        );
-    });
+  return new Promise((resolve, reject) => {
+    con.query(
+      `SELECT GROUP_CONCAT(keyword.keyword) FROM keyword INNER JOIN keyword_list ON keyword_list.keyword_id = keyword.id WHERE keyword_list.stock_id = ?`,
+      [id],
+      function (err, result) {
+        if (err) {
+          reject(err);
+          console.log(err);
+        } else {
+          resolve(result);
+        }
+      }
+    );
+  });
 }
 
 function getKeywordsByName(name) {
-    return new Promise((resolve, reject) => {
-        con.query(
-            `SELECT * FROM keyword WHERE keyword = ?`,
-            [name],
-            function (err, result) {
-                if (err) {
-                    reject(err)
-                    console.log(err);
-                } else {
-                    resolve(result);
-                }
-
-            }
-        );
-    });
+  return new Promise((resolve, reject) => {
+    con.query(
+      `SELECT * FROM keyword WHERE keyword = ?`,
+      [name],
+      function (err, result) {
+        if (err) {
+          reject(err);
+          console.log(err);
+        } else {
+          resolve(result);
+        }
+      }
+    );
+  });
 }
 
-function getKeywordlistByStockid(stock_id){
-    return new Promise((resolve, reject) => {
-        con.query(
-            `SELECT GROUP_CONCAT(keyword.keyword) as keyword FROM keyword_list INNER JOIN keyword ON keyword_list.keyword_id = keyword.id WHERE keyword_list.stock_id = ?`,
-            [stock_id],
-            function (err, result) {
-                if (err) {
-                    reject(err)
-                    console.log(err);
-                } else {
-                    resolve(result[0]);
-                }
-
-            }
-        );
-    });
+function getKeywordlistByStockid(stock_id) {
+  return new Promise((resolve, reject) => {
+    con.query(
+      `SELECT GROUP_CONCAT(keyword.keyword) as keyword FROM keyword_list INNER JOIN keyword ON keyword_list.keyword_id = keyword.id WHERE keyword_list.stock_id = ?`,
+      [stock_id],
+      function (err, result) {
+        if (err) {
+          reject(err);
+          console.log(err);
+        } else {
+          resolve(result[0]);
+        }
+      }
+    );
+  });
 }
 
-function insertKeywordList(stock_id, keyword_id){
-    return new Promise((resolve, reject) => {
-        con.query(
-            "INSERT INTO keyword_list (stock_id, keyword_id) VALUES (?, ?)",
-            [
-                stock_id,
-                keyword_id
-            ],
-            function (err, result) {
-                if (err){
-                    reject(err);
-                    console.log(err);
-                } 
-                resolve(result);
-
-            }
-        );      
-    });
+function insertKeywordList(stock_id, keyword_id) {
+  return new Promise((resolve, reject) => {
+    con.query(
+      "INSERT INTO keyword_list (stock_id, keyword_id) VALUES (?, ?)",
+      [stock_id, keyword_id],
+      function (err, result) {
+        if (err) {
+          reject(err);
+          console.log(err);
+        }
+        resolve(result);
+      }
+    );
+  });
 }
 
-function countKeywordlistById(table, id){
-    return new Promise((resolve, reject) => {
-		let table_id = table + "_id";
-        con.query(
-            `
+function countKeywordlistById(table, id) {
+  return new Promise((resolve, reject) => {
+    let table_id = table + "_id";
+    con.query(
+      `
             SELECT count(??) as number
             FROM keyword_list
             LEFT JOIN stock on stock.id = stock_id 
             WHERE ?? = ?
             `,
-            [
-				table_id,
-				table_id,
-				id
-			],
-            function (err, result) {
-                if (err) {
-                    reject(err)
-                    console.log(err);
-
-                } else {
-                    resolve(result);
-
-                }
-
-            }
-        );
-    });
+      [table_id, table_id, id],
+      function (err, result) {
+        if (err) {
+          reject(err);
+          console.log(err);
+        } else {
+          resolve(result);
+        }
+      }
+    );
+  });
 }
 
-function deleteKeywordList(stock_id){
-    return new Promise((resolve, reject) => {
-        con.query(
-            "DELETE FROM keyword_list WHERE stock_id = ?",
-            [stock_id],
-            function (err, result) {
-                if (err){
-                    reject(err);
-                    console.log(err);
-                } 
-                resolve(result);
-
-            }
-        );      
-    });
+function deleteKeywordList(stock_id) {
+  return new Promise((resolve, reject) => {
+    con.query(
+      "DELETE FROM keyword_list WHERE stock_id = ?",
+      [stock_id],
+      function (err, result) {
+        if (err) {
+          reject(err);
+          console.log(err);
+        }
+        resolve(result);
+      }
+    );
+  });
 }
 
-function getLocationIdAndGroupPlaceIdsByStockIds(stock_ids){
-    return new Promise((resolve, reject) => {
-        con.query(
-            `select storage_location_id, group_concat(id separator ",") as "places" from storage_place WHERE stock_id in (?) group by storage_location_id;`,
-			[stock_ids],
-            function (err, result) {
-                if (err){
-                    reject(err);
-                    console.log(err);
-                } 
-                resolve(result);
-
-            }
-        );      
-    });
+function getLocationIdAndGroupPlaceIdsByStockIds(stock_ids) {
+  return new Promise((resolve, reject) => {
+    con.query(
+      `select storage_location_id, group_concat(id separator ",") as "places" from storage_place WHERE stock_id in (?) group by storage_location_id;`,
+      [stock_ids],
+      function (err, result) {
+        if (err) {
+          reject(err);
+          console.log(err);
+        }
+        resolve(result);
+      }
+    );
+  });
 }
 
-function getLocationByStockIds(stock_ids){
-    return new Promise((resolve, reject) => {
-        con.query(
-            `select distinct storage_place.storage_location_id, storage_location.parent from storage_place
+function getLocationByStockIds(stock_ids) {
+  return new Promise((resolve, reject) => {
+    con.query(
+      `select distinct storage_place.storage_location_id, storage_location.parent from storage_place
             inner join storage_location ON storage_location.id = storage_place.storage_location_id
             where storage_place.stock_id in (?);`,
-			[stock_ids],
-            function (err, result) {
-                if (err){
-                    reject(err);
-                    console.log(err);
-                } 
-                resolve(result);
-
-            }
-        );      
-    });
+      [stock_ids],
+      function (err, result) {
+        if (err) {
+          reject(err);
+          console.log(err);
+        }
+        resolve(result);
+      }
+    );
+  });
 }
-
-
 
 module.exports = {
-    getMasterdata,
-    getMasterdataByName,
-	getUnitById,
-    insertMasterdata,
-    deleteMasterdata,
-    countMasterdataById,
-    getStorageLocation,
-    getStorageParentById,
-    getStorageLocationById,
-    getStorageLocationByParentId,
-    insertStorageLocation,
-    updateStorageLocation,
-    deleteStorageLocation,
-    getStorageByStockId,
-    getEmptyStoragePlace,
-    countEmptyStoragePlacesByLocationId,
-    setStoragePlaceToNull,
-    deleteStoragePlaces,
-    getStorageLocationByNameAndParent,
-    insertStoragePlaces,
-    updateStoragePlace,
-    getKeywordsByStockId,
-    getKeywordsByName,
-    getKeywordlistByStockid,
-    insertKeywordList,
-    countKeywordlistById,
-    deleteKeywordList,
-    getLocationIdAndGroupPlaceIdsByStockIds,
-    getLocationByStockIds
-}
+  getMasterdata,
+  getMasterdataByName,
+  getUnitById,
+  insertMasterdata,
+  deleteMasterdata,
+  countMasterdataById,
+  getStorageLocation,
+  getStorageParentById,
+  getStorageLocationById,
+  getStorageLocationByParentId,
+  insertStorageLocation,
+  updateStorageLocation,
+  deleteStorageLocation,
+  getStorageByStockId,
+  getEmptyStoragePlace,
+  countEmptyStoragePlacesByLocationId,
+  setStoragePlaceToNull,
+  deleteStoragePlaces,
+  getStorageLocationByNameAndParent,
+  insertStoragePlaces,
+  updateStoragePlace,
+  getKeywordsByStockId,
+  getKeywordsByName,
+  getKeywordlistByStockid,
+  insertKeywordList,
+  countKeywordlistById,
+  deleteKeywordList,
+  getLocationIdAndGroupPlaceIdsByStockIds,
+  getLocationByStockIds,
+};
