@@ -29,3 +29,11 @@ apiController(app);
 app.listen(PORT, () => {
 	console.log("Server is listening on port %d", PORT);
 });
+
+process.on("SIGTERM", () => {
+	console.log("Received SIGTERM: closing HTTP server.");
+	// TODO: close DB connection pool
+	server.close(() => {
+		console.log("HTTP server closed");
+	})
+})
