@@ -255,10 +255,16 @@ function updateArticle(article_id, name, unit_id, category_id) {
 }
 
 //updates stock number & minimum_number 
-function updateStock(number, minimum_number, username, stock_id) {
+function updateStock(number, minimum_number, username, stock_id, articlenumber) {
     return new Promise((resolve, reject) => {
-        con.query("UPDATE stock SET number = ?, minimum_number = ?, change_by = ? WHERE id = ?",
-            [number, minimum_number, username, stock_id],
+        con.query("UPDATE stock SET number = ?, minimum_number = ?, change_by = ?, articlenumber = ? WHERE id = ?",
+            [
+				number,
+				minimum_number,
+				username,
+				articlenumber,
+				stock_id,
+			],
             function (err, result) {
                 if (err) {
                     reject(err);

@@ -355,7 +355,8 @@ module.exports = function(app){
             "minimum_number": entry.minimum_number,
             "category": entry.category,
             "keywords": (keywords.keyword == null ? '' : keywords.keyword),
-            "unit": entry.unit
+            "unit": entry.unit,
+			"articlenumber": entry.articlenumber,
           };
 
           //check if any changes were made
@@ -384,7 +385,7 @@ module.exports = function(app){
         let unit = await masterdataDB.getUnitById(req.body.unit);
         let category = await masterdataDB.getMasterdataByName("category", req.body.category);
         await functions.updateArticle(entry.article_id, req.body.name, unit.id, category.id);
-        await functions.updateStock(req.body.number, req.body.minimum_number, req.session.username, req.body.id);
+        await functions.updateStock(req.body.number, req.body.minimum_number, req.session.username, req.body.id, req.body.articlenumber);
 
         //update keywords
         await masterdataDB.deleteKeywordList(entry.id); //delete old keywords
