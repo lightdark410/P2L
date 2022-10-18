@@ -138,6 +138,7 @@ let inventurPopup = $(`
             </td>
           </tr>
         </table>
+        <span id="InventurError"></span>
       </div>
       <div class="PopUp_footer">
         <button type="submit" id="PopUpSubmit">
@@ -600,6 +601,8 @@ $("body").on("click", "#cover, .navbar, #mdiv", function () {
     $("#InventurPopUp input").each(function (i) {
       $(this).val("");
     });
+    // clear inventur popup error message
+    $("#InventurPopUp #InventurError").text("");
 
     //clears the number buttons in edit popup
     $("#number, #minimum_number").parent().find("span").remove();

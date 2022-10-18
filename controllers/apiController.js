@@ -1040,16 +1040,20 @@ module.exports = function (app) {
         logger.debug(
           `User: ${
             req.session.username
-          } - Method: POST - Route: /api/updateStockNumber - Body: ${JSON.stringify(
+          } - Method: PATCH - Route: /api/updateStockNumber - Body: ${JSON.stringify(
             req.body
           )} - Error: ${error}`
         );
-        res.send(e);
+        res.status(500).send(error);
         return;
       }
       logger.debug(
         `getStockIDByArticlenumber returned: ${JSON.stringify(response)}`
       );
+      if (response.length === 0) {
+        res.sendStatus(404);
+        return;
+      }
       try {
         reponse = await functions.updateStockNumber(
           response[0].id,
@@ -1061,14 +1065,14 @@ module.exports = function (app) {
         logger.debug(
           `User: ${
             req.session.username
-          } - Method: POST - Route: /api/updateStockNumber - Body: ${JSON.stringify(
+          } - Method: PATCH - Route: /api/updateStockNumber - Body: ${JSON.stringify(
             req.body
           )} - Error: ${error}`
         );
-        res.send(error);
+        res.status(500).send(error);
         return;
       }
-      res.send("updated");
+      res.send({ status: 200, message: "Update successful." });
     } else {
       res.redirect("/");
     }

@@ -175,10 +175,20 @@ $("body").on("submit", "#InventurPopUp form", function (event) {
     processData: false,
     contentType: "application/x-www-form-urlencoded",
     success: function () {
+      //clear error message
+      $("#InventurError").text("");
       //load new data
       table.ajax.reload();
       //close popup
       $("#mdiv").click();
+    },
+    error: function (jqXHR, textStatus, error) {
+      console.log(JSON.stringify(jqXHR));
+      $("#InventurError").text(
+        jqXHR?.status
+          ? "Artikelnummer nicht gefunden!"
+          : "Es ist ein Fehler aufgetreten."
+      );
     },
   });
 });

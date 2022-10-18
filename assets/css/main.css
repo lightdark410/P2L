@@ -914,6 +914,10 @@ input:checked + .slider_list:before {
   border: none !important;
 }
 
+#InventurPopUp #InventurError {
+  color: red;
+}
+
 #InventurPopUp table tr td {
   padding: 10px;
 }
