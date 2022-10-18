@@ -5,10 +5,10 @@ const logFormat = printf(({ level, message, timestamp }) => {
 });
 
 const logger = createLogger({
-  level: "info",
+  level: "debug",
   format: combine(timestamp({ format: "YYYY-MM-DD HH:mm:ss" }), logFormat),
   transports: [
-    new transports.File({ filename: "logs/info.log", level: "info" }),
+    new transports.File({ filename: "logs/info.log", level: "debug" }),
   ],
 });
 
