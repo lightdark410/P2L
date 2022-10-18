@@ -52,7 +52,7 @@ function getUnitById(id) {
 function insertMasterdata(table, value) {
   return new Promise((resolve, reject) => {
     con.query(
-      'INSERT INTO ?? ( ?? ) VALUES ("?")',
+      "INSERT INTO ?? ( ?? ) VALUES (?)",
       [table, table, value],
       function (err, result) {
         if (err) {
@@ -89,7 +89,7 @@ function countMasterdataById(table, id) {
       `
             SELECT count(${con.escapeId(table + "_id")}) as number
             FROM article
-            LEFT JOIN stock on article_id = article.id 
+            LEFT JOIN stock on article_id = article.id
             WHERE ${table}_id = ?
             `,
       [id],
@@ -433,7 +433,7 @@ function countKeywordlistById(table, id) {
       `
             SELECT count(??) as number
             FROM keyword_list
-            LEFT JOIN stock on stock.id = stock_id 
+            LEFT JOIN stock on stock.id = stock_id
             WHERE ?? = ?
             `,
       [table_id, table_id, id],
