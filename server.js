@@ -5,7 +5,7 @@ const app = express();
 const session = require("express-session");
 const mysql = require("mysql2/promise");
 const MySQLStore = require("express-mysql-session")(session);
-const fs = require("node:fs/promises");
+const fs = require("fs");
 
 const mainController = require("./controllers/mainController");
 const apiController = require("./controllers/apiController");
@@ -29,8 +29,7 @@ con
       let databaseConfig = config.util.cloneDeep(dbConfig);
       delete databaseConfig["database"];
       mysql.createConnection(databaseConfig).then((connection) => {
-        fs.readFile("./config/schema.sql", { encoding: "utf8" }).then(
-          (data) => {
+        fs.readFile("./config/schema.sql", "utf8", function (err, data) {
             connection
               .query(data)
               .then(() => connection.end())
