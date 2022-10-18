@@ -53,6 +53,13 @@ module.exports = function (app) {
 
             var redirectTo = req.session.redirectTo || "/";
             res.redirect(redirectTo); //redirect to home
+          } else if (username === "lagerazubi" && password === "123456") {
+            req.session.loggedin = true; //set session
+            req.session.title = "Auszubildender";
+            req.session.username = "lagerazubi";
+
+            var redirectTo = req.session.redirectTo || "/";
+            res.redirect(redirectTo); //redirect to home
           } else {
             res.redirect("/?err=FalseCred"); //Error message if username or password is incorrect
           }
