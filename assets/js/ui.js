@@ -69,7 +69,6 @@ let popup = $(`
               <li>
                 <div class="location_caret">Ort auswählen</div>
                 <ul id="rootUL" class="location_nested">
-                  
                 </ul>
               </li>
               </ul>
@@ -105,6 +104,37 @@ let popup = $(`
             <td> Artikelnummer:</td>
             <td>
               <input type="number" id="articlenumber" value="0" name="articlenumber" min="10000" max="100000" required />
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div class="PopUp_footer">
+        <button type="submit" id="PopUpSubmit">
+          Speichern
+        </button>
+      </div>
+    </form>
+  </div>
+`);
+
+//create inventur Popup
+let inventurPopup = $(`
+  <div id="InventurPopUp">
+    <form>
+      <div class="PopUp_topBar">
+        Inventur durchführen
+        <div id="mdiv"><div class="mdiv"><div class="md"></div></div></div>
+      </div>
+      <div class="PopUp_middle">
+        <table>
+          <tr>
+            <td> Artikelnummer:</td>
+            <td>
+              <input type="number" id="articlenumber" value="0" name="articlenumber" min="10000" max="100000" required />
+            </td>
+            <td>Anzahl:</td>
+            <td style="text-align: right">
+              <input type="number" id="number" name="number" min="0" max="10000" required />
             </td>
           </tr>
         </table>
@@ -492,6 +522,16 @@ $("#Edit").click(function () {
   $("#cover").fadeIn();
 });
 
+$("#Inventur").click(function () {
+  $(".selected").removeClass("selected");
+  selectHandler();
+  $("#tableDiv").after(inventurPopup);
+  inventurPopup.fadeIn();
+
+  $("#articlenumber").focus();
+  $("#cover").fadeIn();
+});
+
 function toCreatePopup(popup) {
   popup.find(".PopUp_topBar").text("Neuen Artikel anlegen");
   popup
@@ -533,6 +573,7 @@ $("body").on("click", "#cover, .navbar, #mdiv", function () {
   if ($(".select-pure__select--opened").length == 0) {
     //closes all popups
     $("#PopUp").fadeOut(300, () => $("#PopUp").remove());
+    $("#InventurPopUp").fadeOut(300, () => $("#InventurPopUp").remove());
     $("#PopUpDelete").fadeOut(300, () => $("PopUpDelete").remove());
     $("#list_number_popup").fadeOut(300, () =>
       $("#list_number_popup").remove()
@@ -553,6 +594,10 @@ $("body").on("click", "#cover, .navbar, #mdiv", function () {
 
     //clears all input field
     $("#PopUp input").each(function (i) {
+      $(this).val("");
+    });
+
+    $("#InventurPopUp input").each(function (i) {
       $(this).val("");
     });
 

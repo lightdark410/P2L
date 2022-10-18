@@ -160,6 +160,29 @@ $("body").on("submit", "#PopUp form", function (event) {
   }
 });
 
+//handle inventur popup submit
+$("body").on("submit", "#InventurPopUp form", function (event) {
+  event.preventDefault();
+  //get all values from popup
+  var articlenumber = $("#articlenumber").val();
+  var number = $("#number").val();
+
+  var formdata = `articlenumber=${articlenumber}&number=${number}`;
+  $.ajax({
+    type: "PATCH",
+    url: "/api/updateStockNumber",
+    data: formdata,
+    processData: false,
+    contentType: "application/x-www-form-urlencoded",
+    success: function () {
+      //load new data
+      table.ajax.reload();
+      //close popup
+      $("#mdiv").click();
+    },
+  });
+});
+
 //generate qr code
 $("body").on("submit", "#list_popup form", function (e) {
   e.preventDefault();

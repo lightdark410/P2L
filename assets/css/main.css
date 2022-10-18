@@ -545,6 +545,26 @@ thead input {
   width: 100%;
 }
 
+#InventurPopUp {
+  display: none;
+  width: 800px;
+  position: fixed;
+  left: 50%;
+  top: 45%;
+  transform: translate(-50%, -50%);
+  border-radius: 10px;
+  text-align: center;
+  z-index: 1030;
+  background-color: #efefef;
+  font-weight: bold;
+  color: black;
+}
+
+#InventurPopUp form {
+  height: 100%;
+  width: 100%;
+}
+
 #list_number_popup {
   display: none;
   width: 30%;
@@ -655,7 +675,7 @@ thead input {
 #list_number_popup .PopUp_middle input {
   width: 35% !important;
 }
-/* 
+/*
 #list_popup .PopUp_middle input{
   width: 65% !important;
 } */
@@ -880,6 +900,21 @@ input:checked + .slider_list:before {
 }
 
 #PopUp table tr td {
+  padding: 10px;
+}
+
+#InventurPopUp table {
+  margin: auto;
+  height: 100%;
+  margin-top: 2%;
+  width: 100%;
+  table-layout: fixed;
+  /* margin-left: -7.5%; */
+  text-align: right;
+  border: none !important;
+}
+
+#InventurPopUp table tr td {
   padding: 10px;
 }
 

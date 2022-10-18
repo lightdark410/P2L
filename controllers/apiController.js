@@ -2,6 +2,7 @@ const logger = require("../logger/logger");
 const config = require("config");
 const functions = require("./functions");
 const masterdataDB = require("./masterdataDB"); //import sql functions for handling masterdata database changes
+const dbController = require("./dbController"); //import refactored sql functions
 const taskDB = require("./taskDB");
 const logDB = require("./logDB");
 const http = require("http");
@@ -1020,4 +1021,56 @@ module.exports = function (app) {
       req.end();
     });
   }
+
+  app.patch("/api/updateStockNumber", async (req, res) => {
+    if (req.session.loggedin) {
+      logger.debug(
+        `User: ${
+          req.session.username
+        } - Method: POST - Route: /api/updateStockNumber - Body: ${JSON.stringify(
+          req.body
+        )}`
+      );
+      let response;
+      try {
+        response = await dbController.getStockIDByArticlenumber(
+          req.body.articlenumber
+        );
+      } catch (error) {
+        logger.debug(
+          `User: ${
+            req.session.username
+          } - Method: POST - Route: /api/updateStockNumber - Body: ${JSON.stringify(
+            req.body
+          )} - Error: ${error}`
+        );
+        res.send(e);
+        return;
+      }
+      logger.debug(
+        `getStockIDByArticlenumber returned: ${JSON.stringify(response)}`
+      );
+      try {
+        reponse = await functions.updateStockNumber(
+          response[0].id,
+          req.body.number,
+          req.session.username
+        );
+        await logDB.log(response[0].id, "change");
+      } catch (error) {
+        logger.debug(
+          `User: ${
+            req.session.username
+          } - Method: POST - Route: /api/updateStockNumber - Body: ${JSON.stringify(
+            req.body
+          )} - Error: ${error}`
+        );
+        res.send(error);
+        return;
+      }
+      res.send("updated");
+    } else {
+      res.redirect("/");
+    }
+  });
 };
