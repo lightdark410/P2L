@@ -1,7 +1,3 @@
-$.get("/api/user", function (data) {
-  $("#loginText").html(`Eingeloggt als ${data.title} ${data.username}`);
-});
-
 $("#Logout").click(function () {
   $.get("/logout", function (data) {
     window.location.href = "/";

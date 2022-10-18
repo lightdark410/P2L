@@ -68,7 +68,7 @@ module.exports = function (app) {
   //Page Routing
   app.get("/", async (req, res) => {
     if (req.session.loggedin) {
-      res.render("index"); //load index
+      res.render("index", { session: req.session }); //load index
     } else {
       req.session.redirectTo = `/`;
       res.render("login"); //redirect to login page if not logged in
@@ -77,7 +77,7 @@ module.exports = function (app) {
 
   app.get("/auftraege", async (req, res) => {
     if (req.session.loggedin) {
-      res.render("task");
+      res.render("task", { session: req.session });
     } else {
       req.session.redirectTo = `/auftraege`;
       res.render("login");
@@ -86,7 +86,7 @@ module.exports = function (app) {
 
   app.get("/stammdaten", async (req, res) => {
     if (req.session.loggedin) {
-      res.render("stammdaten");
+      res.render("stammdaten", { session: req.session });
     } else {
       req.session.redirectTo = `/stammdaten`;
       res.render("login"); //redirect to login page if not logged in
@@ -102,7 +102,7 @@ module.exports = function (app) {
   app.get("/logs", async (req, res) => {
     if (req.session.loggedin) {
       try {
-        res.render("logs");
+        res.render("logs", { session: req.session });
       } catch (error) {
         res.status("500").send("Internal Server Error");
         console.log(error);
@@ -116,7 +116,7 @@ module.exports = function (app) {
   app.get("/logs/:stockId", async (req, res) => {
     if (req.session.loggedin) {
       try {
-        res.render("logs");
+        res.render("logs", { session: req.session });
       } catch (error) {
         res.status("500").send("Internal Server Error");
         console.log(error);
@@ -129,7 +129,7 @@ module.exports = function (app) {
 
   app.get("/qr", async (req, res) => {
     if (req.session.loggedin) {
-      res.render("qr");
+      res.render("qr", { session: req.session });
     } else {
       req.session.redirectTo = `/qr`;
       res.render("login"); //redirect to login page if not logged in

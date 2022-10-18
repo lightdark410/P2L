@@ -26,6 +26,7 @@
 
     <div class="row ml-0 mt-3 ml-3">
         <div>
+          <% if (session.title != "Auszubildender") { %>
             <button class="btn topbar_btn" id="New" title="Neuen Artikel hinzufügen">
                 Neu
             </button>
@@ -35,6 +36,7 @@
             <button class="btn topbar_btn" id="Delete" disabled title="Wähle mindestens eine Zeile aus um sie löschen zu können">
                 Löschen
             </button>
+            <% } %>
             <button class="btn topbar_btn" id="Inventur" title="Inventur durchführen">
                 Inventur
             </button>
