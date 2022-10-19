@@ -98,6 +98,12 @@ const checkForDuplicateArtNum = function (event) {
   });
 };
 
+const submitFormByEnterKey = function (event) {
+  if (event.key === "Enter") {
+    event.target.closest("form").getElementsByTagName("button").item(0).click();
+  }
+};
+
 //create stock Popup
 let popup = $(`
   <div id="PopUp">
@@ -581,6 +587,7 @@ $("#Inventur").click(function () {
 
   $("#articlenumber").focus();
   $("#cover").fadeIn();
+  $("#InventurPopUp form")[0].addEventListener("keydown", submitFormByEnterKey);
 });
 
 function toCreatePopup(popup) {
@@ -626,6 +633,10 @@ $("body").on("click", "#cover, .navbar, #mdiv", function () {
     $("#articlenumber")[0].removeEventListener(
       "input",
       checkForDuplicateArtNum
+    );
+    $("#InventurPopUp form")[0].removeEventListener(
+      "keydown",
+      submitFormByEnterKey
     );
 
     //closes all popups

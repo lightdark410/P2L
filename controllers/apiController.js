@@ -877,7 +877,7 @@ module.exports = function (app) {
       );
       if (req.session.title === "Auszubildender") {
         logger.warn(
-          `User ${req.session.username} tried to delete a stammdaten stock entry without proper permissions.`
+          `User ${req.session.username} tried to delete a stammdaten entry without proper permissions.`
         );
         res.status(403).send({
           status: 403,
