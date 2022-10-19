@@ -870,6 +870,22 @@ module.exports = function (app) {
   //delete masterdata entry by name
   app.delete("/api/stammdaten/:table/:name", async (req, res) => {
     if (req.session.loggedin) {
+      logger.debug(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      if (req.session.title === "Auszubildender") {
+        logger.warn(
+          `User ${req.session.username} tried to delete a stammdaten stock entry without proper permissions.`
+        );
+        res.status(403).send({
+          status: 403,
+          code: "ERR_PERMISSION_DENIED",
+          message: "Permission denied",
+        });
+        return;
+      }
       try {
         var table = req.params.table;
         if (table == "storageLocation") {
