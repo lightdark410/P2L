@@ -351,11 +351,93 @@ module.exports = function (app) {
     }
   });
 
+  //get stock entries by articlenumber
+  app.get("/api/stock/articlenumber/:articlenumber", async (req, res) => {
+    if (req.session.loggedin) {
+      let response;
+      try {
+        response = await dbController.getStockIDByArticlenumber(
+          req.params.articlenumber
+        );
+      } catch (error) {
+        logger.error(
+          `User: ${
+            req.session.username
+          } - Method: GET - Route: /api/stock/articlenumber/${
+            req.params.articlenumber
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      if (response.length === 0) {
+        res.status(404).send({
+          status: 404,
+          code: "ERR_NOT_FOUND",
+          message:
+            "No stock entry with articlenumber ${req.params.articlenumber} found.",
+        });
+        return;
+      }
+      res.send(response);
+    } else {
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
+    }
+  });
+
   //creates stock entry
   app.post("/api/stock", async (req, res) => {
     if (req.session.loggedin) {
+      logger.debug(
+        `User: ${
+          req.session.username
+        } - Method: POST - Route: /api/stock - Body: ${JSON.stringify(
+          req.body
+        )}`
+      );
+      if (req.session.title === "Auszubildender") {
+        logger.warn(
+          `User ${req.session.username} tried to create a new stock entry without proper permissions.`
+        );
+        res.status(403).send({
+          status: 403,
+          code: "ERR_PERMISSION_DENIED",
+          message: "Permission denied",
+        });
+        return;
+      }
+      let response;
+      try {
+        response = await dbController.getStockIDByArticlenumber(
+          req.body.articlenumber
+        );
+      } catch (error) {
+        logger.error(
+          `User: ${
+            req.session.username
+          } - Method: PATCH - Route: /api/updateStockNumber - Body: ${JSON.stringify(
+            req.body
+          )} - Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      if (response.length !== 0) {
+        logger.debug(
+          `User ${req.session.username} tried to create a stock entry with duplicate articlenumber.`
+        );
+        res.status(400).send({
+          status: 400,
+          code: "ERR_DUPLICATE_ARTNUM",
+          message: "Articlenumber already exists.",
+        });
+        return;
+      }
       var username = req.session.username;
-      console.log(req.body);
       try {
         let category = await masterdataDB.getMasterdataByName(
           "category",
@@ -404,18 +486,76 @@ module.exports = function (app) {
         //add user log
         await logDB.log(latestStock.id, "create");
         res.send("Entry Created");
+        logger.info(
+          `User ${req.session.username} created a new stock entry: ID: ${latestStock.id}, Articlenumber: ${latestStock.articlenumber}, Name: ${item.name}, Number: ${latestStock.number}, MinNumber: ${latestStock.minimum_number}`
+        );
       } catch (err) {
-        res.status(400).send("Bad Request");
+        logger.error(
+          `User: ${
+            req.session.username
+          } - Method: PATCH - Route: /api/updateStockNumber - Body: ${JSON.stringify(
+            req.body
+          )} - Error: ${err}`
+        );
+        res.status(500).send(err);
       }
     } else {
-      req.session.redirectTo = `/`;
-      res.redirect("/"); //redirect to login page if not logged in
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
     }
   });
 
   //update stock entry
   app.patch("/api/stock", async (req, res) => {
     if (req.session.loggedin) {
+      logger.debug(
+        `User: ${
+          req.session.username
+        } - Method: PATCH - Route: /api/stock - Body: ${JSON.stringify(
+          req.body
+        )}`
+      );
+      if (req.session.title === "Auszubildender") {
+        logger.warn(
+          `User ${req.session.username} tried to edit a new stock entry without proper permissions.`
+        );
+        res.status(403).send({
+          status: 403,
+          code: "ERR_PERMISSION_DENIED",
+          message: "Permission denied",
+        });
+        return;
+      }
+      let response;
+      try {
+        response = await dbController.getStockIDByArticlenumber(
+          req.body.articlenumber
+        );
+      } catch (error) {
+        logger.error(
+          `User: ${
+            req.session.username
+          } - Method: PATCH - Route: /api/stock - Body: ${JSON.stringify(
+            req.body
+          )} - Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      if (response.length !== 0) {
+        logger.debug(
+          `User ${req.session.username} tried to edit a stock entry to have a duplicate articlenumber.`
+        );
+        res.status(400).send({
+          status: 400,
+          code: "ERR_DUPLICATE_ARTNUM",
+          message: "Articlenumber already exists.",
+        });
+        return;
+      }
       try {
         let entry = await functions.getStockById(req.body.id);
 
@@ -430,10 +570,11 @@ module.exports = function (app) {
           minimum_number: entry.minimum_number,
           category: entry.category,
           keywords: keywords.keyword == null ? "" : keywords.keyword,
-          unit: entry.unit,
+          unit: entry.unit_id,
           articlenumber: entry.articlenumber,
         };
 
+        let logString = `User ${req.session.username} edited a stock entry: ID: ${req.body.id}, `;
         //check if any changes were made
         let flag = true;
         if (Object.keys(req.body).length == Object.keys(compare_json).length) {
@@ -441,8 +582,8 @@ module.exports = function (app) {
             if (req.body[key] == compare_json[key]) {
               continue;
             } else {
+              logString += `${key}: ${compare_json[key]} -> ${req.body[key]}, `;
               flag = false;
-              break;
             }
           }
         } else {
@@ -498,14 +639,21 @@ module.exports = function (app) {
         //add user log
         await logDB.log(req.body.id, "change");
 
+        // remove extraneous comma and space at the end of the log message
+        logString = logString.slice(0, -2);
+        logger.info(logString);
+
         res.send("updated");
       } catch (e) {
         console.log(e);
-        res.status(404).send(e);
+        res.status(500).send(e);
       }
     } else {
-      req.session.redirectTo = `/`;
-      res.redirect("/"); //redirect to login page if not logged in
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
     }
   });
 
@@ -1037,7 +1185,7 @@ module.exports = function (app) {
           req.body.articlenumber
         );
       } catch (error) {
-        logger.debug(
+        logger.error(
           `User: ${
             req.session.username
           } - Method: PATCH - Route: /api/updateStockNumber - Body: ${JSON.stringify(
@@ -1051,7 +1199,11 @@ module.exports = function (app) {
         `getStockIDByArticlenumber returned: ${JSON.stringify(response)}`
       );
       if (response.length === 0) {
-        res.sendStatus(404);
+        res.status(404).send({
+          status: 404,
+          code: "ERR_NOT_FOUND",
+          message: "Couldn't find an entry with the given article number",
+        });
         return;
       }
       try {
@@ -1062,7 +1214,7 @@ module.exports = function (app) {
         );
         await logDB.log(response[0].id, "change");
       } catch (error) {
-        logger.debug(
+        logger.error(
           `User: ${
             req.session.username
           } - Method: PATCH - Route: /api/updateStockNumber - Body: ${JSON.stringify(
@@ -1073,6 +1225,9 @@ module.exports = function (app) {
         return;
       }
       res.send({ status: 200, message: "Update successful." });
+      logger.info(
+        `User ${req.session.username} updated stock number for articlenumber ${req.body.articlenumber} to ${req.body.number}`
+      );
     } else {
       res.redirect("/");
     }

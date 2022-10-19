@@ -51,6 +51,53 @@ function stammdaten() {
   };
 }
 
+const checkForDuplicateArtNum = function (event) {
+  const currentArtNum = parseInt(event.target.value);
+  if (
+    currentArtNum < parseInt(event.target.min) ||
+    currentArtNum > parseInt(event.target.max)
+  ) {
+    if (event.target.nextElementSibling) {
+      $("#artNumNotificationBreak").remove();
+      $("#artNumNotification").remove();
+    }
+    return;
+  }
+  const selectedRows = $("#table tbody tr.selected");
+  if (
+    selectedRows.length !== 0 &&
+    selectedRows.children().eq(2).text() === currentArtNum.toString()
+  ) {
+    if (event.target.nextElementSibling) {
+      $("#artNumNotificationBreak").remove();
+      $("#artNumNotification").remove();
+    }
+    return;
+  }
+  $.ajax({
+    async: false,
+    method: "GET",
+    url: `/api/stock/articlenumber/${currentArtNum}`,
+    success: function (jqXHR, testStatus, error) {
+      if (!event.target.nextElementSibling) {
+        event.target.insertAdjacentHTML(
+          "afterend",
+          "<br id='artNumNotificationBreak'><span id='artNumNotification'>Diese Artikelnummer existiert bereits</span>"
+        );
+      }
+      $(".ui-autocomplete").css("z-index", "0");
+    },
+    error: function (jqXHR, textStatus, error) {
+      if (jqXHR.status === 404) {
+        if (event.target.nextElementSibling) {
+          $("#artNumNotificationBreak").remove();
+          $("#artNumNotification").remove();
+        }
+      }
+    },
+  });
+};
+
 //create stock Popup
 let popup = $(`
   <div id="PopUp">
@@ -138,6 +185,7 @@ let inventurPopup = $(`
             </td>
           </tr>
         </table>
+        <span id="InventurSuccess"></span>
         <span id="InventurError"></span>
       </div>
       <div class="PopUp_footer">
@@ -422,6 +470,7 @@ $("#New").click(function () {
     },
   });
 
+  $("#articlenumber")[0].addEventListener("input", checkForDuplicateArtNum);
   $("#name").focus();
   $("#cover").fadeIn();
 });
@@ -516,6 +565,7 @@ $("#Edit").click(function () {
   $(location).attr("data-parent", result.storage_parent);
   $("#number").val(result.number);
   $("#articlenumber").val(result.articlenumber);
+  $("#articlenumber")[0].addEventListener("input", checkForDuplicateArtNum);
   $("#minimum_number").val(result.minimum_number);
   $("#category").val(result.category);
   $("#unit").val(result.unit);
@@ -572,6 +622,12 @@ function toUpdatePopup(popup) {
 $("body").on("click", "#cover, .navbar, #mdiv", function () {
   //only do smth if the keyword dropdown in the stock popup is closed
   if ($(".select-pure__select--opened").length == 0) {
+    // remove articlenumber event listener
+    $("#articlenumber")[0].removeEventListener(
+      "input",
+      checkForDuplicateArtNum
+    );
+
     //closes all popups
     $("#PopUp").fadeOut(300, () => $("#PopUp").remove());
     $("#InventurPopUp").fadeOut(300, () => $("#InventurPopUp").remove());
@@ -586,7 +642,12 @@ $("body").on("click", "#cover, .navbar, #mdiv", function () {
 
     //close location dropdown
     $("#myUL ul").removeClass("active");
+    // remove error messages
     $("#LocationNotification").remove();
+    $("#artNumNotificationBreak").remove();
+    $("#artNumNotification").remove();
+    $("#InventurPopUp #InventurError").text("");
+
     $("#myUL").find("div").first().attr("style", "color: inherit");
 
     $("#myUL").find("div").first().removeAttr("data-id");
@@ -601,8 +662,6 @@ $("body").on("click", "#cover, .navbar, #mdiv", function () {
     $("#InventurPopUp input").each(function (i) {
       $(this).val("");
     });
-    // clear inventur popup error message
-    $("#InventurPopUp #InventurError").text("");
 
     //clears the number buttons in edit popup
     $("#number, #minimum_number").parent().find("span").remove();

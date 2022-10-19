@@ -170,16 +170,21 @@ $("body").on("submit", "#InventurPopUp form", function (event) {
     data: formdata,
     processData: false,
     contentType: "application/x-www-form-urlencoded",
-    success: function () {
+    success: function (jqXHR, textStatus, error) {
       //clear error message
       $("#InventurError").text("");
+      // show success message
+      $("#InventurSuccess").text(
+        `Artikel mit Artikelnummmer ${articlenumber} wurde aktualisiert.`
+      );
       //load new data
       table.ajax.reload();
-      //close popup
-      $("#mdiv").click();
+      $("#articlenumber").val("");
+      $("#number").val("");
+      $("#articlenumber").focus();
     },
     error: function (jqXHR, textStatus, error) {
-      console.log(JSON.stringify(jqXHR));
+      $("#InventurSuccess").text("");
       $("#InventurError").text(
         jqXHR?.status
           ? "Artikelnummer nicht gefunden!"

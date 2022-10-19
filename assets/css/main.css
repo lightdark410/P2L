@@ -64,6 +64,10 @@ h2 {
     width: 50% !important;
   }
 
+  #artNumNotification {
+    left: 23vw !important;
+  }
+
   #notification {
     left: 23vw !important;
   }
@@ -924,6 +928,16 @@ input:checked + .slider_list:before {
 
 #deleteForm .PopUp_topBar {
   text-align: center;
+}
+
+#artNumNotification {
+  display: inline-block;
+  color: orange;
+  font-weight: normal;
+  text-align: left;
+  position: relative;
+  width: 200%;
+  right: 1vw;
 }
 
 #notification {
