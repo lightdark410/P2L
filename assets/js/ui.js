@@ -320,7 +320,7 @@ $("body").on("change, keyup", "#name", function () {
     //get selected line
     if ($(this).hasClass("selected")) {
       //get name from selected row
-      selectedName = $(this).children().eq(1).html();
+      selectedName = $(this).children().eq(3).html();
     }
   });
 
