@@ -75,37 +75,59 @@ $("table").on("click", ".fa-trash", function () {
   let table = $(this).closest("table").find("th").first().text();
   let val = $(this).parent().text();
   let number = null;
+  let authorised;
 
   $.ajax({
     async: false,
     type: "GET",
     global: false,
-    url: `/api/stammdaten/${table}/${val}`,
+    url: "/api/user",
     success: function (data) {
-      number = data.number;
+      if (data.title === "Auszubildender") {
+        authorised = false;
+      } else {
+        authorised = true;
+      }
     },
   });
 
   let popUpMid = ``;
-  if (number == 0) {
-    popUpMid = `
-        <span>Sicher, dass Sie "${val}" <b><u>unwiderruflich</u></b></span>
-        <br>
-        <span>von den Stammdaten löschen wollen?</span>
-        <br>
-        <button class="btn btn-danger delete" type="button">Löschen</button>
-        <button class="btn btn-secondary cancel" type="button">Abbrechen</button>
-        `;
+  if (authorised) {
+    $.ajax({
+      async: false,
+      type: "GET",
+      global: false,
+      url: `/api/stammdaten/${table}/${val}`,
+      success: function (data) {
+        number = data.number;
+      },
+    });
+
+    if (number == 0) {
+      popUpMid = `
+          <span>Sicher, dass Sie "${val}" <b><u>unwiderruflich</u></b></span>
+          <br>
+          <span>von den Stammdaten löschen wollen?</span>
+          <br>
+          <button class="btn btn-danger delete" type="button">Löschen</button>
+          <button class="btn btn-secondary cancel" type="button">Abbrechen</button>
+          `;
+    } else {
+      popUpMid = `
+          "${val}" Wird aktuell von ${number} Artikeln genutzt <br> und kann daher nicht gelöscht werden.
+          <br>
+          <button class="btn btn-secondary cancel" type="button">Abbrechen</button>
+          `;
+    }
   } else {
     popUpMid = `
-        "${val}" Wird aktuell von ${number} Artikeln genutzt <br> und kann daher nicht gelöscht werden.
-        <br>
+        Sie haben keine Berechtigung Stammdaten zu löschen!
+        <br />
         <button class="btn btn-secondary cancel" type="button">Abbrechen</button>
         `;
   }
 
-  let popUp =
-    `
+  let popUp = `
         <div class="popup">
             <form>
             <div class="popup_top">
@@ -117,9 +139,7 @@ $("table").on("click", ".fa-trash", function () {
                 </div>
             </div>
             <div class="popup_mid">
-            ` +
-    popUpMid +
-    `
+            ${popUpMid}
             </div>
             <div class="popup_foot"></div>
             </form>
@@ -141,28 +161,30 @@ $("table").on("click", ".fa-trash", function () {
     $(".popup").remove();
   });
 
-  $(".popup_mid > .delete").click(function () {
-    switch (table) {
-      case "Kategorie":
-        table = "category";
-        break;
-      case "Stichwörter":
-        table = "keyword";
-        break;
-      case "Einheit":
-        table = "unit";
-        break;
-      default:
-        break;
-    }
-    $.ajax({
-      url: `/api/stammdaten/${table}/${val}`,
-      type: "DELETE",
-      success: function (result) {
-        location.reload();
-      },
+  if (authorised) {
+    $(".popup_mid > .delete").click(function () {
+      switch (table) {
+        case "Kategorie":
+          table = "category";
+          break;
+        case "Stichwörter":
+          table = "keyword";
+          break;
+        case "Einheit":
+          table = "unit";
+          break;
+        default:
+          break;
+      }
+      $.ajax({
+        url: `/api/stammdaten/${table}/${val}`,
+        type: "DELETE",
+        success: function (result) {
+          location.reload();
+        },
+      });
     });
-  });
+  }
 });
 
 $("body").on("click", ".cover, #mdiv", function () {
