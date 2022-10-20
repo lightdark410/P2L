@@ -100,7 +100,11 @@ const checkForDuplicateArtNum = function (event) {
 
 const submitFormByEnterKey = function (event) {
   if (event.key === "Enter") {
-    event.target.closest("form").getElementsByTagName("button").item(0).click();
+    event.target
+      .closest("form")
+      .getElementsByTagName("button")
+      .namedItem("PopUpSubmit")
+      .click();
   }
 };
 
@@ -401,16 +405,6 @@ $("body").on("change, keyup", "#name", function () {
   }
 });
 
-//prevents unintentional form submit by pressing enter
-$(document).ready(function () {
-  $(window).keydown(function (event) {
-    if (event.keyCode == 13) {
-      event.preventDefault();
-      return false;
-    }
-  });
-});
-
 $("body").on("click", ".numberButton", function (e) {
   e.preventDefault();
   var number = $("#number").val();
@@ -476,6 +470,7 @@ $("#New").click(function () {
     },
   });
 
+  $("#PopUp form").on("keydown", submitFormByEnterKey);
   $("#articlenumber")[0].addEventListener("input", checkForDuplicateArtNum);
   $("#name").focus();
   $("#cover").fadeIn();
@@ -571,10 +566,11 @@ $("#Edit").click(function () {
   $(location).attr("data-parent", result.storage_parent);
   $("#number").val(result.number);
   $("#articlenumber").val(result.articlenumber);
-  $("#articlenumber")[0].addEventListener("input", checkForDuplicateArtNum);
   $("#minimum_number").val(result.minimum_number);
   $("#category").val(result.category);
   $("#unit").val(result.unit);
+  $("#articlenumber")[0].addEventListener("input", checkForDuplicateArtNum);
+  $("#PopUp form").on("keydown", submitFormByEnterKey);
 
   $("#cover").fadeIn();
 });
@@ -638,6 +634,7 @@ $("body").on("click", "#cover, .navbar, #mdiv", function () {
       "keydown",
       submitFormByEnterKey
     );
+    $("#PopUp form").off("keydown", submitFormByEnterKey);
 
     //closes all popups
     $("#PopUp").fadeOut(300, () => $("#PopUp").remove());
