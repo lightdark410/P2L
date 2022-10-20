@@ -156,7 +156,7 @@ let popup = $(`
             </td>
             <td> Artikelnummer:</td>
             <td>
-              <input type="number" id="articlenumber" value="0" name="articlenumber" min="10000" max="100000" required />
+              <input type="number" id="articlenumber" value="0" name="articlenumber" min="10000" max="999999" required />
             </td>
           </tr>
         </table>
@@ -183,7 +183,7 @@ let inventurPopup = $(`
           <tr>
             <td> Artikelnummer:</td>
             <td>
-              <input type="number" id="articlenumber" value="0" name="articlenumber" min="10000" max="100000" required />
+              <input type="number" id="articlenumber" value="0" name="articlenumber" min="10000" max="999999" required />
             </td>
             <td>Anzahl:</td>
             <td style="text-align: right">

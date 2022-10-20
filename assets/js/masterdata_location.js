@@ -121,9 +121,9 @@ function getCreateNode() {
               value: 1,
               name: "number",
               height: "32",
-              width: "55",
+              width: "65",
               min: "0",
-              max: "100",
+              max: "1000",
             })
           )
           .append(
@@ -266,9 +266,9 @@ $("#EditNode").click(function () {
           value: places,
           name: "number",
           height: "32",
-          width: "55",
+          width: "65",
           min: "0",
-          max: "100",
+          max: "1000",
         })
       )
       .append(
