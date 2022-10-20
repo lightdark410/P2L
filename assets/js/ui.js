@@ -630,11 +630,11 @@ $("body").on("click", "#cover, .navbar, #mdiv", function () {
   //only do smth if the keyword dropdown in the stock popup is closed
   if ($(".select-pure__select--opened").length == 0) {
     // remove articlenumber event listener
-    $("#articlenumber")[0].removeEventListener(
+    $("#articlenumber")[0]?.removeEventListener(
       "input",
       checkForDuplicateArtNum
     );
-    $("#InventurPopUp form")[0].removeEventListener(
+    $("#InventurPopUp form")[0]?.removeEventListener(
       "keydown",
       submitFormByEnterKey
     );

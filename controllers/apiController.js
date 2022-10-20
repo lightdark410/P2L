@@ -545,7 +545,7 @@ module.exports = function (app) {
         res.status(500).send(error);
         return;
       }
-      if (response.length !== 0) {
+      if (response.length !== 0 && response[0].id != req.body.id) {
         logger.debug(
           `User ${req.session.username} tried to edit a stock entry to have a duplicate articlenumber.`
         );
