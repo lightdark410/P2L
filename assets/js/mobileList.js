@@ -27,6 +27,14 @@ let svg_noborder_paths = [
 ];
 let data = req.data;
 console.log(data);
+if (req.status === -1) {
+  $.ajax({
+    url: "/api/updateTaskStatus",
+    data: `taskID=${id}&newStatus=0`,
+    method: "POST",
+  });
+  req.status = 0;
+}
 if (req.status == 0) {
   let ledColor;
   try {

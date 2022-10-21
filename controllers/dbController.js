@@ -11,4 +11,12 @@ async function getStockIDByArticlenumber(articlenumber) {
   return rows;
 }
 
-module.exports = { getStockIDByArticlenumber };
+async function updateTaskStatus(taskID, newStatus) {
+  const [rows, fields] = await con.query(
+    `UPDATE task SET status = ? WHERE id = ?`,
+    [newStatus, taskID]
+  );
+  return rows;
+}
+
+module.exports = { getStockIDByArticlenumber, updateTaskStatus };

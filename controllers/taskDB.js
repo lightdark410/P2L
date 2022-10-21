@@ -6,7 +6,7 @@ var con = mysql.createPool(config.get("dbConfig"));
 function insert_task(username) {
   return new Promise((resolve, reject) => {
     con.query(
-      "INSERT INTO task (creator, status) VALUES (?, 0);",
+      "INSERT INTO task (creator, status) VALUES (?, -1);",
       [username],
       function (err, result) {
         //send results

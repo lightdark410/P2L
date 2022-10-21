@@ -81,7 +81,7 @@ module.exports = function (app) {
         };
         res.send(JSON.stringify(data));
       } catch (error) {
-        res.status(400).send("Bad Request");
+        res.status(400).send(error);
         logger.error(
           `User: ${req.session.username} - Method: Get - Route: /api/mobileList/${req.params.id} - Error: ${error}`
         );
@@ -378,8 +378,7 @@ module.exports = function (app) {
         res.status(404).send({
           status: 404,
           code: "ERR_NOT_FOUND",
-          message:
-            "No stock entry with articlenumber ${req.params.articlenumber} found.",
+          message: `No stock entry with articlenumber ${req.params.articlenumber} found.`,
         });
         return;
       }
@@ -1190,14 +1189,15 @@ module.exports = function (app) {
     });
   }
 
+  /**
+   * Updates the number of items in stock.
+   **/
   app.patch("/api/updateStockNumber", async (req, res) => {
     if (req.session.loggedin) {
       logger.debug(
-        `User: ${
-          req.session.username
-        } - Method: POST - Route: /api/updateStockNumber - Body: ${JSON.stringify(
-          req.body
-        )}`
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
       );
       let response;
       try {
@@ -1206,18 +1206,13 @@ module.exports = function (app) {
         );
       } catch (error) {
         logger.error(
-          `User: ${
-            req.session.username
-          } - Method: PATCH - Route: /api/updateStockNumber - Body: ${JSON.stringify(
-            req.body
-          )} - Error: ${error}`
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
         );
         res.status(500).send(error);
         return;
       }
-      logger.debug(
-        `getStockIDByArticlenumber returned: ${JSON.stringify(response)}`
-      );
       if (response.length === 0) {
         res.status(404).send({
           status: 404,
@@ -1235,11 +1230,9 @@ module.exports = function (app) {
         await logDB.log(response[0].id, "change");
       } catch (error) {
         logger.error(
-          `User: ${
-            req.session.username
-          } - Method: PATCH - Route: /api/updateStockNumber - Body: ${JSON.stringify(
-            req.body
-          )} - Error: ${error}`
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
         );
         res.status(500).send(error);
         return;
@@ -1249,7 +1242,65 @@ module.exports = function (app) {
         `User ${req.session.username} updated stock number for articlenumber ${req.body.articlenumber} to ${req.body.number}`
       );
     } else {
-      res.redirect("/");
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
+    }
+  });
+
+  /**
+   * Updates the status of a task.
+   * Intended only for toggling between "open" and "in progress" (-1 and 0 respectively).
+   * For setting a task to finished please refer to DELETE /api/mobileList
+   **/
+  app.post("/api/updateTaskStatus", async (req, res) => {
+    if (req.session.loggedin) {
+      logger.debug(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      const taskID = parseInt(req.body.taskID);
+      if (isNaN(taskID)) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "taskID must be an integer.",
+        });
+        return;
+      }
+      const newStatus = parseInt(req.body.newStatus);
+      if (isNaN(newStatus) || newStatus < -1 || newStatus > 0) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "newStatus must be an integer between -1 and 0.",
+        });
+        return;
+      }
+      try {
+        await dbController.updateTaskStatus(taskID, newStatus);
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      res.send({ status: 200, code: "OK", message: "Update successful." });
+      logger.info(
+        `User ${req.session.username} has updated status of task ${taskID} to ${newStatus}.`
+      );
+    } else {
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
     }
   });
 };

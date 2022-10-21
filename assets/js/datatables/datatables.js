@@ -146,7 +146,9 @@ let taskTable = $("#task").DataTable({
     //add status to last column
     let td = $(row).find("td").last();
     let status = parseInt(td.text());
-    if (status == 0) {
+    if (status === -1) {
+      td.html("<span>Offen</span>");
+    } else if (status == 0) {
       td.html("<span>In Bearbeitung </span><img src='../assets/loading.png'/>");
     } else {
       td.html(
