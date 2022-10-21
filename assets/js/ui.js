@@ -54,6 +54,7 @@ function stammdaten() {
 const checkForDuplicateArtNum = function (event) {
   const currentArtNum = parseInt(event.target.value);
   if (
+    !currentArtNum || // if NaN
     currentArtNum < parseInt(event.target.min) ||
     currentArtNum > parseInt(event.target.max)
   ) {
@@ -100,6 +101,7 @@ const checkForDuplicateArtNum = function (event) {
 
 const submitFormByEnterKey = function (event) {
   if (event.key === "Enter") {
+    event.preventDefault();
     event.target
       .closest("form")
       .getElementsByTagName("button")
@@ -472,6 +474,8 @@ $("#New").click(function () {
 
   $("#PopUp form").on("keydown", submitFormByEnterKey);
   $("#articlenumber")[0].addEventListener("input", checkForDuplicateArtNum);
+  $("#notificationBreak").remove();
+  $("#notification").remove();
   $("#name").focus();
   $("#cover").fadeIn();
 });
