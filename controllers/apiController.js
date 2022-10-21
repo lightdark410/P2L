@@ -108,8 +108,12 @@ module.exports = function (app) {
         let username = req.session.username;
         let data = JSON.parse(req.body.list);
         //create new mobileList
-        await taskDB.insert_task(username);
-        let task_id = await taskDB.get_latest_task_id();
+        response = await taskDB.insert_task(username);
+        logger.debug(
+          `Insert task response: ${JSON.stringify(response, null, 2)}`
+        );
+        // FIXME: do a proper fix here, response.insertID should never be falsy but we should do proper checking and error handling
+        let task_id = response.insertID || (await taskDB.get_latest_task_id());
         //fill mobileListEntries
         data.forEach(async (obj) => {
           await taskDB.insert_task_entry(
