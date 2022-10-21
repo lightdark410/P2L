@@ -35,7 +35,7 @@ $("#task tbody").on("click", "tr", function (e) {
 $("#task tbody").on("click", "#qr", function (e) {
   let qrRow = $(this).parents("tbody").parents("tr").prev();
   let id = qrRow.find("td:nth-child(2)").text();
-  let data = `http://ainventar01.bbw-azubi.local:8090/mobileList/${id}`;
+  let data = `http://10.132.20.30:8090/mobileList/${id}`;
   $("#qrcode").text("");
   new QRCode(document.getElementById("qrcode"), data);
   $("#qrcode").append(`<div><a href="${data}">${data}</a></div>`);
