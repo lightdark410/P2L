@@ -19,4 +19,22 @@ async function updateTaskStatus(taskID, newStatus) {
   return rows;
 }
 
-module.exports = { getStockIDByArticlenumber, updateTaskStatus };
+async function deleteTask(taskID) {
+  const connection = await con.getConnection();
+  await connection.beginTransaction();
+  try {
+    await connection.query("DELETE FROM task_entries WHERE task_id = ?", [
+      taskID,
+    ]);
+    await connection.query("DELETE FROM task_log WHERE task_id = ?", [taskID]);
+    await connection.query("DELETE FROM task WHERE id = ?", [taskID]);
+  } catch (error) {
+    await connection.rollback();
+    await connection.release();
+    throw error;
+  }
+  await connection.commit();
+  await connection.release();
+}
+
+module.exports = { deleteTask, getStockIDByArticlenumber, updateTaskStatus };

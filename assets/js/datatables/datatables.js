@@ -109,7 +109,7 @@ function format(d) {
   return `<table cellpadding="0" cellspacing="0" border="0">
       <tr>
           <td style="padding: 0 5px 0 0">
-            <button class="btn btn-danger">
+            <button class="btn btn-danger" id="delete-task">
               Auftrag löschen
             </button>
           </td>

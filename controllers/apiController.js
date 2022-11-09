@@ -1303,4 +1303,65 @@ module.exports = function (app) {
       });
     }
   });
+
+  /**
+   * Deletes a task.
+   **/
+  app.post("/api/deleteTask", async (req, res) => {
+    if (req.session.loggedin) {
+      logger.debug(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      if (req.session.title === "Auszubildender") {
+        logger.warn(
+          `User ${req.session.username} tried to delete a task without proper permissions.`
+        );
+        res.status(403).send({
+          status: 403,
+          code: "ERR_PERMISSION_DENIED",
+          message: "Permission denied",
+        });
+        return;
+      }
+      const taskID = parseInt(req.body.taskID);
+      if (isNaN(taskID)) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "taskID must be an integer.",
+        });
+        return;
+      }
+      try {
+        taskStatus = await taskDB.get_task_status(taskID);
+        if (taskStatus.status === 0) {
+          res.status(400).send({
+            status: 400,
+            code: "ERR_TASK_IN_PROGRESS",
+            message: "A task in progress cannot be deleted.",
+          });
+          return;
+        }
+        await dbController.deleteTask(taskID);
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      res.send({ status: 200, code: "OK", message: "Deletion successful." });
+      logger.info(`User ${req.session.username} has deleted task ${taskID}.`);
+    } else {
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
+    }
+  });
 };
