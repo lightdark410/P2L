@@ -110,6 +110,78 @@ const submitFormByEnterKey = function (event) {
   }
 };
 
+const buildSubTrees = function (rootLI, rootNodes) {
+  let nodesAdded = false;
+  for (const node of rootNodes) {
+    const childNodes = stammdatenResult.storage_location.filter(
+      (elem) => elem.parent === node.id
+    );
+    let LIEntry = $("<li/>", {
+      "data-id": node.id,
+      "data-parent": node.parent,
+      "data-places": node.places,
+      "data-empty_places": node.empty_places,
+    });
+    let childNodesExist = false;
+    if (childNodes.length > 0) {
+      LIEntry.append(
+        '<div class="location_caret"></div><ul class="location_nested"></ul>'
+      );
+      LIEntry.children(".location_caret").text(node.name);
+      childNodesExist = buildSubTrees(LIEntry, childNodes);
+      if (!childNodesExist) {
+        LIEntry.children().remove();
+        LIEntry.text(node.name);
+      }
+    } else {
+      LIEntry.text(node.name);
+    }
+    if (node.empty_places !== 0 || childNodesExist) {
+      $(rootLI).children(".location_nested").append(LIEntry);
+      nodesAdded = true;
+    } else {
+      console.log("not adding child node:", JSON.stringify(node, null, 2));
+    }
+  }
+  return nodesAdded;
+};
+
+const buildNodeTree = function () {
+  const rootNodes = stammdatenResult.storage_location.filter(
+    (elem) => elem.parent === 0
+  );
+  for (const node of rootNodes) {
+    const childNodes = stammdatenResult.storage_location.filter(
+      (elem) => elem.parent === node.id
+    );
+    let LIEntry = $("<li/>", {
+      "data-id": node.id,
+      "data-parent": node.parent,
+      "data-places": node.places,
+      "data-empty_places": node.empty_places,
+    });
+    let childNodesExist = false;
+    if (childNodes.length > 0) {
+      LIEntry.append(
+        '<div class="location_caret"></div><ul class="location_nested"></ul>'
+      );
+      LIEntry.children(".location_caret").text(node.name);
+      childNodesExist = buildSubTrees(LIEntry, childNodes);
+      if (!childNodesExist) {
+        LIEntry.children().remove();
+        LIEntry.text(node.name);
+      }
+    } else {
+      LIEntry.text(node.name);
+    }
+    if (node.empty_places !== 0 || childNodesExist) {
+      $(rootUL[0]).find(".location_nested").first().append(LIEntry);
+    } else {
+      console.log("not adding root node", JSON.stringify(node, null, 2));
+    }
+  }
+};
+
 //create stock Popup
 let popup = $(`
   <div id="PopUp">
@@ -218,80 +290,12 @@ $("body").on("click", ".location_caret:first-child", function (e) {
 
 let rootUL = popup.find("#myUL");
 
-appendLocationRootNodes();
-//load all root locations in the popup
-function appendLocationRootNodes() {
-  $.each(stammdaten().storage_location, function (i, p) {
-    if (p.parent == 0) {
-      $(rootUL[0])
-        .find(".location_nested")
-        .append(
-          $("<li/>", {
-            text: p.name,
-            "data-id": p.id,
-            "data-parent": p.parent,
-            "data-places": p.places,
-            "data-empty_places": p.empty_places,
-          })
-        );
-      appendChild(p.id);
-    }
-  });
-}
-//append children locations in the popup
-function appendChild(parentId) {
-  $.get(`/api/storageLocation/parent/${parentId}`, function (data) {
-    if (data.length > 0) {
-      let parentLI = $(rootUL).find(`*[data-id=${parentId}]`);
-      let LIText = parentLI.text();
-
-      $(parentLI).text("");
-      $(parentLI).append(`
-          <div class="location_caret">${LIText}</div>
-          <ul class="location_nested">
-        `);
-
-      $.each(data, function (i, p) {
-        $(parentLI)
-          .find(".location_nested")
-          .append(
-            $("<li/>", {
-              text: p.name,
-              "data-id": p.id,
-              "data-parent": p.parent,
-              "data-places": p.places,
-              "data-empty_places": p.empty_places,
-            })
-          );
-        appendChild(p.id);
-      });
-    } else {
-      removeEndNode(parentId);
-    }
-  });
-}
-
-//remove child nodes without free storage places
-function removeEndNode(nodeDataId) {
-  let endNode = popup.find(`[data-id='${nodeDataId}']`).first();
-  let endNodeParent = $(endNode).data("parent");
-  let parentUl = $(endNode).parent();
-  if ($(endNode).data("empty_places") == 0) {
-    if (!$(endNode).has("ul").length) {
-      $(endNode).remove();
-    }
-    if (parentUl.children().length == 0) {
-      let parentNode = popup.find(`[data-id="${endNodeParent}"]`);
-      let nodeText = parentNode.find("div").first().text();
-      parentNode.html(nodeText);
-    }
-    removeEndNode(endNodeParent);
-  }
-}
+const stammdatenResult = stammdaten();
+buildNodeTree();
 
 function checkForEmptyStoragePlaces() {
   //checks if every 'emptyPlaces' property is 0
-  if (stammdaten().storage_location.every(emptyPlaceIsZero)) {
+  if (stammdatenResult.storage_location.every(emptyPlaceIsZero)) {
     $("#LocationNotification").remove();
     //add error message
     $("#myUL")
@@ -306,13 +310,13 @@ function checkForEmptyStoragePlaces() {
 }
 
 //apply option tags for selection
-$.each(stammdaten().category, function (i, p) {
+$.each(stammdatenResult.category, function (i, p) {
   popup
     .find("#category")
     .append($("<option></option>").val(p.category).html(p.category));
 });
 
-$.each(stammdaten().unit, function (i, p) {
+$.each(stammdatenResult.unit, function (i, p) {
   popup.find("#unit").append($("<option></option>").val(p.id).html(p.unit));
 });
 
