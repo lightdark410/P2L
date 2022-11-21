@@ -1041,21 +1041,32 @@ module.exports = function (app) {
         let oldStorageLocation = await masterdataDB.getStorageLocationById(
           req.body.id
         );
+        newPlaceAmount = parseInt(req.body.number);
+        if (isNaN(newPlaceAmount) && newPlaceAmount >= 0) {
+          res
+            .status(400)
+            .send({
+              status: 400,
+              code: "ERR_BAD_REQUEST",
+              message: "number must be a positive integer or 0",
+            });
+          return;
+        }
         await masterdataDB.updateStorageLocation(
           req.body.id,
           req.body.name,
-          req.body.number
+          newPlaceAmount
         );
-        if (oldStorageLocation.places < req.body.number) {
+        if (oldStorageLocation.places < newPlaceAmount) {
           await masterdataDB.insertStoragePlaces(
             req.body.id,
-            req.body.number,
+            newPlaceAmount,
             oldStorageLocation.places
           );
-        } else if (oldStorageLocation.places > req.body.number) {
+        } else if (oldStorageLocation.places > newPlaceAmount) {
           await masterdataDB.deleteStoragePlaces(
             req.body.id,
-            req.body.number,
+            newPlaceAmount,
             oldStorageLocation.places
           );
         }

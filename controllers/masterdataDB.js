@@ -270,18 +270,16 @@ function setStoragePlaceToNull(stock_id) {
 function deleteStoragePlaces(storage_location_id, places, start) {
   return new Promise((resolve, reject) => {
     try {
-      for (var i = start; i > places; i--) {
-        con.query(
-          `DELETE FROM storage_place WHERE storage_location_id = ? AND stock_id IS NULL`,
-          [storage_location_id, i],
-          function (err, result) {
-            if (err) {
-              console.log(err);
-              reject(err);
-            }
+      con.query(
+        `DELETE FROM storage_place WHERE storage_location_id = ? AND place > ? AND stock_id IS NULL`,
+        [storage_location_id, places],
+        function (err, result) {
+          if (err) {
+            console.log(err);
+            reject(err);
           }
-        );
-      }
+        }
+      );
       resolve("done");
     } catch (error) {
       reject(error);
