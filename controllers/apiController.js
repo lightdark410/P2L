@@ -68,6 +68,7 @@ module.exports = function (app) {
           task[i].number = stock_data.number;
           task[i].storage = storage_name;
           task[i].storage_place = storage.place;
+          task[i].articleNumber = stock_data.articlenumber;
         }
 
         //get color from led api
@@ -109,9 +110,6 @@ module.exports = function (app) {
         let data = JSON.parse(req.body.list);
         //create new mobileList
         response = await taskDB.insert_task(username);
-        logger.debug(
-          `Insert task response: ${JSON.stringify(response, null, 2)}`
-        );
         // FIXME: do a proper fix here, response.insertID should never be falsy but we should do proper checking and error handling
         let task_id = response.insertID || (await taskDB.get_latest_task_id());
         //fill mobileListEntries
@@ -1367,6 +1365,120 @@ module.exports = function (app) {
       }
       res.send({ status: 200, code: "OK", message: "Deletion successful." });
       logger.info(`User ${req.session.username} has deleted task ${taskID}.`);
+    } else {
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
+    }
+  });
+
+  /**
+   * Updates the amount that was actually changed by a task entry.
+   **/
+  app.post("/api/updateTaskEntry", async (req, res) => {
+    if (req.session.loggedin) {
+      logger.debug(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      const taskID = parseInt(req.body.task_id);
+      if (isNaN(taskID)) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "taskID must be an integer.",
+        });
+        return;
+      }
+      const stockID = parseInt(req.body.stock_id);
+      if (isNaN(stockID)) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "stockID must be an integer.",
+        });
+        return;
+      }
+      const amountReal = parseInt(req.body.amount_real);
+      if (isNaN(amountReal) && amountReal <= 0) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "amountReal must be a positive integer.",
+        });
+        return;
+      }
+      let taskEntryID;
+      try {
+        const response = await dbController.updateTaskEntryAmount(
+          taskID,
+          stockID,
+          amountReal
+        );
+        taskEntryID = response.taskEntryID;
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      res.send({ status: 200, code: "OK", message: "Update successful." });
+      logger.info(
+        `User ${req.session.username} has updated task entry ${taskEntryID} with actual amount ${amountReal}.`
+      );
+    } else {
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
+    }
+  });
+
+  /**
+   * Finishes a task.
+   **/
+  app.post("/api/finishTask/:id", async (req, res) => {
+    if (req.session.loggedin) {
+      logger.debug(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      const taskID = parseInt(req.params.id);
+      if (isNaN(taskID)) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "taskID must be an integer.",
+        });
+        return;
+      }
+      try {
+        await dbController.finishTask(taskID, req.session.username);
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      res.send({
+        status: 200,
+        code: "OK",
+        message: "Task was marked as finished.",
+      });
+      logger.info(
+        `User ${req.session.username} has marked task ${taskID} as finished.`
+      );
     } else {
       res.status(403).send({
         status: 403,
