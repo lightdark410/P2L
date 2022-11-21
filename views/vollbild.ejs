@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="../assets/favicon.jpg" />
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      :fullscreen,
+      ::backdrop {
+        background-color: rgba(255, 255, 255, 0);
+      }
+      button {
+        margin: 10px;
+        font-size: larger;
+        background: deepskyblue;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <button type="button" onclick="document.getElementById('ifr').requestFullscreen()">Vollbild aktivieren</button>
+    <iframe id="ifr" width="100%" height="100%" frameborder="0" src="/" onload="document.title = this.contentDocument.title"></iframe>
+    <script>
+      const fullScreenHandler = function (event) {
+        const btn = document.querySelector("body button");
+        if (document.fullscreenElement) {
+          btn.hidden = true;
+          btn.disabled = true;
+        } else {
+          btn.hidden = false;
+          btn.disabled = false;
+        }
+      }
+      document.addEventListener("fullscreenchange", fullScreenHandler);
+    </script>
+  </body>
+</html>

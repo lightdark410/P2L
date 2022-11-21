@@ -72,6 +72,10 @@ module.exports = function (app) {
     }
   });
 
+  app.get("/vollbild", async (req, res) => {
+    res.render("vollbild");
+  });
+
   //Page Routing
   app.get("/", async (req, res) => {
     if (req.session.loggedin) {
