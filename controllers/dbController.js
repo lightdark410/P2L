@@ -54,7 +54,7 @@ const reorderPlaces = async function (oldPlaces, connection) {
   const occupiedPlaces = [];
   for (const place of oldPlaces) {
     if (place.stock_id === null) {
-      emtpyPlaces.push(place);
+      emptyPlaces.push(place);
     } else {
       occupiedPlaces.push(place);
     }
@@ -293,10 +293,16 @@ async function resizeStorageLocation(storageLocationID, newSize) {
     }
     result.oldSize = oldData[0].places;
     result.newSize = newSize;
+    [locationName] = await connection.query(
+      CTE_getFullLocationPathFromLeaf_single(),
+      [storageLocationID]
+    );
+    result.locationName = locationName[0].fullpath;
     const [oldPlaces] = await connection.query(
       `SELECT *
        FROM storage_place
        WHERE storage_location_id = ?
+       ORDER BY place ASC
        FOR UPDATE`,
       [storageLocationID]
     );
@@ -325,7 +331,7 @@ async function resizeStorageLocation(storageLocationID, newSize) {
       );
     } else if (reorderedPlacesCount.total < newSize) {
       const newPlacesArr = [];
-      for (let i = reorderedPlacesCount.total; i <= newSize; i++) {
+      for (let i = reorderedPlacesCount.total + 1; i <= newSize; i++) {
         newPlacesArr.push([storageLocationID, i]);
       }
       await connection.query(

@@ -1035,43 +1035,80 @@ module.exports = function (app) {
   //updates storage location
   app.patch("/api/storageLocation", async (req, res) => {
     if (req.session.loggedin) {
+      logger.debug(
+        `User: ${
+          req.session.username
+        } - Method: Patch - Route: /api/storagePlace - Body: ${JSON.stringify(
+          req.body
+        )}`
+      );
+      if (!req.body.id) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "id is required",
+        });
+      }
+      const newPlaceAmount = parseInt(req.body.number);
+      if (isNaN(newPlaceAmount) && newPlaceAmount >= 0) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "number must be a positive integer or 0",
+        });
+        return;
+      }
       try {
-        let oldStorageLocation = await masterdataDB.getStorageLocationById(
-          req.body.id
-        );
-        newPlaceAmount = parseInt(req.body.number);
-        if (isNaN(newPlaceAmount) && newPlaceAmount >= 0) {
-          res
-            .status(400)
-            .send({
-              status: 400,
-              code: "ERR_BAD_REQUEST",
-              message: "number must be a positive integer or 0",
-            });
-          return;
-        }
-        await masterdataDB.updateStorageLocation(
+        const result = await dbController.resizeStorageLocation(
           req.body.id,
-          req.body.name,
           newPlaceAmount
         );
-        if (oldStorageLocation.places < newPlaceAmount) {
-          await masterdataDB.insertStoragePlaces(
-            req.body.id,
-            newPlaceAmount,
-            oldStorageLocation.places
+        if (result.error) {
+          if (result.error === "ERR_NOTHING_TO_DO") {
+            res.status(200).send({
+              status: 200,
+              code: "NOT_MODIFIED",
+              message: "No change needed.",
+            });
+            return;
+          }
+          let errorMessage;
+          switch (result.error) {
+            case "ERR_LOC_NOT_FOUND":
+              errorMessage = "Storage location not found.";
+              break;
+            case "ERR_NOT_ENOUGH_EMPTY_PLACES":
+              errorMessage = "There are too many occupied places.";
+              break;
+            default:
+              errorMessage = "An error has oocured.";
+          }
+          logger.error(
+            `User: ${
+              req.session.username
+            } - Method: Patch - Route: /api/storagePlace - Body: ${JSON.stringify(
+              req.body
+            )} - Error: ${result.error}`
           );
-        } else if (oldStorageLocation.places > newPlaceAmount) {
-          await masterdataDB.deleteStoragePlaces(
-            req.body.id,
-            newPlaceAmount,
-            oldStorageLocation.places
-          );
+          res
+            .status(400)
+            .send({ status: 400, code: result.error, message: errorMessage });
+          return;
         }
+        logger.info(
+          `User: ${req.session.username} resized storage location ${result.locationName}, id ${req.body.id} from ${result.oldSize} to ${result.newSize}, reordering ${result.reordered} places.`
+        );
 
-        res.send("updated");
+        res.send({ status: 200, code: "OK" });
       } catch (error) {
-        res.status("500").send("Internal Server Error");
+        logger.error(
+          `User: ${
+            req.session.username
+          } - Method: Patch - Route: /api/storagePlace - Body: ${JSON.stringify(
+            req.body
+          )} - Error: ${error}`
+        );
+        res.status("500").send(error);
         console.log(error);
       }
     } else {
