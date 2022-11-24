@@ -351,7 +351,7 @@ $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
   if ($("#OnlyWarnRows").prop("checked")) {
     var warnArr = [];
 
-    if (parseInt(data[3]) < parseInt(data[4])) {
+    if (parseInt(data[4]) < parseInt(data[5])) {
       warnArr.push($($("table.dataTable").DataTable().row(dataIndex).node()));
     }
     for (var i = 0; i < warnArr.length; i++) {
