@@ -9,16 +9,16 @@ const connPool = mysql.createPool(config.get("dbConfig"));
 const CTE_getFullLocationPathFromLeaf = function () {
   return `
 	  WITH RECURSIVE cte as (
-      SELECT childTable.id, childTable.name, childTable.parent, childTable.name AS fullpath
+      SELECT childTable.id, childTable.name, childTable.parent, childTable.name AS fullpath, childTable.id AS src_id
       FROM inventur.storage_location AS childTable
       WHERE childTable.id in ?
       UNION ALL
-      SELECT parentTable.id, parentTable.name, parentTable.parent, CONCAT(parentTable.name, '-', childTable.fullpath) AS fullpath
+      SELECT parentTable.id, parentTable.name, parentTable.parent, CONCAT(parentTable.name, '-', childTable.fullpath) AS fullpath, childTable.src_id
       FROM inventur.storage_location AS parentTable
       INNER JOIN cte as childTable
       ON childTable.parent = parentTable.id
       )
-	  SELECT fullpath FROM cte WHERE parent = 0;`;
+	  SELECT src_id AS id, fullpath FROM cte WHERE parent = 0;`;
 };
 
 const CTE_getFullLocationPathFromLeaf_single = function () {
@@ -275,6 +275,85 @@ async function getStockIDByArticlenumber(articlenumber) {
   return rows;
 }
 
+const getTaskEntriesById = async function (taskID) {
+  const result = [];
+  const incompleteEntries = [];
+  const [rows, fields] = await connPool.query(
+    `SELECT
+       task_entries.lay_in,
+       task_entries.amount,
+       task_entries.amount_real,
+       task_entries.status,
+       task_entries.stock_id,
+       task_log.name,
+       task_log.storage_location,
+       task_log.storage_place,
+       task_log.amount_post,
+       task_log.amount_pre
+     FROM task_entries
+     LEFT JOIN task_log
+       ON task_entries.task_id = task_log.task_id
+         AND task_entries.stock_id = task_log.stock_id
+     WHERE task_entries.task_id = ?`,
+    [taskID]
+  );
+  for (const row of rows) {
+    if (
+      row.name === null ||
+      row.storage_place === null ||
+      row.storage_location === null
+    ) {
+      incompleteEntries.push(row);
+    } else {
+      result.push(row);
+    }
+  }
+  if (incompleteEntries.length > 0) {
+    const stockIDs = incompleteEntries.map((elem) => elem.stock_id);
+    const [stockInfo] = await connPool.query(
+      `SELECT
+         stock.id,
+         article.name,
+         storage_place.place,
+         storage_place.storage_location_id
+       FROM stock
+       LEFT JOIN article
+         ON stock.article_id = article.id
+       LEFT JOIN storage_place
+         ON stock.id = storage_place.stock_id
+       WHERE stock.id = ?`,
+      [stockIDs]
+    );
+    const locationIDs = new Set();
+    const stockMap = {};
+    for (const stock of stockInfo) {
+      stockMap[stock.id] = stock;
+      locationIDs.add(stock.storage_location_id);
+    }
+    const [locationPaths] = await connPool.query(
+      CTE_getFullLocationPathFromLeaf(),
+      [[Array.from(locationIDs)]]
+    );
+    const locationMap = locationPaths.reduce((map, loc) => {
+      map[loc.id] = loc.fullpath;
+      return map;
+    }, {});
+    for (let entry of incompleteEntries) {
+      entry.name = stockMap[entry.stock_id].name;
+      entry.storage_place = stockMap[entry.stock_id].place;
+      entry.storage_location =
+        locationMap[stockMap[entry.stock_id].storage_location_id] ?? "n/a";
+      result.push(entry);
+    }
+  }
+  return result.map((elem) => {
+    elem.amount_real = elem.amount_real ?? "-";
+    elem.amount_pre = elem.amount_pre ?? "-";
+    elem.amount_post = elem.amount_post ?? "-";
+    return elem;
+  });
+};
+
 async function resizeStorageLocation(storageLocationID, newSize) {
   const connection = await connPool.getConnection();
   await connection.beginTransaction();
@@ -402,6 +481,7 @@ module.exports = {
   deleteTask,
   finishTask,
   getStockIDByArticlenumber,
+  getTaskEntriesById,
   resizeStorageLocation,
   updateTaskEntryAmount,
   updateTaskStatus,

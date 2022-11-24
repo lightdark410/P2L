@@ -18,9 +18,11 @@ $("#task tbody").on("click", "tr", function (e) {
   if (isNaN(task_id)) {
     return;
   }
-  task_entriesTable.ajax.url(`/api/tasklog/${task_id}`).load(function () {
-    loadEntryStatus();
-  });
+  task_entriesTable.ajax
+    .url(`/api/taskEntriesById/${task_id}`)
+    .load(function () {
+      loadEntryStatus();
+    });
 
   function loadEntryStatus() {
     let tr = $("#task_entries tbody tr");
@@ -30,10 +32,15 @@ $("#task tbody").on("click", "tr", function (e) {
     $(tr).each(function (i) {
       let td = $(this).find("td").last();
       let status = parseInt(td.text());
-      if (status == 1) {
-        td.html("<img src='../assets/svg/check_noborder.svg'/>");
-      } else {
-        td.html("<img src='../assets/svg/warning_noborder.svg'/>");
+      switch (status) {
+        case 1:
+          td.html("<img src='../assets/svg/check_noborder.svg'/>");
+          break;
+        case 2:
+          td.html("<img src='../assets/svg/warning_noborder.svg'/>");
+          break;
+        default:
+          td.html("<img src='../assets/svg/cross_noborder.svg'/>");
       }
     });
   }

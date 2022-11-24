@@ -1299,7 +1299,7 @@ module.exports = function (app) {
   /**
    * Updates the status of a task.
    * Intended only for toggling between "open" and "in progress" (-1 and 0 respectively).
-   * For setting a task to finished please refer to DELETE /api/mobileList
+   * For setting a task to finished please refer to POST /api/finishTask/:id
    **/
   app.post("/api/updateTaskStatus", async (req, res) => {
     if (req.session.loggedin) {
@@ -1516,6 +1516,47 @@ module.exports = function (app) {
       logger.info(
         `User ${req.session.username} has marked task ${taskID} as finished.`
       );
+    } else {
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
+    }
+  });
+
+  /**
+   * Gets the status information for the task entries of a given task.
+   **/
+  app.get("/api/taskEntriesById/:id", async (req, res) => {
+    if (req.session.loggedin) {
+      logger.debug(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      const taskID = parseInt(req.params.id);
+      if (isNaN(taskID)) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "taskID must be an integer.",
+        });
+        return;
+      }
+      let result;
+      try {
+        result = await dbController.getTaskEntriesById(taskID);
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      res.send({ status: 200, code: "OK", data: result });
     } else {
       res.status(403).send({
         status: 403,
