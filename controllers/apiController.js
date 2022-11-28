@@ -1159,7 +1159,6 @@ module.exports = function (app) {
 
   //send request to the led api
   function ledRequest(RequestData, method) {
-    console.log(RequestData);
     const data = JSON.stringify(RequestData);
     const options = {
       hostname: config.get("led.hostname"),
@@ -1172,21 +1171,26 @@ module.exports = function (app) {
       },
       timeout: 500,
     };
+    console.log("led request data", data);
+    console.log("led request options", options);
 
     return new Promise((resolve, reject) => {
       const req = http.request(options, (res) => {
         let result = "";
         res.on("data", (d) => {
+          console.log("led req data received:", d);
           result += d;
         });
 
         res.on("end", () => {
+          console.log("led req data received total:", result);
           resolve(result);
         });
       });
 
       req.on("timeout", () => {
         req.destroy();
+        console.warn("LED request timed out.");
         resolve("");
       });
 
@@ -1206,28 +1210,34 @@ module.exports = function (app) {
     const options = {
       hostname: config.get("led.hostname"),
       port: config.get("led.port"),
-      path: `/color/api/v1?id=${auftragsId}`,
+      path: `/anfrage/api/v1?id=${auftragsId}`,
       method: "GET",
       timeout: 500,
     };
+    console.log("led request options", options);
 
     return new Promise((resolve, reject) => {
       const req = http.request(options, (res) => {
         let result = "";
         res.on("data", (d) => {
+          console.log("led req data received:", d);
           result += d;
         });
 
         res.on("end", () => {
+          console.log("led req data received total:", result);
           resolve(result);
         });
       });
 
       req.on("timeout", () => {
         req.destroy();
+        console.warn("LED request timed out.");
+        resolve("timeout");
       });
 
       req.on("error", (error) => {
+        console.error(error);
         resolve(error);
       });
 
@@ -1411,6 +1421,74 @@ module.exports = function (app) {
     }
   });
 
+  app.post("/api/createTask", async (req, res) => {
+    if (req.session.loggedin) {
+      logger.debug(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      try {
+        const username = req.session.username;
+        const data = JSON.parse(req.body.list).map((elem) => {
+          elem.stock_id = parseInt(elem.stock_id);
+          elem.amount = parseInt(elem.amount);
+          return elem;
+        });
+        if (data.some((elem) => isNaN(elem.stock_id) || isNaN(elem.amount))) {
+          res.status(400).send({
+            status: 400,
+            code: "ERR_BAD_REQUEST",
+            message: "Every stock_id and amount must be an integer.",
+          });
+          return;
+        }
+        // create new task
+        const response = await dbController.createTask(username, data);
+        // TODO: maybe rewrite this one?
+        const locations = await masterdataDB.getLocationByStockIds(
+          response.stockIDs
+        );
+
+        // Build array with storage IDs
+        // TODO: Definitely rewrite this
+        let locationArr = [];
+        for (const ele of locations) {
+          const res = await getFullStoragePath(
+            ele.parent,
+            ele.storage_location_id
+          );
+          const resArr = JSON.parse("[" + res + "]");
+          locationArr = locationArr.concat(resArr);
+        }
+
+        //Build JSON for led POST request
+        const storageData = {};
+        storageData.auftrag = response.taskID;
+        storageData.lager = locationArr;
+        console.log(await ledRequest(storageData, "POST")); //post storage data to led api
+        //send qr code link
+        logger.info(`User $(username) has created a new task.`);
+        res.send(`${config.get("qr.domain")}/mobileList/${response.taskID}`);
+      } catch (error) {
+        res.status(400).send(error);
+        logger.error(
+          `User: ${
+            req.session.username
+          } - Method: Post - Route: /api/mobileList - Body: ${JSON.stringify(
+            req.body
+          )} - Error: ${error}`
+        );
+      }
+    } else {
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
+    }
+  });
+
   /**
    * Updates the amount that was actually changed by a task entry.
    **/
@@ -1465,6 +1543,38 @@ module.exports = function (app) {
         res.status(500).send(error);
         return;
       }
+      /**
+       *              LED request
+       **/
+      let unfinishedEntries = await taskDB.getUnfinishedTaskEntries(
+        req.body.task_id
+      );
+
+      let locationArr = [];
+      if (unfinishedEntries.length != 0) {
+        let stock_ids = [];
+        for (let obj of unfinishedEntries) {
+          stock_ids.push(obj.stock_id);
+        }
+        let locations = await masterdataDB.getLocationByStockIds(stock_ids);
+        //Build array with storage id´s
+        for (let ele of locations) {
+          let res = await getFullStoragePath(
+            ele.parent,
+            ele.storage_location_id
+          );
+          let resArr = JSON.parse("[" + res + "]");
+          locationArr = locationArr.concat(resArr);
+        }
+      }
+
+      let lagerData = {};
+      lagerData.auftrag = parseInt(req.body.task_id);
+      lagerData.lager = locationArr;
+      console.log(await ledRequest(lagerData, "PUT"));
+      /**
+       *              LED request end
+       **/
       res.send({ status: 200, code: "OK", message: "Update successful." });
       logger.info(
         `User ${req.session.username} has updated task entry ${taskEntryID} with actual amount ${amountReal}.`
@@ -1508,6 +1618,7 @@ module.exports = function (app) {
         res.status(500).send(error);
         return;
       }
+      console.log(await ledRequest({ auftrag: taskID }, "DELETE"));
       res.send({
         status: 200,
         code: "OK",

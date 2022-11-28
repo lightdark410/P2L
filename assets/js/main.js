@@ -836,7 +836,7 @@ $("body").on("submit", "#list_popup form", function (e) {
       amount: amount,
     });
   }
-  $.post("/api/mobileList", { list: JSON.stringify(list) }, function (data) {
+  $.post("/api/createTask", { list: JSON.stringify(list) }, function (data) {
     $("#qrcode").text("");
     new QRCode(document.getElementById("qrcode"), data);
     $("#qrcode").append(`<div><a href="${data}">${data}</a></div>`);

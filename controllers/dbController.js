@@ -105,6 +105,39 @@ const reorderPlaces = async function (oldPlaces, connection) {
  *                      EXPORTED FUNCTIONS                           *
  *********************************************************************/
 
+const createTask = async function (username, taskEntryInfo) {
+  const connection = await connPool.getConnection();
+  await connection.beginTransaction();
+  const result = { taskID: undefined, stockIDs: [] };
+  try {
+    const [rows] = await connection.query(
+      `INSERT INTO task (creator, status) VALUES (?, ?)`,
+      [username, -1]
+    );
+    result.taskID = rows.insertId;
+    for (const taskEntry of taskEntryInfo) {
+      await connection.query(
+        `INSERT INTO task_entries (task_id, stock_id, lay_in, amount, status)
+         VALUES (?, ?, ?, ?, ?)`,
+        [
+          result.taskID,
+          taskEntry.stock_id,
+          taskEntry.lay_in ? 1 : 0,
+          taskEntry.amount,
+          0,
+        ]
+      );
+      result.stockIDs.push(taskEntry.stock_id);
+    }
+  } catch (error) {
+    await cleanUpConnection(connection);
+    throw error;
+  }
+  await connection.commit();
+  await connection.release();
+  return result;
+};
+
 const deleteCategory = async function (categoryID) {
   const connection = await connPool.getConnection();
   await connection.beginTransaction();
@@ -423,7 +456,7 @@ const getTaskEntriesById = async function (taskID) {
          ON stock.article_id = article.id
        LEFT JOIN storage_place
          ON stock.id = storage_place.stock_id
-       WHERE stock.id = ?`,
+       WHERE stock.id IN (?)`,
       [stockIDs]
     );
     const locationIDs = new Set();
@@ -595,6 +628,7 @@ async function updateTaskStatus(taskID, newStatus) {
 }
 
 module.exports = {
+  createTask,
   deleteCategory,
   deleteKeyword,
   deleteTask,
