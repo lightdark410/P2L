@@ -8,14 +8,14 @@ const connPool = mysql.createPool(config.get("dbConfig"));
  *********************************************************************/
 const CTE_getFullLocationPathFromLeaf = function () {
   return `
-	  WITH RECURSIVE cte as (
+	  WITH RECURSIVE cte AS (
       SELECT childTable.id, childTable.name, childTable.parent, childTable.name AS fullpath, childTable.id AS src_id
       FROM inventur.storage_location AS childTable
-      WHERE childTable.id in ?
+      WHERE childTable.id IN ?
       UNION ALL
       SELECT parentTable.id, parentTable.name, parentTable.parent, CONCAT(parentTable.name, '-', childTable.fullpath) AS fullpath, childTable.src_id
       FROM inventur.storage_location AS parentTable
-      INNER JOIN cte as childTable
+      INNER JOIN cte AS childTable
       ON childTable.parent = parentTable.id
       )
 	  SELECT src_id AS id, fullpath FROM cte WHERE parent = 0;`;
@@ -105,6 +105,55 @@ const reorderPlaces = async function (oldPlaces, connection) {
  *                      EXPORTED FUNCTIONS                           *
  *********************************************************************/
 
+const deleteCategory = async function (categoryID) {
+  const connection = await connPool.getConnection();
+  await connection.beginTransaction();
+  const result = {};
+  try {
+    const [rows] = await connection.query(
+      "SELECT * FROM category WHERE id = ? FOR UPDATE",
+      [categoryID]
+    );
+    result.id = rows[0].id;
+    result.name = rows[0].category;
+    // we don't need to check here if any articles use the category,
+    // since if they do, the delete will fail due to a foreign key restriction
+    await connection.query("DELETE FROM category WHERE id = ?", [categoryID]);
+  } catch (error) {
+    await cleanUpConnection(connection);
+    throw error;
+  }
+  await connection.commit();
+  await connection.release();
+  return result;
+};
+
+const deleteKeyword = async function (keywordID) {
+  const connection = await connPool.getConnection();
+  await connection.beginTransaction();
+  const result = {};
+  try {
+    const [rows] = await connection.query(
+      "SELECT * FROM keyword WHERE id = ? FOR UPDATE",
+      [keywordID]
+    );
+    result.id = rows[0].id;
+    result.name = rows[0].keyword;
+    // we don't need to check here if any articles use the keyword,
+    // since if they do, the delete will fail due to a foreign key restriction
+    await connection.query("DELETE FROM keyword_list WHERE keyword_id = ?", [
+      keywordID,
+    ]);
+    await connection.query("DELETE FROM keyword WHERE id = ?", [keywordID]);
+  } catch (error) {
+    await cleanUpConnection(connection);
+    throw error;
+  }
+  await connection.commit();
+  await connection.release();
+  return result;
+};
+
 async function deleteTask(taskID) {
   const connection = await connPool.getConnection();
   await connection.beginTransaction();
@@ -121,6 +170,29 @@ async function deleteTask(taskID) {
   await connection.commit();
   await connection.release();
 }
+
+const deleteUnit = async function (unitID) {
+  const connection = await connPool.getConnection();
+  await connection.beginTransaction();
+  const result = {};
+  try {
+    const [rows] = await connection.query(
+      "SELECT * FROM unit WHERE id = ? FOR UPDATE",
+      [unitID]
+    );
+    result.id = rows[0].id;
+    result.name = rows[0].unit;
+    // we don't need to check here if any articles use the unit,
+    // since if they do, the delete will fail due to a foreign key restriction
+    await connection.query("DELETE FROM unit WHERE id = ?", [unitID]);
+  } catch (error) {
+    await cleanUpConnection(connection);
+    throw error;
+  }
+  await connection.commit();
+  await connection.release();
+  return result;
+};
 
 // FIXME: don't log a change if the actual change amount is 0
 // TODO: move logging, tasklog and updating stock values to updateTaskEntryAmount()
@@ -267,6 +339,36 @@ async function finishTask(taskID, username) {
   return "Finished successfully";
 }
 
+const getCategoryById = async function (categoryID) {
+  const [rows] = await connPool.query(
+    `SELECT category.id, category.category AS name, IFNULL(counter.article_count, 0) AS article_count
+     FROM category
+     LEFT JOIN
+       (SELECT COUNT(*) AS article_count, category_id
+          FROM article
+          GROUP BY category_id) AS counter
+       ON category.id = counter.category_id
+     WHERE category.id = ?`,
+    [categoryID]
+  );
+  return rows;
+};
+
+const getKeywordById = async function (keywordID) {
+  const [rows] = await connPool.query(
+    `SELECT keyword.id, keyword.keyword AS name, IFNULL(counter.article_count, 0) AS article_count
+     FROM keyword
+     LEFT JOIN
+       (SELECT COUNT(*) AS article_count, keyword_id
+          FROM keyword_list
+          GROUP BY keyword_id) AS counter
+       ON keyword.id = counter.keyword_id
+     WHERE keyword.id = ?`,
+    [keywordID]
+  );
+  return rows;
+};
+
 async function getStockIDByArticlenumber(articlenumber) {
   const [rows, fields] = await connPool.query(
     `SELECT id FROM stock WHERE articlenumber = ?`,
@@ -352,6 +454,21 @@ const getTaskEntriesById = async function (taskID) {
     elem.amount_post = elem.amount_post ?? "-";
     return elem;
   });
+};
+
+const getUnitById = async function (unitID) {
+  const [rows] = await connPool.query(
+    `SELECT unit.id, unit.unit AS name, IFNULL(counter.article_count, 0) AS article_count
+     FROM unit
+     LEFT JOIN
+       (SELECT COUNT(*) AS article_count, unit_id
+          FROM article
+          GROUP BY unit_id) AS counter
+       ON unit.id = counter.unit_id
+     WHERE unit.id = ?`,
+    [unitID]
+  );
+  return rows;
 };
 
 async function resizeStorageLocation(storageLocationID, newSize) {
@@ -478,10 +595,16 @@ async function updateTaskStatus(taskID, newStatus) {
 }
 
 module.exports = {
+  deleteCategory,
+  deleteKeyword,
   deleteTask,
+  deleteUnit,
   finishTask,
+  getCategoryById,
+  getKeywordById,
   getStockIDByArticlenumber,
   getTaskEntriesById,
+  getUnitById,
   resizeStorageLocation,
   updateTaskEntryAmount,
   updateTaskStatus,

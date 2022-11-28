@@ -135,49 +135,72 @@ let taskTable = $("#task").DataTable({
       data: null,
       defaultContent: "",
     },
-    { data: "id" }, //mock data for saveIcon
-    { data: "date" },
-    { data: "creator" },
-    { data: "status" },
+    { data: "id", className: "task-id" }, //mock data for saveIcon
+    { data: "date", className: "task-date" },
+    { data: "creator", className: "task-creator" },
+    { data: "status", className: "task-status-indicator" },
   ],
   columnDefs: [{ width: "30%", targets: 4 }],
   order: [[1, "desc"]],
   createdRow: function (row, data, index) {
     //add status to last column
-    let td = $(row).find("td").last();
-    let status = parseInt(td.text());
-    if (status === -1) {
-      td.html("<span>Offen</span>");
-    } else if (status == 0) {
-      td.html("<span>In Bearbeitung </span><img src='../assets/loading.png'/>");
-    } else {
-      td.html(
-        "<span>Abgeschlossen </span><img src='../assets/check-mark.png'/>"
-      );
+    const statusTD = $(row).find("td.task-status-indicator");
+    switch (parseInt(statusTD.text())) {
+      case -1:
+        statusTD.html("<span>Offen</span>");
+        break;
+      case 0:
+        statusTD.html(
+          "<span>In Bearbeitung </span><img src='../assets/loading.png'/>"
+        );
+        break;
+      default:
+        statusTD.html(
+          "<span>Abgeschlossen </span><img src='../assets/check-mark.png'/>"
+        );
     }
   },
   initComplete: function () {
     //get first task id
-    let taskId = parseInt(
-      $("#task tbody tr:eq(0)").find("td:nth-child(2)").text()
+    const taskId = parseInt(
+      $("#task tbody tr:eq(0)").find("td.task-id").text()
     );
     //load task entries for the first task
     if (!isNaN(taskId)) {
-      task_entriesTable.ajax.url(`/api/tasklog/${taskId}`).load(function () {
-        let tr = $("#task_entries tbody tr");
-        if ($(tr).find("td").length == 1) {
-          return;
-        }
-        $(tr).each(function (i) {
-          let td = $(this).find("td").last();
-          let status = parseInt(td.text());
-          if (status == 1) {
-            td.html("<img src='../assets/svg/check_noborder.svg'/>");
-          } else {
-            td.html("<img src='../assets/svg/warning_noborder.svg'/>");
+      task_entriesTable.ajax
+        .url(`/api/taskEntriesById/${taskId}`)
+        .load(function () {
+          const tr = $("#task_entries tbody tr");
+          if ($(tr).find("td").length == 1) {
+            return;
           }
+          $(tr).each(function (i) {
+            const statusTD = $(this).find("td.status-indicator");
+            switch (parseInt(statusTD.text())) {
+              case 1:
+                statusTD.html("<img src='../assets/svg/check_noborder.svg'/>");
+                break;
+              case 2:
+                statusTD.html(
+                  "<img src='../assets/svg/warning_noborder.svg'/>"
+                );
+                break;
+              default:
+                statusTD.html("<img src='../assets/svg/cross_noborder.svg'/>");
+            }
+            const layInTD = $(this).find("td.lay-in");
+            switch (layInTD.text()) {
+              case "0":
+                layInTD.text("Nein");
+                break;
+              case "1":
+                layInTD.text("Ja");
+                break;
+              default:
+                layInTD.text("n/a");
+            }
+          });
         });
-      });
     }
   },
   language: {
@@ -218,29 +241,27 @@ let task_entriesTable = $("#task_entries").DataTable({
     url: "/assets/js/datatables/German.json",
   },
   columns: [
-    { data: "stock_id" },
-    { data: "name" },
-    { data: "storage_location" },
-    { data: "storage_place" },
-    { data: "lay_in" },
-    { data: "amount" },
-    { data: "amount_real" },
-    { data: "amount_pre" },
-    { data: "amount_post" },
-    { data: "status" },
+    { data: "stock_id", className: "stock-id" },
+    { data: "name", className: "article-name" },
+    { data: "storage_location", className: "storage-location" },
+    { data: "storage_place", className: "storage-place" },
+    { data: "lay_in", className: "lay-in" },
+    { data: "amount", className: "amount" },
+    { data: "amount_real", className: "amount-real" },
+    { data: "amount_pre", className: "amount-pre" },
+    { data: "amount_post", className: "amount-post" },
+    { data: "status", className: "status-indicator" },
   ],
   columnDefs: [
-    { width: "15%", targets: 0 },
+    { width: "15%", targets: [0, 3, 5, 6, 7, 8, 9] },
     { width: "30%", targets: 1 },
     { width: "20%", targets: 2 },
-    { width: "15%", targets: 3 },
   ],
 });
 
-let url = window.location.pathname;
-let id = url.substring(url.lastIndexOf("/") + 1);
-let ajax_url;
-!isNaN(id) ? (ajax_url = `/api/logs/${id}`) : (ajax_url = "/api/logs");
+const url = window.location.pathname;
+const id = url.substring(url.lastIndexOf("/") + 1);
+const ajax_url = !isNaN(id) ? `/api/logs/${id}` : "/api/logs";
 $("#logsTable").DataTable({
   ordering: false,
   language: {
@@ -252,29 +273,29 @@ $("#logsTable").DataTable({
     type: "GET",
   },
   columns: [
-    { data: "event" },
-    { data: "stock_id" },
-    { data: "name" },
-    { data: "category" },
-    { data: "keywords" },
-    { data: "location" },
-    { data: "date" },
-    { data: "creator" },
-    { data: "change_by" },
-    { data: "number" },
-    { data: "minimum_number" },
+    { data: "event", className: "event-type" },
+    { data: "stock_id", className: "stock-id" },
+    { data: "name", className: "article-name" },
+    { data: "category", className: "category-name" },
+    { data: "keywords", className: "keyword-list" },
+    { data: "location", className: "storage-location" },
+    { data: "date", className: "log-date" },
+    { data: "creator", className: "creator-name" },
+    { data: "change_by", className: "change-by-name" },
+    { data: "number", className: "current-amount" },
+    { data: "minimum_number", className: "minimum-amount" },
   ],
   rowCallback: function (row, data, index) {
     //add background colors for the events
     switch (data.event) {
       case "delete":
-        $(row).find("td").first().css("background-color", "#ffadad");
+        $(row).find("td.event-type").css("background-color", "#ffadad");
         break;
       case "change":
-        $(row).find("td").first().css("background-color", "#fdffb6");
+        $(row).find("td.event-type").css("background-color", "#fdffb6");
         break;
       case "create":
-        $(row).find("td").first().css("background-color", "#9bf6ff");
+        $(row).find("td.event-type").css("background-color", "#9bf6ff");
         break;
       default:
         break;
@@ -295,6 +316,7 @@ $("#kategorieTable").DataTable({
         return "" + data + '<i class="fas fa-trash"></i>';
       },
     },
+    { data: "id", className: "category-id", visible: false },
   ],
   language: {
     url: "/assets/js/datatables/German.json",
@@ -317,6 +339,7 @@ $("#keywordsTable").DataTable({
         return "" + data + '<i class="fas fa-trash"></i>';
       },
     },
+    { data: "id", className: "keyword-id", visible: false },
   ],
   language: {
     url: "/assets/js/datatables/German.json",
@@ -339,6 +362,7 @@ $("#unitTable").DataTable({
         return "" + data + '<i class="fas fa-trash"></i>';
       },
     },
+    { data: "id", className: "unit-id", visible: false },
   ],
   language: {
     url: "/assets/js/datatables/German.json",
