@@ -105,6 +105,118 @@ const reorderPlaces = async function (oldPlaces, connection) {
  *                      EXPORTED FUNCTIONS                           *
  *********************************************************************/
 
+const createCategory = async function (categoryName) {
+  const connection = await connPool.getConnection();
+  await connection.beginTransaction();
+  const result = {};
+  try {
+    const [rows] = await connection.query(
+      `SELECT id, category
+       FROM category
+       WHERE category = ?
+       FOR UPDATE`,
+      [categoryName]
+    );
+    if (rows.length !== 0) {
+      result.error = "ERR_DUPLICATE_NAME";
+      cleanUpConnection(connection);
+      return result;
+    }
+    const [insertResult] = await connection.query(
+      `INSERT INTO category (category)
+       VALUES (?)`,
+      [categoryName]
+    );
+    result.insertID = insertResult.insertId;
+  } catch (error) {
+    await cleanUpConnection(connection);
+    throw error;
+  }
+  await connection.commit();
+  await connection.release();
+  return result;
+};
+
+const createKeyword = async function (keywordName) {
+  const connection = await connPool.getConnection();
+  await connection.beginTransaction();
+  const result = {};
+  try {
+    const [rows] = await connection.query(
+      `SELECT id, keyword
+       FROM keyword
+       WHERE keyword = ?
+       FOR UPDATE`,
+      [keywordName]
+    );
+    if (rows.length !== 0) {
+      result.error = "ERR_DUPLICATE_NAME";
+      cleanUpConnection(connection);
+      return result;
+    }
+    const [insertResult] = await connection.query(
+      `INSERT INTO keyword (keyword)
+       VALUES (?)`,
+      [keywordName]
+    );
+    result.insertID = insertResult.insertId;
+  } catch (error) {
+    await cleanUpConnection(connection);
+    throw error;
+  }
+  await connection.commit();
+  await connection.release();
+  return result;
+};
+
+const createStorageLocation = async function (locName, locParent, places) {
+  const connection = await connPool.getConnection();
+  await connection.beginTransaction();
+  const result = {};
+  try {
+    const [rows] = await connection.query(
+      `SELECT id, name, parent
+       FROM storage_location
+       WHERE name = ? AND parent = ?
+       FOR UPDATE`,
+      [locName, locParent]
+    );
+    if (rows.length !== 0) {
+      result.error = "ERR_DUPLICATE_NAME";
+      cleanUpConnection(connection);
+      return result;
+    }
+    const [insertResult] = await connection.query(
+      `INSERT INTO storage_location (name, parent, places)
+       VALUES (?, ?, ?)`,
+      [locName, locParent, places]
+    );
+    result.insertID = insertResult.insertId;
+    if (places !== 0) {
+      const newPlacesArr = [];
+      for (let i = 1; i <= places; i++) {
+        newPlacesArr.push([result.insertID, i]);
+      }
+      await connection.query(
+        `INSERT
+         INTO storage_place (storage_location_id, place)
+         VALUES ?`,
+        [newPlacesArr]
+      );
+    }
+    [[{ fullpath: result.fullPath }]] = await connection.query(
+      CTE_getFullLocationPathFromLeaf_single(),
+      [result.insertID]
+    );
+  } catch (error) {
+    await cleanUpConnection(connection);
+    throw error;
+  }
+  await connection.commit();
+  await connection.release();
+  return result;
+};
+
 const createTask = async function (username, taskEntryInfo) {
   const connection = await connPool.getConnection();
   await connection.beginTransaction();
@@ -129,6 +241,38 @@ const createTask = async function (username, taskEntryInfo) {
       );
       result.stockIDs.push(taskEntry.stock_id);
     }
+  } catch (error) {
+    await cleanUpConnection(connection);
+    throw error;
+  }
+  await connection.commit();
+  await connection.release();
+  return result;
+};
+
+const createUnit = async function (unitName) {
+  const connection = await connPool.getConnection();
+  await connection.beginTransaction();
+  const result = {};
+  try {
+    const [rows] = await connection.query(
+      `SELECT id, unit
+       FROM unit
+       WHERE unit = ?
+       FOR UPDATE`,
+      [unitName]
+    );
+    if (rows.length !== 0) {
+      result.error = "ERR_DUPLICATE_NAME";
+      cleanUpConnection(connection);
+      return result;
+    }
+    const [insertResult] = await connection.query(
+      `INSERT INTO unit (unit)
+       VALUES (?)`,
+      [unitName]
+    );
+    result.insertID = insertResult.insertId;
   } catch (error) {
     await cleanUpConnection(connection);
     throw error;
@@ -178,6 +322,68 @@ const deleteKeyword = async function (keywordID) {
       keywordID,
     ]);
     await connection.query("DELETE FROM keyword WHERE id = ?", [keywordID]);
+  } catch (error) {
+    await cleanUpConnection(connection);
+    throw error;
+  }
+  await connection.commit();
+  await connection.release();
+  return result;
+};
+
+const deleteStorageLocation = async function (locID) {
+  const connection = await connPool.getConnection();
+  await connection.beginTransaction();
+  const result = {};
+  try {
+    const [rows] = await connection.query(
+      `SELECT *
+       FROM storage_location
+       WHERE id = ?
+       FOR UPDATE`,
+      [locID]
+    );
+    const [childLocations] = await connection.query(
+      `SELECT *
+       FROM storage_location
+       WHERE parent = ?`,
+      [locID]
+    );
+    if (childLocations.length !== 0) {
+      result.error = "ERR_CHILDREN_EXIST";
+      await cleanUpConnection(connection);
+      return result;
+    }
+    result.id = rows[0].id;
+    result.name = rows[0].name;
+    const [oldPlaces] = await connection.query(
+      `SELECT *
+       FROM storage_place
+       WHERE storage_location_id = ?
+       FOR UPDATE`,
+      [locID]
+    );
+    if (oldPlaces.some((elem) => elem.stock_id !== null)) {
+      result.error = "ERR_OCCUPIED_PLACES_EXIST";
+      await cleanUpConnection(connection);
+      return result;
+    }
+    [[{ fullpath: result.fullPath }]] = await connection.query(
+      CTE_getFullLocationPathFromLeaf_single(),
+      [locID]
+    );
+    await connection.query(
+      `DELETE
+       FROM storage_place
+       WHERE storage_location_id = ?`,
+      [locID]
+    );
+    await connection.query(
+      `DELETE
+       FROM storage_location
+       WHERE id = ?`,
+      [locID]
+    );
   } catch (error) {
     await cleanUpConnection(connection);
     throw error;
@@ -504,13 +710,17 @@ const getUnitById = async function (unitID) {
   return rows;
 };
 
-async function resizeStorageLocation(storageLocationID, newSize) {
+async function resizeAndRenameStorageLocation(
+  storageLocationID,
+  newSize,
+  newName
+) {
   const connection = await connPool.getConnection();
   await connection.beginTransaction();
   const result = {};
   try {
     const [oldData] = await connection.query(
-      `SELECT id, places
+      `SELECT id, name, places
        FROM storage_location
        WHERE id = ?
        FOR UPDATE`,
@@ -522,11 +732,11 @@ async function resizeStorageLocation(storageLocationID, newSize) {
     }
     result.oldSize = oldData[0].places;
     result.newSize = newSize;
-    [locationName] = await connection.query(
+    const [locationName] = await connection.query(
       CTE_getFullLocationPathFromLeaf_single(),
       [storageLocationID]
     );
-    result.locationName = locationName[0].fullpath;
+    result.oldLocationName = locationName[0].fullpath;
     const [oldPlaces] = await connection.query(
       `SELECT *
        FROM storage_place
@@ -545,7 +755,8 @@ async function resizeStorageLocation(storageLocationID, newSize) {
     if (
       reorderedPlacesCount.total === newSize &&
       newSize === oldData[0].places &&
-      reorderedPlacesCount.changed === 0
+      reorderedPlacesCount.changed === 0 &&
+      newName === oldData[0].name
     ) {
       await cleanUpConnection(connection);
       return { error: "ERR_NOTHING_TO_DO" };
@@ -572,10 +783,15 @@ async function resizeStorageLocation(storageLocationID, newSize) {
     }
     await connection.query(
       `UPDATE storage_location
-       SET places = ?
+       SET places = ?, name = ?
        WHERE id = ?`,
-      [newSize, storageLocationID]
+      [newSize, newName, storageLocationID]
     );
+    const [newLocationName] = await connection.query(
+      CTE_getFullLocationPathFromLeaf_single(),
+      [storageLocationID]
+    );
+    result.newLocationName = newLocationName[0].fullpath;
   } catch (error) {
     await cleanUpConnection(connection);
     throw error;
@@ -628,9 +844,14 @@ async function updateTaskStatus(taskID, newStatus) {
 }
 
 module.exports = {
+  createCategory,
+  createKeyword,
+  createStorageLocation,
   createTask,
+  createUnit,
   deleteCategory,
   deleteKeyword,
+  deleteStorageLocation,
   deleteTask,
   deleteUnit,
   finishTask,
@@ -639,7 +860,7 @@ module.exports = {
   getStockIDByArticlenumber,
   getTaskEntriesById,
   getUnitById,
-  resizeStorageLocation,
+  resizeAndRenameStorageLocation,
   updateTaskEntryAmount,
   updateTaskStatus,
 };

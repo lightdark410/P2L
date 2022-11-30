@@ -139,8 +139,6 @@ const buildSubTrees = function (rootLI, rootNodes) {
     if (node.empty_places !== 0 || childNodesExist) {
       $(rootLI).children(".location_nested").append(LIEntry);
       nodesAdded = true;
-    } else {
-      console.log("not adding child node:", JSON.stringify(node, null, 2));
     }
   }
   return nodesAdded;
@@ -176,8 +174,6 @@ const buildNodeTree = function () {
     }
     if (node.empty_places !== 0 || childNodesExist) {
       $(rootUL[0]).find(".location_nested").first().append(LIEntry);
-    } else {
-      console.log("not adding root node", JSON.stringify(node, null, 2));
     }
   }
 };

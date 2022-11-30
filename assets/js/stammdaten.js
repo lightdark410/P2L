@@ -20,6 +20,11 @@ const createStammdatenTemplate = function (stammdatenType) {
     keyword: "Stichwort",
     unit: "Einheit",
   };
+  const capitalisedType = {
+    category: "Category",
+    keyword: "Keyword",
+    unit: "Unit",
+  };
   return function () {
     //toggle arrow icon
     $(this).find("i").first().toggleClass("fa-chevron-down fa-chevron-up");
@@ -32,7 +37,7 @@ const createStammdatenTemplate = function (stammdatenType) {
       $(this).parent().after(`
               <tr class="create-stammdaten-mask">
                 <td>
-                  <form data-type="${stammdatenType}">
+                  <form data-type="${capitalisedType[stammdatenType]}">
                     <input maxlength="20" class="StammInput" type="text" placeholder="${placeholderText[stammdatenType]}...">
                     <input type="submit" value="Speichern" class="StammSave" />
                   </form>
@@ -47,7 +52,8 @@ const createStammdatenTemplate = function (stammdatenType) {
     }
   };
 };
-// higher-order function returning the hanlder to delete a Stammdatum
+
+// higher-order function returning the handler to delete a Stammdatum
 const deleteStammdatenTemplate = function (stammdatenType) {
   const validTypes = ["category", "keyword", "unit"];
   if (!validTypes.includes(stammdatenType)) {
@@ -187,7 +193,7 @@ $("body").on("submit", ".create-stammdaten-mask form", function (event) {
   event.preventDefault();
   const inputVal = $(this).find("input").val();
   const type = $(this).data("type");
-  $.post(`/api/stammdaten/${type}`, { value: inputVal }, function () {
+  $.post(`/api/create${type}`, { value: inputVal }, function () {
     location.reload();
   });
 });
@@ -199,10 +205,6 @@ $("#locationUL").on("focusin", "input", function () {
     let scrolledY = window.scrollY;
     window.scrollTo(0, scrolledY - 100);
   }
-});
-
-$(".AddRow").hover(function () {
-  $(this).css("cursor", "pointer");
 });
 
 // displays delete popup when clicking on the "trash" icon

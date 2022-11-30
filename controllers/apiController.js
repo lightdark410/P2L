@@ -109,11 +109,12 @@ module.exports = function (app) {
         let username = req.session.username;
         let data = JSON.parse(req.body.list);
         //create new mobileList
-        response = await taskDB.insert_task(username);
-        // FIXME: do a proper fix here, response.insertID should never be falsy but we should do proper checking and error handling
-        let task_id = response.insertID || (await taskDB.get_latest_task_id());
+        const response = await taskDB.insert_task(username);
+        console.log("insert task response:", response);
+        // FIXME: do a proper fix here, response.insertId should never be falsy but we should do proper checking and error handling
+        let task_id = response.insertId || (await taskDB.get_latest_task_id());
         //fill mobileListEntries
-        data.forEach(async (obj) => {
+        for (const obj of data) {
           await taskDB.insert_task_entry(
             task_id,
             obj.stock_id,
@@ -121,7 +122,7 @@ module.exports = function (app) {
             obj.amount,
             0
           );
-        });
+        }
 
         let stock_ids = data.map((d) => d.stock_id).join(", ");
         let locations = await masterdataDB.getLocationByStockIds(stock_ids);
@@ -1042,11 +1043,12 @@ module.exports = function (app) {
           req.body
         )}`
       );
-      if (!req.body.id) {
+      const locID = parseInt(req.body.id);
+      if (isNaN(locID)) {
         res.status(400).send({
           status: 400,
           code: "ERR_BAD_REQUEST",
-          message: "id is required",
+          message: "id must be an integer",
         });
       }
       const newPlaceAmount = parseInt(req.body.number);
@@ -1058,48 +1060,21 @@ module.exports = function (app) {
         });
         return;
       }
+      const newName = req.body.name;
+      if (!newName) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "name is required",
+        });
+      }
+      let result;
       try {
-        const result = await dbController.resizeStorageLocation(
-          req.body.id,
-          newPlaceAmount
+        result = await dbController.resizeAndRenameStorageLocation(
+          locID,
+          newPlaceAmount,
+          newName
         );
-        if (result.error) {
-          if (result.error === "ERR_NOTHING_TO_DO") {
-            res.status(200).send({
-              status: 200,
-              code: "NOT_MODIFIED",
-              message: "No change needed.",
-            });
-            return;
-          }
-          let errorMessage;
-          switch (result.error) {
-            case "ERR_LOC_NOT_FOUND":
-              errorMessage = "Storage location not found.";
-              break;
-            case "ERR_NOT_ENOUGH_EMPTY_PLACES":
-              errorMessage = "There are too many occupied places.";
-              break;
-            default:
-              errorMessage = "An error has oocured.";
-          }
-          logger.error(
-            `User: ${
-              req.session.username
-            } - Method: Patch - Route: /api/storagePlace - Body: ${JSON.stringify(
-              req.body
-            )} - Error: ${result.error}`
-          );
-          res
-            .status(400)
-            .send({ status: 400, code: result.error, message: errorMessage });
-          return;
-        }
-        logger.info(
-          `User: ${req.session.username} resized storage location ${result.locationName}, id ${req.body.id} from ${result.oldSize} to ${result.newSize}, reordering ${result.reordered} places.`
-        );
-
-        res.send({ status: 200, code: "OK" });
       } catch (error) {
         logger.error(
           `User: ${
@@ -1111,6 +1086,55 @@ module.exports = function (app) {
         res.status("500").send(error);
         console.log(error);
       }
+      if (result.error) {
+        if (result.error === "ERR_NOTHING_TO_DO") {
+          res.status(200).send({
+            status: 200,
+            code: "NOT_MODIFIED",
+            message: "No change needed.",
+          });
+          return;
+        }
+        let errorMessage;
+        switch (result.error) {
+          case "ERR_LOC_NOT_FOUND":
+            errorMessage = "Storage location not found.";
+            break;
+          case "ERR_NOT_ENOUGH_EMPTY_PLACES":
+            errorMessage = "There are too many occupied places.";
+            break;
+          default:
+            errorMessage = "An error has oocured.";
+        }
+        logger.error(
+          `User: ${
+            req.session.username
+          } - Method: Patch - Route: /api/storagePlace - Body: ${JSON.stringify(
+            req.body
+          )} - Error: ${result.error}`
+        );
+        res
+          .status(400)
+          .send({ status: 400, code: result.error, message: errorMessage });
+        return;
+      }
+      let logString = `User ${req.session.username} edited storage location id ${locID} by: `;
+      if (result.oldLocationName !== result.newLocationName) {
+        logString = `${logString}renaming ${result.oldLocationName} -> ${result.newLocationName}`;
+      }
+      if (result.oldSize !== result.newSize) {
+        logString = `${logString}${
+          logString.endsWith(" ") ? "" : ", "
+        }resizing ${result.oldSize} -> ${result.newSize}`;
+      }
+      if (result.reordered !== 0) {
+        logString = `${logString}${
+          logString.endsWith(" ") ? "" : ", "
+        }reordering ${result.reordered} places`;
+      }
+      logger.info(`${logString}.`);
+
+      res.send({ status: 200, code: "OK" });
     } else {
       req.session.redirectTo = `/`;
       res.redirect("/"); //redirect to login page if not logged in
@@ -1421,6 +1445,9 @@ module.exports = function (app) {
     }
   });
 
+  /**
+   * Creates a task.
+   **/
   app.post("/api/createTask", async (req, res) => {
     if (req.session.loggedin) {
       logger.debug(
@@ -1678,6 +1705,63 @@ module.exports = function (app) {
   });
 
   /**
+   * Creates a category.
+   **/
+  app.post("/api/createCategory", async (req, res) => {
+    if (req.session.loggedin) {
+      logger.debug(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      const categoryName = req.body.value;
+      let result;
+      try {
+        result = await dbController.createCategory(categoryName);
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      if (result.error) {
+        let errorMessage;
+        switch (result.error) {
+          case "ERR_DUPLICATE_NAME":
+            errorMessage = "A category with this name already exists";
+            break;
+          default:
+            errorMessage = "An error has oocured.";
+        }
+        logger.error(
+          `User: ${
+            req.session.username
+          } - Method: Patch - Route: /api/storagePlace - Body: ${JSON.stringify(
+            req.body
+          )} - Error: ${result.error}`
+        );
+        res
+          .status(400)
+          .send({ status: 400, code: result.error, message: errorMessage });
+        return;
+      }
+      logger.info(
+        `User ${req.session.username} has created a category "${categoryName}" with id ${result.insertID}`
+      );
+      res.send({ status: 200, code: "OK", message: "Category created" });
+    } else {
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
+    }
+  });
+
+  /**
    * Gets the information about a given category.
    **/
   app.get("/api/categoryById/:id", async (req, res) => {
@@ -1753,6 +1837,63 @@ module.exports = function (app) {
       logger.info(
         `User deleted the category ${result.name} with the id ${result.id}.`
       );
+    } else {
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
+    }
+  });
+
+  /**
+   * Creates a unit.
+   **/
+  app.post("/api/createUnit", async (req, res) => {
+    if (req.session.loggedin) {
+      logger.debug(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      const unitName = req.body.value;
+      let result;
+      try {
+        result = await dbController.createUnit(unitName);
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      if (result.error) {
+        let errorMessage;
+        switch (result.error) {
+          case "ERR_DUPLICATE_NAME":
+            errorMessage = "A unit with this name already exists";
+            break;
+          default:
+            errorMessage = "An error has oocured.";
+        }
+        logger.error(
+          `User: ${
+            req.session.username
+          } - Method: Patch - Route: /api/storagePlace - Body: ${JSON.stringify(
+            req.body
+          )} - Error: ${result.error}`
+        );
+        res
+          .status(400)
+          .send({ status: 400, code: result.error, message: errorMessage });
+        return;
+      }
+      logger.info(
+        `User ${req.session.username} has created a unit "${unitName}" with id ${result.insertID}`
+      );
+      res.send({ status: 200, code: "OK", message: "Unit created" });
     } else {
       res.status(403).send({
         status: 403,
@@ -1848,6 +1989,63 @@ module.exports = function (app) {
   });
 
   /**
+   * Creates a keyword.
+   **/
+  app.post("/api/createKeyword", async (req, res) => {
+    if (req.session.loggedin) {
+      logger.debug(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      const keywordName = req.body.value;
+      let result;
+      try {
+        result = await dbController.createKeyword(keywordName);
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      if (result.error) {
+        let errorMessage;
+        switch (result.error) {
+          case "ERR_DUPLICATE_NAME":
+            errorMessage = "A keyword with this name already exists";
+            break;
+          default:
+            errorMessage = "An error has oocured.";
+        }
+        logger.error(
+          `User: ${
+            req.session.username
+          } - Method: Patch - Route: /api/storagePlace - Body: ${JSON.stringify(
+            req.body
+          )} - Error: ${result.error}`
+        );
+        res
+          .status(400)
+          .send({ status: 400, code: result.error, message: errorMessage });
+        return;
+      }
+      logger.info(
+        `User ${req.session.username} has created a keyword "${keywordName}" with id ${result.insertID}`
+      );
+      res.send({ status: 200, code: "OK", message: "Keyword created" });
+    } else {
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
+    }
+  });
+
+  /**
    * Gets the information about a given keyword.
    **/
   app.get("/api/keywordById/:id", async (req, res) => {
@@ -1922,6 +2120,147 @@ module.exports = function (app) {
       res.send({ status: 200, code: "OK", message: "Keyword deleted." });
       logger.info(
         `User deleted the keyword ${result.name} with the id ${result.id}.`
+      );
+    } else {
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
+    }
+  });
+
+  /**
+   * Creates a storage location.
+   **/
+  app.post("/api/createStorageLocation", async (req, res) => {
+    if (req.session.loggedin) {
+      logger.debug(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      const locName = req.body.name;
+      if (!locName) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "name is required",
+        });
+        return;
+      }
+      const locParent = parseInt(req.body.parent);
+      if (isNaN(locParent)) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "parent must be an integer.",
+        });
+        return;
+      }
+      const places = parseInt(req.body.places);
+      if (isNaN(places) || places < 0) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "places must be a positive integer.",
+        });
+        return;
+      }
+      let result;
+      try {
+        result = await dbController.createStorageLocation(
+          locName,
+          locParent,
+          places
+        );
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      if (result.error) {
+        let errorMessage;
+        switch (result.error) {
+          case "ERR_DUPLICATE_NAME":
+            errorMessage =
+              "A storage location with this name and parent node already exists";
+            break;
+          default:
+            errorMessage = "An error has oocured.";
+        }
+        logger.error(
+          // FIXME: hardcoded route and method in error log
+          `User: ${
+            req.session.username
+          } - Method: Patch - Route: /api/storagePlace - Body: ${JSON.stringify(
+            req.body
+          )} - Error: ${result.error}`
+        );
+        res
+          .status(400)
+          .send({ status: 400, code: result.error, message: errorMessage });
+        return;
+      }
+      logger.info(
+        `User ${req.session.username} has created a storage Location "${result.fullPath}" with id ${result.insertID}`
+      );
+      res.send({
+        status: 200,
+        code: "OK",
+        message: "Storage location created",
+      });
+    } else {
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
+    }
+  });
+
+  /**
+   * Deletes a given storage location.
+   **/
+  app.delete("/api/storageLocationById/:id", async (req, res) => {
+    if (req.session.loggedin) {
+      logger.debug(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      const locID = parseInt(req.params.id);
+      if (isNaN(locID)) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "locationID must be an integer.",
+        });
+        return;
+      }
+      let result;
+      try {
+        result = await dbController.deleteStorageLocation(locID);
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      res.send({
+        status: 200,
+        code: "OK",
+        message: "Storage location deleted.",
+      });
+      logger.info(
+        `User ${req.session.username} deleted the storage location ${result.fullPath} with the id ${result.id}.`
       );
     } else {
       res.status(403).send({
