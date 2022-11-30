@@ -1202,7 +1202,6 @@ module.exports = function (app) {
       const req = http.request(options, (res) => {
         let result = "";
         res.on("data", (d) => {
-          console.log("led req data received:", d);
           result += d;
         });
 
@@ -1214,13 +1213,13 @@ module.exports = function (app) {
 
       req.on("timeout", () => {
         req.destroy();
-        console.warn("LED request timed out.");
+        console.warn("LED", method, "request timed out.");
         resolve("");
       });
 
       req.on("error", (error) => {
         req.destroy();
-        console.error(error);
+        console.error("LED", method, "request error:", error);
         resolve("");
       });
 
@@ -1244,7 +1243,6 @@ module.exports = function (app) {
       const req = http.request(options, (res) => {
         let result = "";
         res.on("data", (d) => {
-          console.log("led req data received:", d);
           result += d;
         });
 
@@ -1256,13 +1254,13 @@ module.exports = function (app) {
 
       req.on("timeout", () => {
         req.destroy();
-        console.warn("LED request timed out.");
-        resolve("timeout");
+        console.warn("LED GET request timed out.");
+        resolve("");
       });
 
       req.on("error", (error) => {
-        console.error(error);
-        resolve(error);
+        console.error("LED GET request error:", error);
+        resolve("");
       });
 
       req.end();
@@ -1455,23 +1453,36 @@ module.exports = function (app) {
           req.originalUrl
         } - Body: ${JSON.stringify(req.body)}`
       );
-      try {
-        const username = req.session.username;
-        const data = JSON.parse(req.body.list).map((elem) => {
-          elem.stock_id = parseInt(elem.stock_id);
-          elem.amount = parseInt(elem.amount);
-          return elem;
+      const username = req.session.username;
+      const data = JSON.parse(req.body.list).map((elem) => {
+        elem.stock_id = parseInt(elem.stock_id);
+        elem.amount = parseInt(elem.amount);
+        return elem;
+      });
+      if (data.some((elem) => isNaN(elem.stock_id) || isNaN(elem.amount))) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "Every stock_id and amount must be an integer.",
         });
-        if (data.some((elem) => isNaN(elem.stock_id) || isNaN(elem.amount))) {
-          res.status(400).send({
-            status: 400,
-            code: "ERR_BAD_REQUEST",
-            message: "Every stock_id and amount must be an integer.",
-          });
-          return;
-        }
+        return;
+      }
+      let response;
+      try {
         // create new task
-        const response = await dbController.createTask(username, data);
+        response = await dbController.createTask(username, data);
+      } catch (error) {
+        res.status(400).send(error);
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        );
+      }
+      try {
+        /**
+         * LED Request
+         **/
         // TODO: maybe rewrite this one?
         const locations = await masterdataDB.getLocationByStockIds(
           response.stockIDs
@@ -1493,20 +1504,22 @@ module.exports = function (app) {
         const storageData = {};
         storageData.auftrag = response.taskID;
         storageData.lager = locationArr;
-        console.log(await ledRequest(storageData, "POST")); //post storage data to led api
-        //send qr code link
-        logger.info(`User $(username) has created a new task.`);
-        res.send(`${config.get("qr.domain")}/mobileList/${response.taskID}`);
+        await ledRequest(storageData, "POST"); //post storage data to led api
+        /**
+         * END LED Request
+         **/
       } catch (error) {
-        res.status(400).send(error);
         logger.error(
-          `User: ${
-            req.session.username
-          } - Method: Post - Route: /api/mobileList - Body: ${JSON.stringify(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(
             req.body
-          )} - Error: ${error}`
+          )} - Error in LED request: ${error}`
         );
       }
+      //send qr code link
+      logger.info(`User $(username) has created a new task.`);
+      res.send(`${config.get("qr.domain")}/mobileList/${response.taskID}`);
     } else {
       res.status(403).send({
         status: 403,
