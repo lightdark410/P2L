@@ -451,15 +451,14 @@ async function finishTask(taskID, username) {
       cleanUpConnection(connection);
       return "Already finished";
     }
-    
-      await connection.query(
-        `UPDATE task
+
+    await connection.query(
+      `UPDATE task
          SET status = 1
          WHERE id = ?`,
-        [taskID]
-      );
-    }
-   catch (error) {
+      [taskID]
+    );
+  } catch (error) {
     // if anything goes wrong abort the transaction and rethrow the error for the caller to handle
     cleanUpConnection(connection);
     throw error;
@@ -764,8 +763,8 @@ async function updateTaskEntryAmount(taskID, stockID, amountReal, username) {
        WHERE id = ?`,
       [amountReal, result.newStatus, oldData[0].id]
     );
-      const [stockEntry] = await connection.query(
-        `SELECT
+    const [stockEntry] = await connection.query(
+      `SELECT
            article.name,
            stock.number,
            stock.minimum_number,
@@ -778,42 +777,44 @@ async function updateTaskEntryAmount(taskID, stockID, amountReal, username) {
          INNER JOIN category ON category.id = article.category_id
          WHERE stock.id = ?
          FOR UPDATE`,
-        [oldData[0].stock_id]
-      );
-      const [keywords] = await connection.query(
-        `SELECT keyword.keyword
+      [oldData[0].stock_id]
+    );
+    const [keywords] = await connection.query(
+      `SELECT keyword.keyword
            FROM keyword_list, keyword
            WHERE keyword_list.keyword_id = keyword.id
              AND keyword_list.stock_id = ?`,
-        [oldData[0].stock_id]
-      );
-      const keywordArr = keywords.map((e) => e.keyword);
-      stockEntry[0].keywords = keywordArr.join(", ");
-      // calculate new amount
-      const newAmount =
+      [oldData[0].stock_id]
+    );
+    const keywordArr = keywords.map((e) => e.keyword);
+    stockEntry[0].keywords = keywordArr.join(", ");
+    // calculate new amount
+    if (oldData[0].amount_real !== null) {
+      amountReal = amountReal - oldData[0].amount_real;
+    }
+    const newAmount =
       oldData[0].lay_in === 1
-          ? stockEntry[0].number + amountReal
-          : stockEntry[0].number - amountReal;
+        ? stockEntry[0].number + amountReal
+        : stockEntry[0].number - amountReal;
 
-      const [storagePlace] = await connection.query(
-        `SELECT place, storage_location_id
+    const [storagePlace] = await connection.query(
+      `SELECT place, storage_location_id
          FROM storage_place
          WHERE stock_id = ?`,
-        [oldData[0].stock_id]
-      );
-      // FIXME: move outside loop for optimisation
-      const [storageLocation] = await connection.query(
-        CTE_getFullLocationPathFromLeaf_single(),
-        [storagePlace[0].storage_location_id]
-      );
-      await connection.query(
-        `UPDATE stock
+      [oldData[0].stock_id]
+    );
+    const [storageLocation] = await connection.query(
+      CTE_getFullLocationPathFromLeaf_single(),
+      [storagePlace[0].storage_location_id]
+    );
+    await connection.query(
+      `UPDATE stock
          SET number = ?
          WHERE id = ?`,
-        [newAmount, oldData[0].stock_id]
-      );
-      await connection.query(
-        `INSERT INTO log
+      [newAmount, oldData[0].stock_id]
+    );
+    await connection.query(
+      `INSERT INTO log
          (
           event,
           stock_id,
@@ -829,21 +830,29 @@ async function updateTaskEntryAmount(taskID, stockID, amountReal, username) {
           deleted
          )
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          "change",
-          oldData[0].stock_id,
-          stockEntry[0].name,
-          stockEntry[0].category,
-          stockEntry[0].keywords,
-          storagePlace[0].storage_location_id,
-          storageLocation[0].fullpath,
-          stockEntry[0].creator,
-          username,
-          newAmount,
-          stockEntry[0].minimum_number,
-          0,
-        ]
-      );
+      [
+        "change",
+        oldData[0].stock_id,
+        stockEntry[0].name,
+        stockEntry[0].category,
+        stockEntry[0].keywords,
+        storagePlace[0].storage_location_id,
+        storageLocation[0].fullpath,
+        stockEntry[0].creator,
+        username,
+        newAmount,
+        stockEntry[0].minimum_number,
+        0,
+      ]
+    );
+    const [oldTaskLog] = await connection.query(
+      `SELECT id
+       FROM task_log
+       WHERE stock_id = ? AND task_id = ?
+       FOR UPDATE`,
+      [stockID, taskID]
+    );
+    if (oldTaskLog.length === 0) {
       await connection.query(
         `INSERT INTO task_log
          (
@@ -868,6 +877,14 @@ async function updateTaskEntryAmount(taskID, stockID, amountReal, username) {
           result.newStatus,
         ]
       );
+    } else {
+      await connection.query(
+        `UPDATE task_log
+         SET amount_post = ?, status = ?
+         WHERE id = ?`,
+        [newAmount, result.newStatus, oldTaskLog[0].id]
+      );
+    }
   } catch (error) {
     cleanUpConnection(connection);
     throw error;
