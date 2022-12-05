@@ -14,26 +14,43 @@ $("#task tbody").on("click", "tr", function (e) {
   });
   $(this).toggleClass("selected");
 
-  let task_id = parseInt($(this).find("td:nth-child(2)").text());
+  const task_id = parseInt($(this).find("td.task-id").text());
   if (isNaN(task_id)) {
     return;
   }
-  task_entriesTable.ajax.url(`/api/tasklog/${task_id}`).load(function () {
-    loadEntryStatus();
-  });
+  task_entriesTable.ajax
+    .url(`/api/taskEntriesById/${task_id}`)
+    .load(function () {
+      loadEntryStatus();
+    });
 
   function loadEntryStatus() {
-    let tr = $("#task_entries tbody tr");
+    const tr = $("#task_entries tbody tr");
     if ($(tr).find("td").length == 1) {
       return;
     }
     $(tr).each(function (i) {
-      let td = $(this).find("td").last();
-      let status = parseInt(td.text());
-      if (status == 1) {
-        td.html("<img src='../assets/svg/check_noborder.svg'/>");
-      } else {
-        td.html("<img src='../assets/svg/warning_noborder.svg'/>");
+      const statusTD = $(this).find("td.status-indicator");
+      switch (statusTD.text()) {
+        case "1":
+          statusTD.html("<img src='../assets/svg/check_noborder.svg'/>");
+          break;
+        case "2":
+          statusTD.html("<img src='../assets/svg/warning_noborder.svg'/>");
+          break;
+        default:
+          statusTD.html("<img src='../assets/svg/cross_noborder.svg'/>");
+      }
+      const layInTD = $(this).find("td.lay-in");
+      switch (layInTD.text()) {
+        case "0":
+          layInTD.text("Nein");
+          break;
+        case "1":
+          layInTD.text("Ja");
+          break;
+        default:
+          layInTD.text("n/a");
       }
     });
   }
@@ -41,7 +58,7 @@ $("#task tbody").on("click", "tr", function (e) {
 
 $("#task tbody").on("click", "#qr", function (e) {
   let qrRow = $(this).parents("tbody").parents("tr").prev();
-  let id = qrRow.find("td:nth-child(2)").text();
+  let id = qrRow.find("td.task-id").text();
   let data = `http://10.132.20.30:8090/mobileList/${id}`;
   $("#qrcode").text("");
   new QRCode(document.getElementById("qrcode"), data);
@@ -52,7 +69,7 @@ $("#task tbody").on("click", "#qr", function (e) {
 // display delete popup when the "delete" button is clicked
 $("#task tbody").on("click", "#delete-task", function (e) {
   const row = $(this).parents("tbody").parents("tr").prev();
-  const id = row.find("td:nth-child(2)").text();
+  const id = row.find("td.task-id").text();
   let authorised;
 
   $.ajax({

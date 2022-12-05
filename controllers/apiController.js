@@ -109,11 +109,12 @@ module.exports = function (app) {
         let username = req.session.username;
         let data = JSON.parse(req.body.list);
         //create new mobileList
-        response = await taskDB.insert_task(username);
-        // FIXME: do a proper fix here, response.insertID should never be falsy but we should do proper checking and error handling
-        let task_id = response.insertID || (await taskDB.get_latest_task_id());
+        const response = await taskDB.insert_task(username);
+        console.log("insert task response:", response);
+        // FIXME: do a proper fix here, response.insertId should never be falsy but we should do proper checking and error handling
+        let task_id = response.insertId || (await taskDB.get_latest_task_id());
         //fill mobileListEntries
-        data.forEach(async (obj) => {
+        for (const obj of data) {
           await taskDB.insert_task_entry(
             task_id,
             obj.stock_id,
@@ -121,7 +122,7 @@ module.exports = function (app) {
             obj.amount,
             0
           );
-        });
+        }
 
         let stock_ids = data.map((d) => d.stock_id).join(", ");
         let locations = await masterdataDB.getLocationByStockIds(stock_ids);
@@ -258,24 +259,37 @@ module.exports = function (app) {
   //stock related data for the home page
   app.get("/api/stock", async (req, res) => {
     if (req.session.loggedin) {
-      var result = await functions.getStock(); // get db data
-      for (var i = 0; i < result.data.length; i++) {
-        //add keywords
-        var keywordlist = await masterdataDB.getKeywordlistByStockid(
-          result.data[i].id
+      logger.silly(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      let result;
+      try {
+        result = await dbController.getAllStockInfo();
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
         );
-        result.data[i].keyword = keywordlist.keyword;
-
-        //add storage place
-        let storage = await masterdataDB.getStorageByStockId(result.data[i].id);
-        let storage_name = await getFullStorageName(storage, storage.name);
-        result.data[i].storage_location = storage_name;
-        result.data[i].storage_place = storage.place;
+        res.status(500).send(error);
+        return;
       }
-      res.send(result);
+      res.send({
+        status: 200,
+        code: "OK",
+        data: result.map((row) => {
+          row.date = row.date.toLocaleString();
+          return row;
+        }),
+      });
     } else {
-      req.session.redirectTo = `/api/stock`;
-      res.redirect("/"); //redirect to login page if not logged in
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
     }
   });
 
@@ -1035,45 +1049,105 @@ module.exports = function (app) {
   //updates storage location
   app.patch("/api/storageLocation", async (req, res) => {
     if (req.session.loggedin) {
+      logger.debug(
+        `User: ${
+          req.session.username
+        } - Method: Patch - Route: /api/storagePlace - Body: ${JSON.stringify(
+          req.body
+        )}`
+      );
+      const locID = parseInt(req.body.id);
+      if (isNaN(locID)) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "id must be an integer",
+        });
+      }
+      const newPlaceAmount = parseInt(req.body.number);
+      if (isNaN(newPlaceAmount) && newPlaceAmount >= 0) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "number must be a positive integer or 0",
+        });
+        return;
+      }
+      const newName = req.body.name;
+      if (!newName) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "name is required",
+        });
+      }
+      let result;
       try {
-        let oldStorageLocation = await masterdataDB.getStorageLocationById(
-          req.body.id
+        result = await dbController.resizeAndRenameStorageLocation(
+          locID,
+          newPlaceAmount,
+          newName
         );
-        newPlaceAmount = parseInt(req.body.number);
-        if (isNaN(newPlaceAmount) && newPlaceAmount >= 0) {
-          res
-            .status(400)
-            .send({
-              status: 400,
-              code: "ERR_BAD_REQUEST",
-              message: "number must be a positive integer or 0",
-            });
-          return;
-        }
-        await masterdataDB.updateStorageLocation(
-          req.body.id,
-          req.body.name,
-          newPlaceAmount
-        );
-        if (oldStorageLocation.places < newPlaceAmount) {
-          await masterdataDB.insertStoragePlaces(
-            req.body.id,
-            newPlaceAmount,
-            oldStorageLocation.places
-          );
-        } else if (oldStorageLocation.places > newPlaceAmount) {
-          await masterdataDB.deleteStoragePlaces(
-            req.body.id,
-            newPlaceAmount,
-            oldStorageLocation.places
-          );
-        }
-
-        res.send("updated");
       } catch (error) {
-        res.status("500").send("Internal Server Error");
+        logger.error(
+          `User: ${
+            req.session.username
+          } - Method: Patch - Route: /api/storagePlace - Body: ${JSON.stringify(
+            req.body
+          )} - Error: ${error}`
+        );
+        res.status("500").send(error);
         console.log(error);
       }
+      if (result.error) {
+        if (result.error === "ERR_NOTHING_TO_DO") {
+          res.status(200).send({
+            status: 200,
+            code: "NOT_MODIFIED",
+            message: "No change needed.",
+          });
+          return;
+        }
+        let errorMessage;
+        switch (result.error) {
+          case "ERR_LOC_NOT_FOUND":
+            errorMessage = "Storage location not found.";
+            break;
+          case "ERR_NOT_ENOUGH_EMPTY_PLACES":
+            errorMessage = "There are too many occupied places.";
+            break;
+          default:
+            errorMessage = "An error has oocured.";
+        }
+        logger.error(
+          `User: ${
+            req.session.username
+          } - Method: Patch - Route: /api/storagePlace - Body: ${JSON.stringify(
+            req.body
+          )} - Error: ${result.error}`
+        );
+        res
+          .status(400)
+          .send({ status: 400, code: result.error, message: errorMessage });
+        return;
+      }
+      let logString = `User ${req.session.username} edited storage location id ${locID} by: `;
+      if (result.oldLocationName !== result.newLocationName) {
+        logString = `${logString}renaming ${result.oldLocationName} -> ${result.newLocationName}`;
+      }
+      if (result.oldSize !== result.newSize) {
+        logString = `${logString}${
+          logString.endsWith(" ") ? "" : ", "
+        }resizing ${result.oldSize} -> ${result.newSize}`;
+      }
+      if (result.reordered !== 0) {
+        logString = `${logString}${
+          logString.endsWith(" ") ? "" : ", "
+        }reordering ${result.reordered} places`;
+      }
+      logger.info(`${logString}.`);
+
+      res.send({ status: 200, code: "OK" });
     } else {
       req.session.redirectTo = `/`;
       res.redirect("/"); //redirect to login page if not logged in
@@ -1122,7 +1196,6 @@ module.exports = function (app) {
 
   //send request to the led api
   function ledRequest(RequestData, method) {
-    console.log(RequestData);
     const data = JSON.stringify(RequestData);
     const options = {
       hostname: config.get("led.hostname"),
@@ -1135,6 +1208,8 @@ module.exports = function (app) {
       },
       timeout: 500,
     };
+    console.log("led request data", data);
+    console.log("led request options", options);
 
     return new Promise((resolve, reject) => {
       const req = http.request(options, (res) => {
@@ -1144,18 +1219,20 @@ module.exports = function (app) {
         });
 
         res.on("end", () => {
+          console.log("led req data received total:", result);
           resolve(result);
         });
       });
 
       req.on("timeout", () => {
         req.destroy();
+        console.warn("LED", method, "request timed out.");
         resolve("");
       });
 
       req.on("error", (error) => {
         req.destroy();
-        console.error(error);
+        console.error("LED", method, "request error:", error);
         resolve("");
       });
 
@@ -1169,10 +1246,11 @@ module.exports = function (app) {
     const options = {
       hostname: config.get("led.hostname"),
       port: config.get("led.port"),
-      path: `/color/api/v1?id=${auftragsId}`,
+      path: `/anfrage/api/v1?id=${auftragsId}`,
       method: "GET",
       timeout: 500,
     };
+    console.log("led request options", options);
 
     return new Promise((resolve, reject) => {
       const req = http.request(options, (res) => {
@@ -1182,16 +1260,20 @@ module.exports = function (app) {
         });
 
         res.on("end", () => {
+          console.log("led req data received total:", result);
           resolve(result);
         });
       });
 
       req.on("timeout", () => {
         req.destroy();
+        console.warn("LED GET request timed out.");
+        resolve("");
       });
 
       req.on("error", (error) => {
-        resolve(error);
+        console.error("LED GET request error:", error);
+        resolve("");
       });
 
       req.end();
@@ -1262,7 +1344,7 @@ module.exports = function (app) {
   /**
    * Updates the status of a task.
    * Intended only for toggling between "open" and "in progress" (-1 and 0 respectively).
-   * For setting a task to finished please refer to DELETE /api/mobileList
+   * For setting a task to finished please refer to POST /api/finishTask/:id
    **/
   app.post("/api/updateTaskStatus", async (req, res) => {
     if (req.session.loggedin) {
@@ -1375,6 +1457,92 @@ module.exports = function (app) {
   });
 
   /**
+   * Creates a task.
+   **/
+  app.post("/api/createTask", async (req, res) => {
+    if (req.session.loggedin) {
+      logger.debug(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      const username = req.session.username;
+      const data = JSON.parse(req.body.list).map((elem) => {
+        elem.stock_id = parseInt(elem.stock_id);
+        elem.amount = parseInt(elem.amount);
+        return elem;
+      });
+      if (data.some((elem) => isNaN(elem.stock_id) || isNaN(elem.amount))) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "Every stock_id and amount must be an integer.",
+        });
+        return;
+      }
+      let response;
+      try {
+        // create new task
+        response = await dbController.createTask(username, data);
+      } catch (error) {
+        res.status(400).send(error);
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        );
+      }
+      try {
+        /**
+         * LED Request
+         **/
+        // TODO: maybe rewrite this one?
+        const locations = await masterdataDB.getLocationByStockIds(
+          response.stockIDs
+        );
+
+        // Build array with storage IDs
+        // TODO: Definitely rewrite this
+        let locationArr = [];
+        for (const ele of locations) {
+          const res = await getFullStoragePath(
+            ele.parent,
+            ele.storage_location_id
+          );
+          const resArr = JSON.parse("[" + res + "]");
+          locationArr = locationArr.concat(resArr);
+        }
+
+        //Build JSON for led POST request
+        const storageData = {};
+        storageData.auftrag = response.taskID;
+        storageData.lager = locationArr;
+        await ledRequest(storageData, "POST"); //post storage data to led api
+        /**
+         * END LED Request
+         **/
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(
+            req.body
+          )} - Error in LED request: ${error}`
+        );
+      }
+      //send qr code link
+      logger.info(`User $(username) has created a new task.`);
+      res.send(`${config.get("qr.domain")}/mobileList/${response.taskID}`);
+    } else {
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
+    }
+  });
+
+  /**
    * Updates the amount that was actually changed by a task entry.
    **/
   app.post("/api/updateTaskEntry", async (req, res) => {
@@ -1429,6 +1597,38 @@ module.exports = function (app) {
         res.status(500).send(error);
         return;
       }
+      /**
+       *              LED request
+       **/
+      let unfinishedEntries = await taskDB.getUnfinishedTaskEntries(
+        req.body.task_id
+      );
+
+      let locationArr = [];
+      if (unfinishedEntries.length != 0) {
+        let stock_ids = [];
+        for (let obj of unfinishedEntries) {
+          stock_ids.push(obj.stock_id);
+        }
+        let locations = await masterdataDB.getLocationByStockIds(stock_ids);
+        //Build array with storage id´s
+        for (let ele of locations) {
+          let res = await getFullStoragePath(
+            ele.parent,
+            ele.storage_location_id
+          );
+          let resArr = JSON.parse("[" + res + "]");
+          locationArr = locationArr.concat(resArr);
+        }
+      }
+
+      let lagerData = {};
+      lagerData.auftrag = parseInt(req.body.task_id);
+      lagerData.lager = locationArr;
+      console.log(await ledRequest(lagerData, "PUT"));
+      /**
+       *              LED request end
+       **/
       res.send({ status: 200, code: "OK", message: "Update successful." });
       logger.info(
         `User ${req.session.username} has updated task entry ${taskEntryID} with actual amount ${amountReal}.`
@@ -1472,6 +1672,7 @@ module.exports = function (app) {
         res.status(500).send(error);
         return;
       }
+      console.log(await ledRequest({ auftrag: taskID }, "DELETE"));
       res.send({
         status: 200,
         code: "OK",
@@ -1479,6 +1680,614 @@ module.exports = function (app) {
       });
       logger.info(
         `User ${req.session.username} has marked task ${taskID} as finished.`
+      );
+    } else {
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
+    }
+  });
+
+  /**
+   * Gets the status information for the task entries of a given task.
+   **/
+  app.get("/api/taskEntriesById/:id", async (req, res) => {
+    if (req.session.loggedin) {
+      logger.debug(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      const taskID = parseInt(req.params.id);
+      if (isNaN(taskID)) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "taskID must be an integer.",
+        });
+        return;
+      }
+      let result;
+      try {
+        result = await dbController.getTaskEntriesById(taskID);
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      res.send({ status: 200, code: "OK", data: result });
+    } else {
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
+    }
+  });
+
+  /**
+   * Creates a category.
+   **/
+  app.post("/api/createCategory", async (req, res) => {
+    if (req.session.loggedin) {
+      logger.debug(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      const categoryName = req.body.value;
+      let result;
+      try {
+        result = await dbController.createCategory(categoryName);
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      if (result.error) {
+        let errorMessage;
+        switch (result.error) {
+          case "ERR_DUPLICATE_NAME":
+            errorMessage = "A category with this name already exists";
+            break;
+          default:
+            errorMessage = "An error has oocured.";
+        }
+        logger.error(
+          `User: ${
+            req.session.username
+          } - Method: Patch - Route: /api/storagePlace - Body: ${JSON.stringify(
+            req.body
+          )} - Error: ${result.error}`
+        );
+        res
+          .status(400)
+          .send({ status: 400, code: result.error, message: errorMessage });
+        return;
+      }
+      logger.info(
+        `User ${req.session.username} has created a category "${categoryName}" with id ${result.insertID}`
+      );
+      res.send({ status: 200, code: "OK", message: "Category created" });
+    } else {
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
+    }
+  });
+
+  /**
+   * Gets the information about a given category.
+   **/
+  app.get("/api/categoryById/:id", async (req, res) => {
+    if (req.session.loggedin) {
+      logger.debug(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      const categoryID = parseInt(req.params.id);
+      if (isNaN(categoryID)) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "categoryID must be an integer.",
+        });
+        return;
+      }
+      let result;
+      try {
+        result = await dbController.getCategoryById(categoryID);
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      res.send(result[0]);
+    } else {
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
+    }
+  });
+
+  /**
+   * Deletes a given category.
+   **/
+  app.delete("/api/categoryById/:id", async (req, res) => {
+    if (req.session.loggedin) {
+      logger.debug(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      const categoryID = parseInt(req.params.id);
+      if (isNaN(categoryID)) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "categoryID must be an integer.",
+        });
+        return;
+      }
+      let result;
+      try {
+        result = await dbController.deleteCategory(categoryID);
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      res.send({ status: 200, code: "OK", message: "Category deleted." });
+      logger.info(
+        `User deleted the category ${result.name} with the id ${result.id}.`
+      );
+    } else {
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
+    }
+  });
+
+  /**
+   * Creates a unit.
+   **/
+  app.post("/api/createUnit", async (req, res) => {
+    if (req.session.loggedin) {
+      logger.debug(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      const unitName = req.body.value;
+      let result;
+      try {
+        result = await dbController.createUnit(unitName);
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      if (result.error) {
+        let errorMessage;
+        switch (result.error) {
+          case "ERR_DUPLICATE_NAME":
+            errorMessage = "A unit with this name already exists";
+            break;
+          default:
+            errorMessage = "An error has oocured.";
+        }
+        logger.error(
+          `User: ${
+            req.session.username
+          } - Method: Patch - Route: /api/storagePlace - Body: ${JSON.stringify(
+            req.body
+          )} - Error: ${result.error}`
+        );
+        res
+          .status(400)
+          .send({ status: 400, code: result.error, message: errorMessage });
+        return;
+      }
+      logger.info(
+        `User ${req.session.username} has created a unit "${unitName}" with id ${result.insertID}`
+      );
+      res.send({ status: 200, code: "OK", message: "Unit created" });
+    } else {
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
+    }
+  });
+
+  /**
+   * Gets the information about a given unit.
+   **/
+  app.get("/api/unitById/:id", async (req, res) => {
+    if (req.session.loggedin) {
+      logger.debug(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      const unitID = parseInt(req.params.id);
+      if (isNaN(unitID)) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "unitID must be an integer.",
+        });
+        return;
+      }
+      let result;
+      try {
+        result = await dbController.getUnitById(unitID);
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      res.send(result[0]);
+    } else {
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
+    }
+  });
+
+  /**
+   * Deletes a given unit.
+   **/
+  app.delete("/api/unitById/:id", async (req, res) => {
+    if (req.session.loggedin) {
+      logger.debug(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      const unitID = parseInt(req.params.id);
+      if (isNaN(unitID)) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "unitID must be an integer.",
+        });
+        return;
+      }
+      let result;
+      try {
+        result = await dbController.deleteUnit(unitID);
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      res.send({ status: 200, code: "OK", message: "Unit deleted." });
+      logger.info(
+        `User deleted the unit ${result.name} with the id ${result.id}.`
+      );
+    } else {
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
+    }
+  });
+
+  /**
+   * Creates a keyword.
+   **/
+  app.post("/api/createKeyword", async (req, res) => {
+    if (req.session.loggedin) {
+      logger.debug(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      const keywordName = req.body.value;
+      let result;
+      try {
+        result = await dbController.createKeyword(keywordName);
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      if (result.error) {
+        let errorMessage;
+        switch (result.error) {
+          case "ERR_DUPLICATE_NAME":
+            errorMessage = "A keyword with this name already exists";
+            break;
+          default:
+            errorMessage = "An error has oocured.";
+        }
+        logger.error(
+          `User: ${
+            req.session.username
+          } - Method: Patch - Route: /api/storagePlace - Body: ${JSON.stringify(
+            req.body
+          )} - Error: ${result.error}`
+        );
+        res
+          .status(400)
+          .send({ status: 400, code: result.error, message: errorMessage });
+        return;
+      }
+      logger.info(
+        `User ${req.session.username} has created a keyword "${keywordName}" with id ${result.insertID}`
+      );
+      res.send({ status: 200, code: "OK", message: "Keyword created" });
+    } else {
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
+    }
+  });
+
+  /**
+   * Gets the information about a given keyword.
+   **/
+  app.get("/api/keywordById/:id", async (req, res) => {
+    if (req.session.loggedin) {
+      logger.debug(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      const keywordID = parseInt(req.params.id);
+      if (isNaN(keywordID)) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "keywordID must be an integer.",
+        });
+        return;
+      }
+      let result;
+      try {
+        result = await dbController.getKeywordById(keywordID);
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      res.send(result[0]);
+    } else {
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
+    }
+  });
+
+  /**
+   * Deletes a given keyword.
+   **/
+  app.delete("/api/keywordById/:id", async (req, res) => {
+    if (req.session.loggedin) {
+      logger.debug(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      const keywordID = parseInt(req.params.id);
+      if (isNaN(keywordID)) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "keywordID must be an integer.",
+        });
+        return;
+      }
+      let result;
+      try {
+        result = await dbController.deleteKeyword(keywordID);
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      res.send({ status: 200, code: "OK", message: "Keyword deleted." });
+      logger.info(
+        `User deleted the keyword ${result.name} with the id ${result.id}.`
+      );
+    } else {
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
+    }
+  });
+
+  /**
+   * Creates a storage location.
+   **/
+  app.post("/api/createStorageLocation", async (req, res) => {
+    if (req.session.loggedin) {
+      logger.debug(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      const locName = req.body.name;
+      if (!locName) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "name is required",
+        });
+        return;
+      }
+      const locParent = parseInt(req.body.parent);
+      if (isNaN(locParent)) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "parent must be an integer.",
+        });
+        return;
+      }
+      const places = parseInt(req.body.places);
+      if (isNaN(places) || places < 0) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "places must be a positive integer.",
+        });
+        return;
+      }
+      let result;
+      try {
+        result = await dbController.createStorageLocation(
+          locName,
+          locParent,
+          places
+        );
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      if (result.error) {
+        let errorMessage;
+        switch (result.error) {
+          case "ERR_DUPLICATE_NAME":
+            errorMessage =
+              "A storage location with this name and parent node already exists";
+            break;
+          default:
+            errorMessage = "An error has oocured.";
+        }
+        logger.error(
+          // FIXME: hardcoded route and method in error log
+          `User: ${
+            req.session.username
+          } - Method: Patch - Route: /api/storagePlace - Body: ${JSON.stringify(
+            req.body
+          )} - Error: ${result.error}`
+        );
+        res
+          .status(400)
+          .send({ status: 400, code: result.error, message: errorMessage });
+        return;
+      }
+      logger.info(
+        `User ${req.session.username} has created a storage Location "${result.fullPath}" with id ${result.insertID}`
+      );
+      res.send({
+        status: 200,
+        code: "OK",
+        message: "Storage location created",
+      });
+    } else {
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
+    }
+  });
+
+  /**
+   * Deletes a given storage location.
+   **/
+  app.delete("/api/storageLocationById/:id", async (req, res) => {
+    if (req.session.loggedin) {
+      logger.debug(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      const locID = parseInt(req.params.id);
+      if (isNaN(locID)) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "locationID must be an integer.",
+        });
+        return;
+      }
+      let result;
+      try {
+        result = await dbController.deleteStorageLocation(locID);
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      res.send({
+        status: 200,
+        code: "OK",
+        message: "Storage location deleted.",
+      });
+      logger.info(
+        `User ${req.session.username} deleted the storage location ${result.fullPath} with the id ${result.id}.`
       );
     } else {
       res.status(403).send({

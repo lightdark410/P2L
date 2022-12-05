@@ -14,59 +14,55 @@ let table = $("#table").DataTable({
   responsive: false,
   columns: [
     //{ data: "hidden" },
-    { data: "id" }, //mock data for saveIcon
-    { data: "id" },
-    { data: "articlenumber" },
-    { data: "name" },
-    { data: "number" },
-    { data: "minimum_number" },
-    { data: "unit" },
-    { data: "storage_location" },
-    { data: "storage_place" },
-    { data: "category" },
-    { data: "creator" },
-    { data: "change_by" },
-    { data: "date" },
-    { data: "keyword" },
-    { data: "id" }, //mock data for logs
+    { data: "id", className: "stock-save-icon", orderable: false }, //mock data for saveIcon
+    { data: "id", className: "stock-id" },
+    { data: "articlenumber", className: "stock-art-num" },
+    { data: "name", className: "stock-art-name" },
+    { data: "number", className: "stock-amount" },
+    { data: "minimum_number", className: "stock-min-amount" },
+    { data: "unit", className: "stock-unit" },
+    { data: "storage_location", className: "stock-storage-loc" },
+    { data: "storage_place", className: "stock-storage-place" },
+    { data: "category", className: "stock-category" },
+    { data: "creator", className: "stock-creator" },
+    { data: "change_by", className: "stock-changed-by" },
+    { data: "date", className: "stock-change-date" },
+    { data: "keyword", className: "stock-keyword-list" },
+    { data: "id", className: "stock-log-icon", orderable: false }, //mock data for logs
   ],
-  rowCallback: function (row, rowdata, index) {
-    //add icons at the first and last column
-    //$(row).find("td").first().data("articlenumber", "Zukünftige");
+  createdRow: function (row, rowdata, index) {
+    // add icons at the first and last column
     $(row)
-      .find("td")
-      .first()
+      .find("td.stock-save-icon")
       .html(
         '<img class="save" src="assets/iconfinder_add.png" alt="" title="Artikel speichern">'
       );
     $(row)
-      .find("td")
-      .last()
+      .find("td.stock-log-icon")
       .html(
         '<img class="log" src="assets/iconfinder_link.svg" alt="" title="Zu den Logs..">'
       );
 
-    //add background colors if number is less that the minimum number
+    // add background colors if number is less that the minimum number
     if (parseInt(rowdata.number) < parseInt(rowdata.minimum_number)) {
       if (parseInt(rowdata.number) > 0) {
-        $(row).find("td:nth-child(4)").addClass("notEnough_left");
-        $(row).find("td:nth-child(5)").addClass("notEnough_right");
+        $(row).find("td.stock-amount").addClass("notEnough_left");
+        $(row).find("td.stock-min-amount").addClass("notEnough_right");
       } else {
-        $(row).find("td:nth-child(4)").addClass("notEnough2_left");
-        $(row).find("td:nth-child(5)").addClass("notEnough2_right");
+        $(row).find("td.stock-amount").addClass("notEnough2_left");
+        $(row).find("td.stock-min-amount").addClass("notEnough2_right");
       }
     }
 
-    table_ids.push(rowdata.article_id);
+    table_ids.push(rowdata.id);
   },
   order: [[1, "asc"]],
-  columnDefs: [{ targets: [0, 13], orderable: false }], //{target: 5, visible: false}
   initComplete: function () {
     // Apply the search
     this.api()
       .columns()
       .every(function () {
-        var that = this;
+        const that = this;
 
         $("input", this.footer()).on("keyup change clear", function () {
           if (that.search() !== this.value) {
@@ -75,18 +71,18 @@ let table = $("#table").DataTable({
         });
       });
 
-    var r = $("#table tfoot tr");
+    const r = $("#table tfoot tr");
     r.find("th").each(function () {
       $(this).css("padding", 8);
     });
     $("#table thead").append(r);
     $("#search_0").css("text-align", "center");
 
-    let list = JSON.parse(localStorage.getItem("list"));
+    const list = JSON.parse(localStorage.getItem("list"));
 
     //filter listitems that are not in the table anymore
     if (list !== null) {
-      res = list.filter((item) => table_ids.includes(item.id));
+      const res = list.filter((item) => table_ids.includes(item.id));
       localStorage.setItem("list", JSON.stringify(res));
       $("#list").find("span").text(res.length);
     }
@@ -135,49 +131,72 @@ let taskTable = $("#task").DataTable({
       data: null,
       defaultContent: "",
     },
-    { data: "id" }, //mock data for saveIcon
-    { data: "date" },
-    { data: "creator" },
-    { data: "status" },
+    { data: "id", className: "task-id" }, //mock data for saveIcon
+    { data: "date", className: "task-date" },
+    { data: "creator", className: "task-creator" },
+    { data: "status", className: "task-status-indicator" },
   ],
   columnDefs: [{ width: "30%", targets: 4 }],
   order: [[1, "desc"]],
   createdRow: function (row, data, index) {
     //add status to last column
-    let td = $(row).find("td").last();
-    let status = parseInt(td.text());
-    if (status === -1) {
-      td.html("<span>Offen</span>");
-    } else if (status == 0) {
-      td.html("<span>In Bearbeitung </span><img src='../assets/loading.png'/>");
-    } else {
-      td.html(
-        "<span>Abgeschlossen </span><img src='../assets/check-mark.png'/>"
-      );
+    const statusTD = $(row).find("td.task-status-indicator");
+    switch (parseInt(statusTD.text())) {
+      case -1:
+        statusTD.html("<span>Offen</span>");
+        break;
+      case 0:
+        statusTD.html(
+          "<span>In Bearbeitung </span><img src='../assets/loading.png'/>"
+        );
+        break;
+      default:
+        statusTD.html(
+          "<span>Abgeschlossen </span><img src='../assets/check-mark.png'/>"
+        );
     }
   },
   initComplete: function () {
     //get first task id
-    let taskId = parseInt(
-      $("#task tbody tr:eq(0)").find("td:nth-child(2)").text()
+    const taskId = parseInt(
+      $("#task tbody tr:eq(0)").find("td.task-id").text()
     );
     //load task entries for the first task
     if (!isNaN(taskId)) {
-      task_entriesTable.ajax.url(`/api/tasklog/${taskId}`).load(function () {
-        let tr = $("#task_entries tbody tr");
-        if ($(tr).find("td").length == 1) {
-          return;
-        }
-        $(tr).each(function (i) {
-          let td = $(this).find("td").last();
-          let status = parseInt(td.text());
-          if (status == 1) {
-            td.html("<img src='../assets/svg/check_noborder.svg'/>");
-          } else {
-            td.html("<img src='../assets/svg/warning_noborder.svg'/>");
+      task_entriesTable.ajax
+        .url(`/api/taskEntriesById/${taskId}`)
+        .load(function () {
+          const tr = $("#task_entries tbody tr");
+          if ($(tr).find("td").length == 1) {
+            return;
           }
+          $(tr).each(function (i) {
+            const statusTD = $(this).find("td.status-indicator");
+            switch (parseInt(statusTD.text())) {
+              case 1:
+                statusTD.html("<img src='../assets/svg/check_noborder.svg'/>");
+                break;
+              case 2:
+                statusTD.html(
+                  "<img src='../assets/svg/warning_noborder.svg'/>"
+                );
+                break;
+              default:
+                statusTD.html("<img src='../assets/svg/cross_noborder.svg'/>");
+            }
+            const layInTD = $(this).find("td.lay-in");
+            switch (layInTD.text()) {
+              case "0":
+                layInTD.text("Nein");
+                break;
+              case "1":
+                layInTD.text("Ja");
+                break;
+              default:
+                layInTD.text("n/a");
+            }
+          });
         });
-      });
     }
   },
   language: {
@@ -218,26 +237,27 @@ let task_entriesTable = $("#task_entries").DataTable({
     url: "/assets/js/datatables/German.json",
   },
   columns: [
-    { data: "stock_id" },
-    { data: "name" },
-    { data: "storage_location" },
-    { data: "storage_place" },
-    { data: "amount_pre" },
-    { data: "amount_post" },
-    { data: "status" },
+    { data: "stock_id", className: "stock-id" },
+    { data: "name", className: "article-name" },
+    { data: "storage_location", className: "storage-location" },
+    { data: "storage_place", className: "storage-place" },
+    { data: "lay_in", className: "lay-in" },
+    { data: "amount", className: "amount" },
+    { data: "amount_real", className: "amount-real" },
+    { data: "amount_pre", className: "amount-pre" },
+    { data: "amount_post", className: "amount-post" },
+    { data: "status", className: "status-indicator" },
   ],
   columnDefs: [
-    { width: "15%", targets: 0 },
+    { width: "15%", targets: [0, 3, 5, 6, 7, 8, 9] },
     { width: "30%", targets: 1 },
     { width: "20%", targets: 2 },
-    { width: "15%", targets: 3 },
   ],
 });
 
-let url = window.location.pathname;
-let id = url.substring(url.lastIndexOf("/") + 1);
-let ajax_url;
-!isNaN(id) ? (ajax_url = `/api/logs/${id}`) : (ajax_url = "/api/logs");
+const url = window.location.pathname;
+const id = url.substring(url.lastIndexOf("/") + 1);
+const ajax_url = !isNaN(id) ? `/api/logs/${id}` : "/api/logs";
 $("#logsTable").DataTable({
   ordering: false,
   language: {
@@ -249,29 +269,29 @@ $("#logsTable").DataTable({
     type: "GET",
   },
   columns: [
-    { data: "event" },
-    { data: "stock_id" },
-    { data: "name" },
-    { data: "category" },
-    { data: "keywords" },
-    { data: "location" },
-    { data: "date" },
-    { data: "creator" },
-    { data: "change_by" },
-    { data: "number" },
-    { data: "minimum_number" },
+    { data: "event", className: "event-type" },
+    { data: "stock_id", className: "stock-id" },
+    { data: "name", className: "article-name" },
+    { data: "category", className: "category-name" },
+    { data: "keywords", className: "keyword-list" },
+    { data: "location", className: "storage-location" },
+    { data: "date", className: "log-date" },
+    { data: "creator", className: "creator-name" },
+    { data: "change_by", className: "change-by-name" },
+    { data: "number", className: "current-amount" },
+    { data: "minimum_number", className: "minimum-amount" },
   ],
   rowCallback: function (row, data, index) {
     //add background colors for the events
     switch (data.event) {
       case "delete":
-        $(row).find("td").first().css("background-color", "#ffadad");
+        $(row).find("td.event-type").css("background-color", "#ffadad");
         break;
       case "change":
-        $(row).find("td").first().css("background-color", "#fdffb6");
+        $(row).find("td.event-type").css("background-color", "#fdffb6");
         break;
       case "create":
-        $(row).find("td").first().css("background-color", "#9bf6ff");
+        $(row).find("td.event-type").css("background-color", "#9bf6ff");
         break;
       default:
         break;
@@ -292,6 +312,7 @@ $("#kategorieTable").DataTable({
         return "" + data + '<i class="fas fa-trash"></i>';
       },
     },
+    { data: "id", className: "category-id", visible: false },
   ],
   language: {
     url: "/assets/js/datatables/German.json",
@@ -314,6 +335,7 @@ $("#keywordsTable").DataTable({
         return "" + data + '<i class="fas fa-trash"></i>';
       },
     },
+    { data: "id", className: "keyword-id", visible: false },
   ],
   language: {
     url: "/assets/js/datatables/German.json",
@@ -336,6 +358,7 @@ $("#unitTable").DataTable({
         return "" + data + '<i class="fas fa-trash"></i>';
       },
     },
+    { data: "id", className: "unit-id", visible: false },
   ],
   language: {
     url: "/assets/js/datatables/German.json",
@@ -344,175 +367,3 @@ $("#unitTable").DataTable({
   scrollCollapse: true,
   paging: false,
 });
-//save all rows with errors in array warnArr
-
-//search for warn rows
-$.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
-  if ($("#OnlyWarnRows").prop("checked")) {
-    var warnArr = [];
-
-    if (parseInt(data[3]) < parseInt(data[4])) {
-      warnArr.push($($("table.dataTable").DataTable().row(dataIndex).node()));
-    }
-    for (var i = 0; i < warnArr.length; i++) {
-      if (
-        warnArr[i][0] ==
-        $($("table.dataTable").DataTable().row(dataIndex).node())[0]
-      ) {
-        return true;
-      }
-    }
-    return false;
-  }
-  return true;
-});
-
-//triggers if user wants to show only rows with errors
-//refreshes table with search above
-$("#OnlyWarnRows").on("change", function () {
-  table.draw();
-});
-
-$("#table tbody").on("dblclick", "tr", function (e) {
-  var that = $(this);
-
-  if (!$(this).hasClass("selected")) {
-    selectRows(that, e);
-  }
-
-  if (!e.ctrlKey && $(this).children().length > 1) {
-    $("#Edit").trigger("click");
-  }
-});
-
-$("#table tbody").on("click", "tr", function (e) {
-  var that = $(this);
-  selectRows(that, e);
-});
-
-//selects row(s)
-function selectRows(that, e) {
-  var thisClass = that.hasClass("selected");
-
-  if (e.ctrlKey) {
-    that.toggleClass("selected");
-  } else {
-    table.rows().every(function (rowIdx, tableLoop, rowLoop) {
-      this.nodes().to$().removeClass("selected");
-    });
-    if (!thisClass) {
-      that.toggleClass("selected");
-    }
-  }
-
-  selectHandler();
-}
-
-function selectHandler() {
-  var rowsSelected = table.rows(".selected").data().length;
-
-  $("#rows").remove();
-  $(`<span id="rows">${rowsSelected} Zeile(n) ausgewählt</span>`).insertAfter(
-    ".dataTables_info"
-  );
-
-  if (rowsSelected === 1) {
-    $("#Edit").prop("disabled", false);
-    $("#Edit").prop("title", "Aktuell ausgewählte Zeile bearbeiten");
-  } else {
-    $("#Edit").prop("disabled", true);
-    $("#Edit").prop(
-      "title",
-      "Wähle eine Zeile aus um sie bearbeiten zu können"
-    );
-  }
-
-  if (rowsSelected > 0) {
-    $("#Delete").prop("disabled", false);
-    $("#Delete").prop("title", "Aktuell ausgewählte Zeile(n) löschen");
-  } else {
-    $("#Delete").prop("disabled", true);
-    $("#Delete").prop(
-      "title",
-      "Wähle mindestens eine Zeile aus um sie löschen zu können"
-    );
-  }
-}
-
-//----------Delete Entry---------------
-
-$("#Delete").click(function () {
-  let deleteRows = table.rows(".selected").data().to$();
-  let taskentries = [];
-  for (let i = 0; i < deleteRows.length; i++) {
-    let id = table.rows(".selected").data().to$()[i].id;
-    $.ajax({
-      async: false,
-      type: "GET",
-      url: `/api/taskentries/stock/${id}`,
-      dataType: "json",
-      success: function (data) {
-        if (data.length > 0) {
-          taskentries.push(data);
-        }
-      },
-    });
-  }
-  var counter = table.rows(".selected").data().length;
-  $("#PopUpDelete").show();
-  $("#cover").show();
-  if (counter > 1) {
-    if (taskentries.length > 0) {
-      $(".PopUpDelete_middle").html(
-        `<span>Diese Artikel können zurzeit nicht gelöscht werden, da mindestens einer teil eines aktiven Auftrags ist.<span>`
-      );
-      $(".PopUp_footer button").hide(0);
-    } else {
-      $(".PopUpDelete_middle").html(
-        `<span>Sind Sie sicher, dass Sie ${counter} Einträge <u><b>unwiderruflich</b></u> löschen möchten?<span>`
-      );
-      $(".PopUp_footer button").show(0);
-    }
-  } else {
-    if (taskentries.length > 0) {
-      $(".PopUpDelete_middle").html(
-        `<span>Dieser Artikel kann zurzeit nicht gelöscht werden, da er teil eines aktiven Auftrags ist.<span>`
-      );
-      $(".PopUp_footer button").hide(0);
-    } else {
-      var artikel = table.rows(".selected").data()[0].name;
-      $(".PopUpDelete_middle").html(
-        `<span>Sind Sie sicher, dass Sie "${artikel}" <u><b>unwiderruflich</b></u> löschen möchten?<span>`
-      );
-      $(".PopUp_footer button").show(0);
-    }
-  }
-});
-
-$("#deleteForm").submit(function (event) {
-  event.preventDefault(); //prevent default action
-
-  var post_url = $(this).attr("action"); //get form action url
-  var deleteRows = table.rows(".selected").data().to$();
-  for (var i = 0; i < deleteRows.length; i++) {
-    var id = table.rows(".selected").data().to$()[i].id;
-
-    post_urlNew = post_url + "/" + id;
-    $.ajax({
-      url: post_urlNew,
-      type: "DELETE",
-      success: function (result) {
-        let localeStorageList = JSON.parse(localStorage.getItem("list"));
-        if (localeStorageList != null) {
-          let filterList = localeStorageList.filter((el) => {
-            return el.id !== id;
-          });
-          localStorage.setItem("list", JSON.stringify(filterList));
-        }
-        location.reload();
-      },
-    });
-  }
-});
-
-//------------------------------------

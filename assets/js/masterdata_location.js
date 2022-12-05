@@ -4,14 +4,14 @@ displayRootNodes();
 function displayRootNodes() {
   $.get("/api/storageLocation/parent/0", function (data) {
     $("#locationUL li").remove();
-    for (var i = 0; i < data.length; i++) {
+    for (const node of data) {
       $("#locationUL").append(
         $("<li/>")
           .append(
             $("<span/>", {
-              class: "caret",
-              text: data[i].name,
-              "data-id": data[i].id,
+              class: "caret node-name",
+              text: node.name,
+              "data-id": node.id,
             })
           )
           .append($("<ul/>", { class: "nested" }))
@@ -22,7 +22,7 @@ function displayRootNodes() {
 
 //gets all children storage location with a specific parent
 function getChildrenByParentId(parentId) {
-  var result = null;
+  let result = null;
   $.ajax({
     url: `/api/storageLocation/parent/${parentId}`,
     type: "get",
@@ -36,7 +36,7 @@ function getChildrenByParentId(parentId) {
 
 //gets one specific storage location by it´s id
 function getLocationById(id) {
-  var result = null;
+  let result = null;
   $.ajax({
     url: `/api/storageLocation/${id}`,
     type: "get",
@@ -50,31 +50,30 @@ function getLocationById(id) {
 
 //displays all children nodes from a parent
 function displayChildNodes(parent) {
-  let parentId = $(parent).data("id");
-  let children = getChildrenByParentId(parentId);
+  const parentId = $(parent).data("id");
+  const children = getChildrenByParentId(parentId);
 
   //clears old children nodes before displaying the new ones
   $(parent).parent().find("ul").empty();
 
-  for (var i = 0; i < children.length; i++) {
+  for (const node of children) {
     $($(parent).parent().find("ul").first()).append(
       $("<li/>")
         .append(
           $("<span/>", {
-            class: "caret",
-            text: children[i].name,
-            "data-id": children[i].id,
+            class: "caret node-name",
+            text: node.name,
+            "data-id": node.id,
           })
         )
         .append($("<ul/>", { class: "nested" }))
     );
   }
 
-  let parentExists = parent.length > 0 ? true : false;
-  if (parentExists) {
-    let dataFromSelectedEle = getLocationById(parentId);
+  if (parent.length > 0) {
+    const dataFromSelectedEle = getLocationById(parentId);
 
-    if (dataFromSelectedEle.places != "0") {
+    if (dataFromSelectedEle.places !== 0) {
       $(parent)
         .parent()
         .find("ul")
@@ -102,7 +101,7 @@ function displayChildNodes(parent) {
 
 //return input fields to add a new location
 function getCreateNode() {
-  let node = $("<li/>", { class: "CreateNode" }).append(
+  const node = $("<li/>", { class: "CreateNode" }).append(
     $("<form/>", { class: "createForm", action: "", method: "POST" })
       .append(
         $("<span/>", { class: "caret create" })
@@ -142,26 +141,26 @@ function getCreateNode() {
 
 //checks if a location already exists
 $("#locationUL").on("keyup", "input[name='name']", function () {
-  let currentVal = $(this).val();
-  let siblings = $(this).closest("li").siblings("li");
+  const currentVal = $(this).val();
+  const siblings = $(this).closest("li").siblings("li");
   let match = false;
-  $(siblings).each(function (index, ele) {
-    let siblingText = $(ele).find("span").first().text();
+  for (const elem of siblings) {
+    const siblingText = $(elem).find("span.node-name").first().text();
     if (
-      siblingText.replace(/\s/g, "").toLowerCase() ==
+      siblingText.replace(/\s/g, "").toLowerCase() ===
       currentVal.replace(/\s/g, "").toLowerCase()
     ) {
       match = true;
     }
-  });
+  }
 
-  let button = $(this).parent().find("button");
+  const button = $(this).siblings("button");
   if (match) {
     //apply error message if a match was found
     $(this).css("color", "red");
     $(button).prop("disabled", true);
 
-    if ($(".LocationErrorMsg").length == 0) {
+    if ($(".LocationErrorMsg").length === 0) {
       $(this)
         .parent()
         .append($("<br/>", { class: "LocationErrorBr" }))
@@ -173,9 +172,9 @@ $("#locationUL").on("keyup", "input[name='name']", function () {
         );
     }
   } else {
-    if ($(".LocationErrorMsg").length != 0) {
-      $(this).parent().find(".LocationErrorBr").remove();
-      $(this).parent().find("span").remove();
+    if ($(".LocationErrorMsg").length !== 0) {
+      $(this).parent().find("br.LocationErrorBr").remove();
+      $(this).parent().find("span.LocationErrorMsg").remove();
     }
 
     $(this).css("color", "black");
@@ -185,25 +184,22 @@ $("#locationUL").on("keyup", "input[name='name']", function () {
 
 //toggles arrow and edit/delete button when a location is clicked
 $("#locationUL").on("click", ".caret", function () {
+  if ($(this).hasClass("create")) {
+    // ignore click events on the create form
+    return true;
+  }
   $(".caret").removeClass("selectedNode");
   $(this).addClass("selectedNode");
 
-  this.parentElement.querySelector(".nested").classList.toggle("active");
-  if ($(this).find("input").length == 0) {
-    this.classList.toggle("caret-down");
-    $(".CreateNode").remove();
-    $(".editForm").remove();
-  }
+  $(this).parent().find(".nested").toggleClass("active");
+  $(this).toggleClass("caret-down");
+  $(".CreateNode").remove();
+  $(".editForm").remove();
 
   $("#EditNode").prop("disabled", false);
   $("#DeleteNode").prop("disabled", false);
 
   if ($(this).hasClass("caret-down")) {
-    // if($(this).find("input").length == 0){
-    //     $(this).addClass("selectedNode");
-    //     $("#EditNode").prop("disabled", false);
-    //     $("#DeleteNode").prop("disabled", false);
-    // }
     displayChildNodes($(this));
   }
 });
@@ -213,24 +209,23 @@ $("#CreateNode").click(function () {
   $(".editForm").remove();
 
   let parentNode;
-  if ($(".selectedNode").length != 0) {
+  if ($(".selectedNode").length !== 0) {
     //find correct parent element
     if (!$(".selectedNode").hasClass("caret-down")) {
       $(".selectedNode").click();
     }
-    parentNode = $(".selectedNode").parent().find("ul").first();
+    parentNode = $(".selectedNode").siblings("ul").first();
   } else {
     parentNode = $("#locationUL");
   }
 
-  let noCreateNodeExists = $(".CreateNode").length == 0;
-  if (noCreateNodeExists) {
+  if ($(".CreateNode").length === 0) {
     let createNode = getCreateNode();
     $(parentNode).append($(createNode));
   }
 
-  $(".createForm").find("input[type='text']").focus();
-  $(".createForm").find("input[type='text']").attr("required", "true");
+  $(".createForm").find("input[name='name']").focus();
+  $(".createForm").find("input[name='name']").attr("required", "true");
 });
 
 //apply input fields to edit an existing location
@@ -238,14 +233,12 @@ $("#EditNode").click(function () {
   $(".CreateNode").remove();
   $(".editForm").remove();
 
-  let selectedText = $(".selectedNode").text();
-  let selectedId = $(".selectedNode").data("id");
-  let selectedEmptyPlaces = $(".selectedNode")
-    .parent()
-    .find(".places")
-    .data("empty_places");
-  let places = $(".selectedNode").parent().find(".places").data("places");
-  places = places ? places : 0;
+  const selectedText = $(".selectedNode").text();
+  const selectedId = $(".selectedNode").data("id");
+  const selectedEmptyPlaces =
+    $(".selectedNode").parent().find(".places").data("empty_places") ?? 0;
+  const places =
+    $(".selectedNode").parent().find(".places").data("places") ?? 0;
 
   $(".selectedNode").after(
     $("<form/>", { class: "editForm", style: "margin-top: -20px" })
@@ -280,10 +273,10 @@ $("#EditNode").click(function () {
       )
   );
 
-  $(".selectedNode").parent().find("input[type='text']").focus();
+  $(".selectedNode").parent().find("input[name='name']").focus();
   $(".selectedNode")
     .parent()
-    .find("input[type='text']")
+    .find("input[name='name']")
     .attr("required", "true");
   $(".selectedNode").parent().find("input").attr("autocomplete", "off");
 
@@ -291,8 +284,7 @@ $("#EditNode").click(function () {
     .parent()
     .find("input[type='number']")
     .on("input", function () {
-      let val = $(this).val();
-      if (val < places - selectedEmptyPlaces) {
+      if ($(this).val < places - selectedEmptyPlaces) {
         $(".selectedNode").parent().find("button").prop("disabled", true);
       } else {
         $(".selectedNode").parent().find("button").prop("disabled", false);
@@ -305,27 +297,23 @@ $("#DeleteNode").click(function () {
   $(".CreateNode").remove();
   $(".editForm").remove();
 
-  let selectedText = $(".selectedNode").text();
-  let selectedId = $(".selectedNode").data("id");
-  let selectedEmptyPlaces = $(".selectedNode")
-    .parent()
-    .find(".places")
-    .data("empty_places");
-  let places = $(".selectedNode").parent().find(".places").data("places");
+  const selectedText = $(".selectedNode").text();
+  const selectedId = $(".selectedNode").data("id");
+  const selectedEmptyPlaces =
+    $(".selectedNode").parent().find(".places").data("empty_places") ?? 0;
+  const places =
+    $(".selectedNode").parent().find(".places").data("places") ?? 0;
 
-  selectedEmptyPlaces = selectedEmptyPlaces ? selectedEmptyPlaces : 0;
-  places = places ? places : 0;
-
-  let numberOfChildren = $(".selectedNode")
+  const numberOfChildren = $(".selectedNode")
     .parent()
     .find("ul")
     .find("*[data-id]").length;
 
   let popUpMid = ``;
 
-  if (numberOfChildren == 0 && places == selectedEmptyPlaces) {
+  if (numberOfChildren === 0 && places === selectedEmptyPlaces) {
     popUpMid = `
-        <span>Sicher, dass Sie "${selectedText}" <b><u>unwiderruflich</u></b></span>
+        <span>Sicher, dass Sie den Lagerort "${selectedText}" <b><u>unwiderruflich</u></b></span>
         <br>
         <span>von den Stammdaten löschen wollen?</span>
         <br>
@@ -334,7 +322,7 @@ $("#DeleteNode").click(function () {
         `;
   } else {
     popUpMid = `
-        "${selectedText}" Wird aktuell von Artikeln genutzt, oder enthällt weiter Lagerorte und kann daher nicht gelöscht werden.
+        "${selectedText}" Wird aktuell von Artikeln genutzt, oder enthält weitere Lagerorte und kann daher nicht gelöscht werden.
         <br>
         <button class="btn btn-secondary cancel" type="button">Abbrechen</button>
         `;
@@ -345,7 +333,7 @@ $("#DeleteNode").click(function () {
         <div class="popup">
             <form>
             <div class="popup_top">
-                Stammdatum von Ort löschen
+                Lagerort löschen?
                 <div id="mdiv">
                     <div class="mdiv">
                         <div class="md"></div>
@@ -377,7 +365,7 @@ $("#DeleteNode").click(function () {
 
   $(".popup_mid > .delete").click(function () {
     $.ajax({
-      url: `/api/stammdaten/storageLocation/${selectedId}`,
+      url: `/api/storageLocationById/${selectedId}`,
       type: "DELETE",
       success: function (result) {
         location.reload();
@@ -390,21 +378,25 @@ $("#DeleteNode").click(function () {
 $("#locationUL").on("submit", ".createForm", function (e) {
   e.preventDefault();
 
-  let span = $(this).find("span");
+  const span = $(this).find("span");
   if ($(span).hasClass("create")) {
-    let parentEle = $(this).parent().parent().parent("li").find("span").first();
-    let parentId = $(parentEle).data("id");
-    parentId = parentId ? parentId : 0;
+    const parentEle = $(this)
+      .parent()
+      .parent()
+      .parent("li")
+      .find("span")
+      .first();
+    const parentId = $(parentEle).data("id") ?? 0;
 
-    let places = $(this).find("input[type='number']").val();
+    const places = $(this).find("input[type='number']").val();
     if ($.isNumeric(places)) {
-      let data = {
+      const data = {
         name: $(span).find("input[type='text']").val(),
         parent: parentId,
         places: places,
       };
 
-      $.post("/api/storageLocation", data, function (data) {
+      $.post("/api/createStorageLocation", data, function (data) {
         displayChildNodes(parentEle);
       });
     }
@@ -415,9 +407,8 @@ $("#locationUL").on("submit", ".createForm", function (e) {
 $("#locationUL").on("submit", ".editForm", function (e) {
   e.preventDefault();
 
-  let id = $(this).find("*[data-id]").data("id");
-  let formdata = $(this).serialize();
-  formdata += "&id=" + id;
+  const id = $(this).find("*[data-id]").data("id");
+  const formdata = `${$(this).serialize()}&id=${id}`;
 
   $.ajax({
     type: "PATCH",
@@ -426,7 +417,7 @@ $("#locationUL").on("submit", ".editForm", function (e) {
     processData: false,
     contentType: "application/x-www-form-urlencoded",
     success: function () {
-      history.go(0);
+      location.reload();
     },
   });
 });
