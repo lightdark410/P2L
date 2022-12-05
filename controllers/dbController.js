@@ -578,6 +578,53 @@ async function finishTask(taskID, username) {
   return "Finished successfully";
 }
 
+const getAllStockInfo = async function () {
+  const [rows] = await connPool.query(
+    `WITH RECURSIVE cte as (
+       SELECT parentTable.id, parentTable.name, parentTable.parent, parentTable.name AS fullpath
+         FROM inventur.storage_location AS parentTable
+         WHERE parentTable.parent = 0
+         UNION ALL
+         SELECT childTable.id, childTable.name, childTable.parent, CONCAT(parentTable.fullpath, '-', childTable.name) AS fullpath
+         FROM inventur.storage_location AS childTable
+         INNER JOIN cte as parentTable
+         ON parentTable.id = childTable.parent
+         )
+     SELECT
+       stock.id,
+       stock.number,
+         stock.minimum_number,
+         stock.creator,
+         stock.change_by,
+         stock.date,
+         stock.articlenumber,
+         article.name,
+         category.category,
+         unit.unit,
+         cte.fullpath AS storage_location,
+         storage_place.place AS storage_place,
+         IFNULL(GROUP_CONCAT(keyword.keyword SEPARATOR ", "), "") AS keyword
+     FROM
+         stock
+             INNER JOIN
+         article ON article.id = stock.article_id
+             INNER JOIN
+         category ON category.id = article.category_id
+             INNER JOIN
+         unit ON unit.id = article.unit_id
+             INNER JOIN
+         storage_place ON stock.id = storage_place.stock_id
+             INNER JOIN
+         cte ON storage_place.storage_location_id = cte.id
+             LEFT JOIN
+          (keyword_list INNER JOIN keyword
+             ON keyword_list.keyword_id = keyword.id)
+             ON stock.id = keyword_list.stock_id
+     GROUP BY stock.id;`
+  );
+  return rows;
+};
+
 const getCategoryById = async function (categoryID) {
   const [rows] = await connPool.query(
     `SELECT category.id, category.category AS name, IFNULL(counter.article_count, 0) AS article_count
@@ -855,6 +902,7 @@ module.exports = {
   deleteTask,
   deleteUnit,
   finishTask,
+  getAllStockInfo,
   getCategoryById,
   getKeywordById,
   getStockIDByArticlenumber,

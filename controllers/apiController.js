@@ -259,24 +259,37 @@ module.exports = function (app) {
   //stock related data for the home page
   app.get("/api/stock", async (req, res) => {
     if (req.session.loggedin) {
-      var result = await functions.getStock(); // get db data
-      for (var i = 0; i < result.data.length; i++) {
-        //add keywords
-        var keywordlist = await masterdataDB.getKeywordlistByStockid(
-          result.data[i].id
+      logger.silly(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      let result;
+      try {
+        result = await dbController.getAllStockInfo();
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
         );
-        result.data[i].keyword = keywordlist.keyword;
-
-        //add storage place
-        let storage = await masterdataDB.getStorageByStockId(result.data[i].id);
-        let storage_name = await getFullStorageName(storage, storage.name);
-        result.data[i].storage_location = storage_name;
-        result.data[i].storage_place = storage.place;
+        res.status(500).send(error);
+        return;
       }
-      res.send(result);
+      res.send({
+        status: 200,
+        code: "OK",
+        data: result.map((row) => {
+          row.date = row.date.toLocaleString();
+          return row;
+        }),
+      });
     } else {
-      req.session.redirectTo = `/api/stock`;
-      res.redirect("/"); //redirect to login page if not logged in
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
     }
   });
 

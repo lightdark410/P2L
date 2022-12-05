@@ -1,7 +1,8 @@
+let duplicateArtNumRequestTracker;
 const checkForDuplicateArtNum = function (event) {
   const currentArtNum = parseInt(event.target.value);
   if (
-    !currentArtNum || // if NaN
+    isNaN(currentArtNum) ||
     currentArtNum < parseInt(event.target.min) ||
     currentArtNum > parseInt(event.target.max)
   ) {
@@ -11,10 +12,10 @@ const checkForDuplicateArtNum = function (event) {
     }
     return;
   }
-  const selectedRows = $("#table tbody tr.selected");
+  const selectedID = $("#table tbody tr.selected td.stock-art-num");
   if (
-    selectedRows.length !== 0 &&
-    selectedRows.children().eq(2).text() === currentArtNum.toString()
+    selectedID.length !== 0 &&
+    selectedID.text() === currentArtNum.toString()
   ) {
     if (event.target.nextElementSibling) {
       $("#artNumNotificationBreak").remove();
@@ -22,11 +23,13 @@ const checkForDuplicateArtNum = function (event) {
     }
     return;
   }
-  $.ajax({
-    async: false,
+  if (duplicateArtNumRequestTracker) {
+    duplicateArtNumRequestTracker.abort();
+  }
+  duplicateArtNumRequestTracker = $.ajax({
     method: "GET",
     url: `/api/stock/articlenumber/${currentArtNum}`,
-    success: function (jqXHR, testStatus, error) {
+    success: function (jqXHR, textStatus, error) {
       if (!event.target.nextElementSibling) {
         event.target.insertAdjacentHTML(
           "afterend",
@@ -43,6 +46,64 @@ const checkForDuplicateArtNum = function (event) {
         }
       }
     },
+    complete: function () {
+      duplicateArtNumRequestTracker = null;
+    },
+  });
+};
+
+let duplicateArtNameRequestTracker;
+// TODO: refactor this API endpoint to properly return 404 if not found etc.
+const checkForDuplicateArtName = function (event) {
+  const currentArtName = event.target.value;
+  if (currentArtName === "") {
+    if (event.target.nextElementSibling) {
+      $("#notificationBreak").remove();
+      $("#notification").remove();
+    }
+    return;
+  }
+  const selectedName = $("#table tbody tr.selected td.stock-art-name");
+  if (selectedName.length !== 0 && selectedName.text() === currentArtName) {
+    if (event.target.nextElementSibling) {
+      $("#notificationBreak").remove();
+      $("#notification").remove();
+    }
+    return;
+  }
+  if (duplicateArtNameRequestTracker) {
+    duplicateArtNameRequestTracker.abort();
+  }
+  duplicateArtNameRequestTracker = $.ajax({
+    method: "GET",
+    url: `/api/stock/name/${currentArtName}`,
+    success: function (jqXHR, textStatus, error) {
+      if (jqXHR) {
+        if (!event.target.nextElementSibling) {
+          event.target.insertAdjacentHTML(
+            "afterend",
+            "<br id='notificationBreak'><span id='notification'>Dieser Artikel extistiert bereits</span>"
+          );
+          $(".ui-autocomplete").css("z-index", "0");
+        }
+      } else {
+        if (event.target.nextElementSibling) {
+          $("#notificationBreak").remove();
+          $("#notification").remove();
+        }
+      }
+    },
+    error: function (jqXHR, textStatus, error) {
+      if (jqXHR.status === 404) {
+        if (event.target.nextElementSibling) {
+          $("#notificationBreak").remove();
+          $("#notification").remove();
+        }
+      }
+    },
+    complete: function () {
+      duplicateArtNameRequestTracker = null;
+    },
   });
 };
 
@@ -57,65 +118,71 @@ const submitFormByEnterKey = function (event) {
   }
 };
 
-function stammdaten() {
-  var location = null;
-  var category = null;
-  var unit = null;
-  var keyword = null;
+let KeywordsAutocomplete;
 
-  $.ajax({
-    async: false,
+const keywordsSelectOptions = {
+  options: [],
+  value: "",
+  multiple: true,
+  autocomplete: true,
+  icon: "fa fa-times",
+  onChange: (value) => {
+    var element = $(".select-pure__label");
+    $(element[0]).scrollTop(element[0].scrollHeight);
+  },
+  classNames: {
+    select: "select-pure__select",
+    dropdownShown: "select-pure__select--opened",
+    multiselect: "select-pure__select--multiple",
+    label: "select-pure__label",
+    placeholder: "select-pure__placeholder",
+    dropdown: "select-pure__options",
+    option: "select-pure__option",
+    autocompleteInput: "select-pure__autocomplete",
+    selectedLabel: "select-pure__selected-label",
+    selectedOption: "select-pure__option--selected",
+    placeholderHidden: "select-pure__placeholder--hidden",
+    optionHidden: "select-pure__option--hidden",
+  },
+};
+const stammdatenResult = {};
+
+const getStorageLocationTree = function () {
+  return $.ajax({
     type: "GET",
     global: false,
     url: "/api/storageLocation",
-    success: function (data) {
-      location = data;
-    },
   });
+};
 
-  $.ajax({
-    async: false,
+const getCategoryList = function () {
+  return $.ajax({
     type: "GET",
     global: false,
     url: "/api/stammdaten/category",
-    success: function (data) {
-      category = data;
-    },
   });
+};
 
-  $.ajax({
-    async: false,
+const getUnitList = function () {
+  return $.ajax({
     type: "GET",
     global: false,
     url: "/api/stammdaten/unit",
-    success: function (data) {
-      unit = data;
-    },
   });
+};
 
-  $.ajax({
-    async: false,
+const getKeywordList = function () {
+  return $.ajax({
     type: "GET",
     global: false,
     url: "/api/stammdaten/keyword",
-    success: function (data) {
-      keyword = data;
-    },
   });
-  return {
-    category: category.data,
-    keyword: keyword.data,
-    unit: unit.data,
-    storage_location: location,
-  };
-}
+};
 
-const buildSubTrees = function (rootLI, rootNodes) {
+const buildSubTrees = function (locationTree, rootLI, rootNodes) {
   let nodesAdded = false;
   for (const node of rootNodes) {
-    const childNodes = stammdatenResult.storage_location.filter(
-      (elem) => elem.parent === node.id
-    );
+    const childNodes = locationTree.filter((elem) => elem.parent === node.id);
     let LIEntry = $("<li/>", {
       "data-id": node.id,
       "data-parent": node.parent,
@@ -128,7 +195,7 @@ const buildSubTrees = function (rootLI, rootNodes) {
         '<div class="location_caret"></div><ul class="location_nested"></ul>'
       );
       LIEntry.children(".location_caret").text(node.name);
-      childNodesExist = buildSubTrees(LIEntry, childNodes);
+      childNodesExist = buildSubTrees(locationTree, LIEntry, childNodes);
       if (!childNodesExist) {
         LIEntry.children().remove();
         LIEntry.text(node.name);
@@ -144,14 +211,10 @@ const buildSubTrees = function (rootLI, rootNodes) {
   return nodesAdded;
 };
 
-const buildNodeTree = function () {
-  const rootNodes = stammdatenResult.storage_location.filter(
-    (elem) => elem.parent === 0
-  );
+const buildNodeTree = function (locationTree) {
+  const rootNodes = locationTree.filter((elem) => elem.parent === 0);
   for (const node of rootNodes) {
-    const childNodes = stammdatenResult.storage_location.filter(
-      (elem) => elem.parent === node.id
-    );
+    const childNodes = locationTree.filter((elem) => elem.parent === node.id);
     let LIEntry = $("<li/>", {
       "data-id": node.id,
       "data-parent": node.parent,
@@ -164,7 +227,7 @@ const buildNodeTree = function () {
         '<div class="location_caret"></div><ul class="location_nested"></ul>'
       );
       LIEntry.children(".location_caret").text(node.name);
-      childNodesExist = buildSubTrees(LIEntry, childNodes);
+      childNodesExist = buildSubTrees(locationTree, LIEntry, childNodes);
       if (!childNodesExist) {
         LIEntry.children().remove();
         LIEntry.text(node.name);
@@ -177,6 +240,41 @@ const buildNodeTree = function () {
     }
   }
 };
+
+// TODO: refactor this API endpoint
+getStorageLocationTree().then((locationTree) => {
+  stammdatenResult.storage_location = locationTree;
+  buildNodeTree(locationTree);
+});
+
+getCategoryList().then((response) => {
+  stammdatenResult.category = response.data;
+  for (const cat of response.data) {
+    popup
+      .find("#category")
+      .append($("<option></option>").val(cat.category).html(cat.category));
+  }
+});
+
+getUnitList().then((response) => {
+  stammdatenResult.unit = response.data;
+  for (const unit of response.data) {
+    popup
+      .find("#unit")
+      .append($("<option></option>").val(unit.id).html(unit.unit));
+  }
+});
+
+getKeywordList().then((response) => {
+  stammdatenResult.keywords = response.data;
+  for (const keyword of response.data) {
+    keywordsSelectOptions.options.push({
+      label: keyword.keyword,
+      value: keyword.keyword,
+      "data-id": keyword.id,
+    });
+  }
+});
 
 //create stock Popup
 let popup = $(`
@@ -277,21 +375,18 @@ let inventurPopup = $(`
   </div>
 `);
 
-const emptyPlaceIsZero = (currentValue) => currentValue.empty_places === 0;
+const rootUL = popup.find("#myUL");
 
 //handles clicks on the location tab in the popup
 $("body").on("click", ".location_caret:first-child", function (e) {
   checkForEmptyStoragePlaces();
 });
 
-let rootUL = popup.find("#myUL");
-
-let stammdatenResult = stammdaten();
-buildNodeTree();
-
 function checkForEmptyStoragePlaces() {
   //checks if every 'emptyPlaces' property is 0
-  if (stammdatenResult.storage_location.every(emptyPlaceIsZero)) {
+  if (
+    stammdatenResult.storage_location.every((loc) => loc.empty_places === 0)
+  ) {
     $("#LocationNotification").remove();
     //add error message
     $("#myUL")
@@ -305,26 +400,15 @@ function checkForEmptyStoragePlaces() {
   }
 }
 
-//apply option tags for selection
-$.each(stammdatenResult.category, function (i, p) {
-  popup
-    .find("#category")
-    .append($("<option></option>").val(p.category).html(p.category));
-});
-
-$.each(stammdatenResult.unit, function (i, p) {
-  popup.find("#unit").append($("<option></option>").val(p.id).html(p.unit));
-});
-
 //apply selected location to popup
+// TODO: rewrite this once the corresponding API endpoint is rewritten
 $("body").on("click", "#myUL li", function (e) {
-  let locationHasFreeStoragePlaces = $(this).data("empty_places") > 0;
-  if (locationHasFreeStoragePlaces) {
-    let dataId = $(this).data("id");
-    let dataParent = $(this).data("parent");
+  if ($(this).data("empty_places") > 0) {
+    const dataId = $(this).data("id");
+    const dataParent = $(this).data("parent");
 
-    var path = [];
-    var el = $(this);
+    const path = [];
+    let el = $(this);
 
     do {
       if (el.children().length == 0) {
@@ -357,7 +441,7 @@ $("body").on("click", ".location_caret", function () {
 
 //close location dropdown on outside click
 $("body").on("click", "#PopUp", function (e) {
-  let target = $(e.target);
+  const target = $(e.target);
   if (!target.is(".location_caret") && target.closest("#myUL").length == 0) {
     $("#rootUL").removeClass("active");
   }
@@ -365,218 +449,81 @@ $("body").on("click", "#PopUp", function (e) {
 
 //change cursor if no empty places are available
 $("body").on("mouseenter", "#myUL li div", function (e) {
-  if ($(this).parent().data("empty_places") == 0) {
+  if ($(this).parent().data("empty_places") === 0) {
     $(this).css("cursor", "default");
   }
 });
 
 //check if new Item already exists
-$("body").on("change, keyup", "#name", function () {
-  let name = $("#name").val();
-  let nameIsNotEmpty = /([^\s])/.test(name);
-
-  let selectedName;
-  $("#table tbody tr").each(function () {
-    //get selected line
-    if ($(this).hasClass("selected")) {
-      //get name from selected row
-      selectedName = $(this).children().eq(3).html();
-    }
-  });
-
-  let nameIsNotEqualToSelectedName = selectedName != name.replace(/\s/g, "");
-
-  //Only check for a match if the input is not empty and not the same as in the selected row
-  if (nameIsNotEmpty && nameIsNotEqualToSelectedName) {
-    $.get(`/api/stock/name/${name}`, function (data) {
-      if (data) {
-        let noErrMsgExists = $("#notification").length == 0;
-        if (noErrMsgExists) {
-          $("#name")
-            .parent()
-            .append(
-              "<br id='notificationBreak'><span id='notification'>Dieser Artikel extistiert bereits</span>"
-            );
-        }
-        $(".ui-autocomplete").css("z-index", "0");
-      } else {
-        $("#notificationBreak").remove();
-        $("#notification").remove();
-      }
-    });
-  }
-});
+$("body").on("input", "#name", checkForDuplicateArtName);
 
 $("body").on("click", ".numberButton", function (e) {
   e.preventDefault();
-  var number = $("#number").val();
-  var sum = parseInt(number) + parseInt($(this).html());
-  if (sum >= 0) {
-    $("#number").val(sum);
-  } else {
-    $("#number").val(0);
-  }
+  const number = $("#number").val();
+  const sum = parseInt(number) + parseInt($(this).html());
+  $("#number").val(Math.max(sum, 0));
 });
-
-var KeywordsAutocomplete;
 
 $("#New").click(function () {
   popup = toCreatePopup(popup);
   $(".selected").removeClass("selected");
   selectHandler();
   $("#tableDiv").after(popup);
-  popup.fadeIn();
   checkForEmptyStoragePlaces();
 
   //apply multi dropdown field for keywords
   $(".select-pure__select").remove();
-  $.ajax({
-    url: "/api/stammdaten/keyword",
-    success: function (data) {
-      var optionsArr = [];
-      for (var i = 0; i < data.data.length; i++) {
-        optionsArr.push({
-          label: data.data[i].keyword,
-          value: data.data[i].keyword,
-          "data-id": data.data[i].id,
-        });
-      }
-      KeywordsAutocomplete = new SelectPure(".autocomplete-select", {
-        options: optionsArr,
-        value: "",
-        multiple: true,
-        autocomplete: true,
-        icon: "fa fa-times",
-        onChange: (value) => {
-          var element = $(".select-pure__label");
-          $(element[0]).scrollTop(element[0].scrollHeight);
-        },
-        classNames: {
-          select: "select-pure__select",
-          dropdownShown: "select-pure__select--opened",
-          multiselect: "select-pure__select--multiple",
-          label: "select-pure__label",
-          placeholder: "select-pure__placeholder",
-          dropdown: "select-pure__options",
-          option: "select-pure__option",
-          autocompleteInput: "select-pure__autocomplete",
-          selectedLabel: "select-pure__selected-label",
-          selectedOption: "select-pure__option--selected",
-          placeholderHidden: "select-pure__placeholder--hidden",
-          optionHidden: "select-pure__option--hidden",
-        },
-      });
-      var resetAutocomplete = function () {
-        KeywordsAutocomplete.reset();
-      };
-    },
-  });
+  keywordsSelectOptions.value = "";
+  KeywordsAutocomplete = new SelectPure(
+    ".autocomplete-select",
+    keywordsSelectOptions
+  );
 
   $("#PopUp form").on("keydown", submitFormByEnterKey);
   $("#articlenumber")[0].addEventListener("input", checkForDuplicateArtNum);
-  $("#notificationBreak").remove();
-  $("#notification").remove();
+  $("#name")[0].addEventListener("input", checkForDuplicateArtName);
   $("#name").focus();
+  popup.fadeIn();
   $("#cover").fadeIn();
 });
 
 $("#Edit").click(function () {
-  //get data from selected line
-  var id;
-  $("#table tbody tr").each(function () {
-    if ($(this).hasClass("selected")) {
-      //get marked line
-      id = $(this).children().eq(1).html(); //get id from line
-      id = id.replace(/ /g, ""); //cut spaces
-      id = id.replace(/\r?\n|\r/g, "");
-    }
-  });
-  var result = "";
+  //get ID from selected line
+  const id = $("#table tbody tr.selected td.stock-id").text();
+  popup = toUpdatePopup(popup);
+  $("#tableDiv").after(popup);
   $.ajax({
-    async: false,
     type: "GET",
     global: false,
     url: `/api/stock/${id}`,
-    success: function (data) {
-      result = {
-        name: data.name,
-        storage_location: data.storage_location,
-        storage_place: data.storage_place,
-        storage_parent: data.storage_parent,
-        storage_location_id: data.storage_location_id,
-        number: data.number,
-        articlenumber: data.articlenumber,
-        minimum_number: data.minimum_number,
-        category: data.category,
-        keywords: data.keyword,
-        unit: data.unit_id,
-      };
-    },
-  });
-  popup = toUpdatePopup(popup);
-  $("#tableDiv").after(popup);
-  popup.fadeIn();
+  }).then((response) => {
+    //apply multi dropdown field for keywords
+    $(".select-pure__select").remove();
+    keywordsSelectOptions.value = response.keyword?.split(",") ?? "";
+    KeywordsAutocomplete = new SelectPure(
+      ".autocomplete-select",
+      keywordsSelectOptions
+    );
 
-  //apply multi dropdown field for keywords
-  $(".select-pure__select").remove();
-  $.ajax({
-    url: "/api/stammdaten/keyword",
-    success: function (data) {
-      var optionsArr = [];
-      for (var i = 0; i < data.data.length; i++) {
-        optionsArr.push({
-          label: data.data[i].keyword,
-          value: data.data[i].keyword,
-        });
-      }
-      KeywordsAutocomplete = new SelectPure(".autocomplete-select", {
-        options: optionsArr,
-        value: result.keywords ? result.keywords.split(",") : "",
-        multiple: true,
-        autocomplete: true,
-        icon: "fa fa-times",
-        onChange: (value) => {
-          //var element = document.getElementsByClassName('.select-pure__label')[0];
-          //element.scrollTop = element.scrollHeight;
-          var element = $(".select-pure__label");
-          $(element[0]).scrollTop(element[0].scrollHeight);
-        },
-        classNames: {
-          select: "select-pure__select",
-          dropdownShown: "select-pure__select--opened",
-          multiselect: "select-pure__select--multiple",
-          label: "select-pure__label",
-          placeholder: "select-pure__placeholder",
-          dropdown: "select-pure__options",
-          option: "select-pure__option",
-          autocompleteInput: "select-pure__autocomplete",
-          selectedLabel: "select-pure__selected-label",
-          selectedOption: "select-pure__option--selected",
-          placeholderHidden: "select-pure__placeholder--hidden",
-          optionHidden: "select-pure__option--hidden",
-        },
-      });
-      var resetAutocomplete = function () {
-        KeywordsAutocomplete.reset();
-      };
-    },
+    const location = $("#myUL").find("div").first();
+
+    $("#name").val(response.name);
+    $(location).text(response.storage_location);
+    $(location).attr("data-id", response.storage_location_id);
+    $(location).attr("data-parent", response.storage_parent);
+    $("#number").val(response.number);
+    $("#articlenumber").val(response.articlenumber);
+    $("#minimum_number").val(response.minimum_number);
+    $("#category").val(response.category);
+    $("#unit").val(response.unit_id);
   });
 
-  let location = $("#myUL").find("div").first();
-
-  $("#name").val(result.name);
-  $(location).text(result.storage_location);
-  $(location).attr("data-id", result.storage_location_id);
-  $(location).attr("data-parent", result.storage_parent);
-  $("#number").val(result.number);
-  $("#articlenumber").val(result.articlenumber);
-  $("#minimum_number").val(result.minimum_number);
-  $("#category").val(result.category);
-  $("#unit").val(result.unit);
   $("#articlenumber")[0].addEventListener("input", checkForDuplicateArtNum);
+  $("#name")[0].addEventListener("input", checkForDuplicateArtName);
   $("#PopUp form").on("keydown", submitFormByEnterKey);
 
   $("#cover").fadeIn();
+  popup.fadeIn();
 });
 
 $("#Inventur").click(function () {
@@ -628,41 +575,36 @@ function toUpdatePopup(popup) {
 //redirect if log icon was clicked
 $("#table").on("click", ".log", function (e) {
   //gets id of clicked row
-  let id = $(this).parent().parent().children().eq(1).html().trim();
+  const id = $(this).closest("tr").find("td.stock-id").text();
   window.location.href = `/logs/${id}`;
 });
 
 //hanlde list_number popup submit
 $("body").on("submit", "#list_number_popup form", function (event) {
   event.preventDefault();
-  let id = $(this).data("id");
-  let change = $(this).serializeArray()[0].value;
+  const id = $(this).data("id");
+  const change =
+    $(this).find("input.list-add-amount").val() *
+    ($(this).find("input#ein_auslagern")[0].checked ? -1 : 1); // negate if we're taking out
 
-  //check if the toggle was checked
-  if ($(this).serializeArray().length == 2) {
-    change = (change * -1).toString();
-  }
-
-  //create list entry to store in cookies
-  let newEntry = { id: id, change: change };
-  addToList(newEntry);
+  // create list entry to store in local storage
+  addToList({ id: id, change: change });
 
   $(this)
     .parent()
     .fadeOut(300, () => $(this).parent().remove());
   $("#cover").fadeOut();
 
-  //ui.js
   updateListNumber();
 });
 
 //trigggers if the trash icon in the list_popup was clicked
 $("body").on("click", "#list_popup .PopUp_middle .fa-trash", function (e) {
-  let row = $(this).parent().parent();
-  let id = row.find(".id").html();
-  let storage_old = JSON.parse(localStorage.getItem("list"));
+  const row = $(this).closest("tr");
+  const id = parseInt(row.find(".id").text());
+  const storage_old = JSON.parse(localStorage.getItem("list"));
   //filter sesseionStorage to remove the clicked element
-  let storage_filtered = storage_old.filter((obj) => obj.id != id);
+  const storage_filtered = storage_old.filter((obj) => obj.id !== id);
   //save changes to session
   localStorage.setItem("list", JSON.stringify(storage_filtered));
   //remove row from popup
@@ -678,23 +620,16 @@ $("body").on("click", "#list_popup .PopUp_middle .fa-trash", function (e) {
       );
     $("#list_popup").find("#qrSubmit").attr("disabled", true);
   }
-  //ui.js
   updateListNumber();
 });
 
-//stores on list entry in cookies
+//stores on list entry in local storage
 function addToList(entry) {
-  let list = localStorage.getItem("list");
-  let newList = [];
+  const list = localStorage.getItem("list");
+  let newList = JSON.parse(list) ?? [];
+  newList = newList.filter((elem) => elem.id !== entry.id);
+  newList.push(entry);
 
-  if (list == null) {
-    newList[0] = entry;
-  } else {
-    newList = JSON.parse(list);
-    //delete duplicate entries
-    newList = newList.filter((obj) => obj.id != entry.id);
-    newList.push(entry);
-  }
   localStorage.setItem("list", JSON.stringify(newList));
 }
 
@@ -715,30 +650,26 @@ function clearList() {
 //handle stock popup submit
 $("body").on("submit", "#PopUp form", function (event) {
   event.preventDefault();
-  let id;
-  //only define id if a row is selected
-  if ($(".selected").length > 0) {
-    id = $(".selected").find("td")[1].innerHTML;
-  }
+  const id = $("table tr.selected td.stock-id").text();
 
   //get all values from popup
-  var articlenumber = $("#articlenumber").val();
-  var name = $("#name").val();
-  var location = $("#myUL").find("div").first().attr("data-id");
-  var number = $("#number").val();
-  var minimum_number = $("#minimum_number").val();
-  var category = $("#category").val();
-  var keywords = $(".select-pure__selected-label");
-  var keywordArr = [];
-  var unit = $("#unit").val();
+  const articlenumber = $("#articlenumber").val();
+  const name = $("#name").val();
+  const location = $("#myUL").find("div").first().attr("data-id");
+  const number = $("#number").val();
+  const minimum_number = $("#minimum_number").val();
+  const category = $("#category").val();
+  const keywords = $(".select-pure__selected-label");
+  const keywordArr = [];
+  const unit = $("#unit").val();
   $(keywords).each(function (i) {
     keywordArr.push($(this).first().text());
   });
 
   //only submit if a location was selected
   if (location > 0) {
-    var formdata = `id=${id}&articlenumber=${articlenumber}&name=${name}&location=${location}&number=${number}&minimum_number=${minimum_number}&category=${category}&keywords=${keywordArr}&unit=${unit}`;
-    if (typeof id === "undefined") {
+    const formdata = `id=${id}&articlenumber=${articlenumber}&name=${name}&location=${location}&number=${number}&minimum_number=${minimum_number}&category=${category}&keywords=${keywordArr}&unit=${unit}`;
+    if (id === "") {
       $.post("/api/stock", formdata, function (response) {
         //load new data
         table.ajax.reload();
@@ -749,8 +680,10 @@ $("body").on("submit", "#PopUp form", function (event) {
         table.order([1, "desc"]).draw();
 
         $("#rootUL").text("");
-        stammdatenResult = stammdaten();
-        buildNodeTree();
+        getStorageLocationTree().then((locationTree) => {
+          stammdatenResult.storage_location = locationTree;
+          buildNodeTree(locationTree);
+        });
       });
     } else {
       $.ajax({
@@ -769,8 +702,10 @@ $("body").on("submit", "#PopUp form", function (event) {
           table.order([1, "desc"]).draw();
 
           $("#rootUL").text("");
-          stammdatenResult = stammdaten();
-          buildNodeTree();
+          getStorageLocationTree().then((locationTree) => {
+            stammdatenResult.storage_location = locationTree;
+            buildNodeTree(locationTree);
+          });
         },
       });
     }
@@ -783,10 +718,10 @@ $("body").on("submit", "#PopUp form", function (event) {
 $("body").on("submit", "#InventurPopUp form", function (event) {
   event.preventDefault();
   //get all values from popup
-  var articlenumber = $("#articlenumber").val();
-  var number = $("#number").val();
+  const articlenumber = $("#articlenumber").val();
+  const number = $("#number").val();
 
-  var formdata = `articlenumber=${articlenumber}&number=${number}`;
+  const formdata = `articlenumber=${articlenumber}&number=${number}`;
   $.ajax({
     type: "PATCH",
     url: "/api/updateStockNumber",
@@ -820,12 +755,12 @@ $("body").on("submit", "#InventurPopUp form", function (event) {
 //generate qr code
 $("body").on("submit", "#list_popup form", function (e) {
   e.preventDefault();
-  let rows = $(this).find("tr");
-  let list = [];
-  for (let i = 1; i < rows.length; i++) {
-    let article_id = $(rows[i]).find(".id").text();
-    let select = $(rows[i]).find("select").val();
-    let amount = $(rows[i]).find(".amount").val();
+  const rows = $(this).find("tbody tr");
+  const list = [];
+  for (const row of rows) {
+    const article_id = $(row).find(".id").text();
+    const select = $(row).find("select").val();
+    const amount = $(row).find(".amount").val();
     list.push({
       stock_id: article_id,
       lay_in: select == "in" ? true : false,
@@ -842,29 +777,28 @@ $("body").on("submit", "#list_popup form", function (e) {
 });
 
 //show popup if save icon was clicked
-$("#table").on("click", "td", function (e) {
+$("#table").on("click", "td.stock-save-icon", function (e) {
   //only show popup if the td contains the save icon
   if (!$(this).find(".save").length) {
     return;
   }
 
   //gets id of clicked row
-  let id = $(this).parent().children().eq(1).html().trim();
-  let name = $(this).parent().children().eq(3).html().trim();
-  let num = $(this).parent().children().eq(4).html().trim();
+  const id = $(this).closest("tr").find("td.stock-id").text();
+  const name = $(this).closest("tr").find("td.stock-art-name").text();
+  const num = $(this).closest("tr").find("td.stock-amount").text();
 
-  let errMsg =
-    "Kann nicht ausgelagert werden, da kein ausreichender Bestand vorliegt";
-  if (num > 0) {
-    errMsg = "";
-  }
-  let list_number_popup = $(`
+  const errMsg =
+    num > 0
+      ? ""
+      : "Kann nicht ausgelagert werden, da kein ausreichender Bestand vorliegt";
+  const list_number_popup = $(`
       <div id="list_number_popup">
         <form data-id="${id}">
           <div class="PopUp_topBar">${name} in Liste speichern<div id="mdiv"><div class="mdiv"><div class="md"></div></div></div></div>
           <div class="PopUp_middle">
             <br>
-            <input type="number" name="value" min="1" max="${num}"/>
+            <input class="list-add-amount" type="number" name="value" min="1" max="${num}"/>
             <br/>
             <div>
               <span>Einlagern</span>
@@ -874,7 +808,7 @@ $("#table").on("click", "td", function (e) {
               </label>
               <span>Auslagern</span>
             </div>
-            <span style="color:red">${errMsg}</span>
+            <span class="list-error-span" style="color:red">${errMsg}</span>
           </div>
           <div class="PopUp_footer">
             <button type="submit">
@@ -887,7 +821,7 @@ $("#table").on("click", "td", function (e) {
 
   $("#tableDiv").after(list_number_popup);
   list_number_popup.fadeIn();
-  let input = $(list_number_popup).find("input").first();
+  const input = $(list_number_popup).find("input").first();
   input.focus();
   input.val(1);
   $("#cover").fadeIn();
@@ -895,58 +829,59 @@ $("#table").on("click", "td", function (e) {
 
 //updates the max attribute in the list_number popup
 function updateMaxval(ele, max) {
-  let middle = $(ele).parent().parent().parent();
-  let input = middle.find("input[type=number]");
-  let span = middle.find("span").last();
+  const middle = $(ele).closest(".PopUp_middle");
+  const input = middle.find("input.list-add-amount");
+  const span = middle.find("span.list-error-span");
   if (ele.checked) {
     $(input).attr({ max: max });
-    if (max == 0) {
+    if (max === 0) {
       span.html(
         "Kann nicht ausgelagert werden, da kein ausreichender Bestand vorliegt"
       );
     }
   } else {
-    $(input).attr({ max: 9999 });
+    $(input).attr({ max: "" });
     span.html("");
   }
 }
 
 //updates number in the list button
 function updateListNumber() {
-  let list = localStorage.getItem("list");
-  let number_of_listitems = 0;
-  if (list !== null) {
-    number_of_listitems = JSON.parse(list).length;
-  }
+  const list = localStorage.getItem("list");
+  const number_of_listitems = JSON.parse(list)?.length ?? 0;
   $("#list span").text(number_of_listitems);
 }
 updateListNumber();
 
 //show popup if list button was clicked
 $("body").on("click", "#list", function (e) {
-  let list = JSON.parse(localStorage.getItem("list"));
+  const list = JSON.parse(localStorage.getItem("list"));
   let tableData = "";
 
   //the popup that will be shown
-  let list_popup = $(`
+  const list_popup = $(`
       <div id="list_popup">
         <form>
           <div class="PopUp_topBar">Artikelliste<div id="mdiv"><div class="mdiv"><div class="md"></div></div></div></div>
           <div class="PopUp_middle">
             <table>
-              <tr>
-                <td>Artikelnummer</td>
-                <td>Artikel</td>
-                <td>Anzahl (aktuell)</td>
-                <td>Ein-/Auslagern</td>
-                <td>Menge</td>
-                <td>Anzahl (danach)</td>
-                <td>Mindestbestand</td>
-                <td>Einheit</td>
-                <td>Lagerort</td>
-                <td>Lagerplatz</td>
-                <td></td>
-              </tr>
+              <thead>
+                <tr>
+                  <td>Artikelnummer</td>
+                  <td>Artikel</td>
+                  <td>Anzahl (aktuell)</td>
+                  <td>Ein-/Auslagern</td>
+                  <td>Menge</td>
+                  <td>Anzahl (danach)</td>
+                  <td>Mindestbestand</td>
+                  <td>Einheit</td>
+                  <td>Lagerort</td>
+                  <td>Lagerplatz</td>
+                  <td></td>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
             </table>
           </div>
           <div id="qrcode"></div>
@@ -959,26 +894,28 @@ $("body").on("click", "#list", function (e) {
       </div>
     `);
   //checks is session is empty
-  if (list == null || list.length == 0) {
+  if (list === null || list.length === 0) {
     tableData = $(
       `<tr><td colspan="100">Speichern Sie Artikel ab, um sie hier einsehen zu können.</td></tr>`
     );
     $(list_popup).find("#qrSubmit").attr("disabled", true);
   } else {
     //fills tableData
-    for (let i = 0; i < list.length; i++) {
-      let task_id = list[i]["id"];
-      let select_in = "selected";
-      let select_out = "selected";
-      let out = list[i]["change"] < 0;
-      out ? (select_in = "") : (select_out = "");
+    for (const elem of list) {
+      const entry_id = elem["id"];
+      const lay_in = elem["change"] <= 0;
+      const select_in = lay_in ? "" : "selected";
+      const select_out = !lay_in ? "" : "selected";
 
-      table.rows().every(function (rowIdx, tableLoop, rowLoop) {
-        var data = this.data();
-        //if a table row matches with the session storage
-        if (task_id == data.id) {
-          //adds a tr to tableData
-          tableData += `
+      $("#table")
+        .DataTable()
+        .rows()
+        .every(function (rowIdx, tableLoop, rowLoop) {
+          const data = this.data();
+          //if a table row matches with the session storage
+          if (entry_id == data.id) {
+            //adds a tr to tableData
+            tableData += `
               <tr>
                 <td class="id">${data.id}</td>
                 <td>${data.name}</td>
@@ -989,9 +926,15 @@ $("body").on("click", "#list", function (e) {
                     <option value="out" ${select_out}>Auslagern</option>
                   </select>
                 </td>
-                <td><input class="amount" type="number" min="1" max="${
-                  out ? data.number : 9999
-                }" value="${Math.abs(list[i]["change"])}"/></td>
+                <td>
+                  <input
+                    class="amount"
+                    type="number"
+                    min="1"
+                    max="${lay_in ? data.number : ""}"
+                    value="${Math.abs(elem["change"])}"
+                  />
+                </td>
                 <td class="sum">0</td>
                 <td class="min">${data.minimum_number}</td>
                 <td>${data.unit}</td>
@@ -1000,21 +943,21 @@ $("body").on("click", "#list", function (e) {
                 <td class="delete"><i class="fas fa-trash"></i></td>
               </tr>
             `;
-        }
-      });
+          }
+        });
     }
   }
 
   //triggers if the list_popup dropdown or number input was changed
   $("body").on(
-    "change keyup",
+    "change input",
     "#list_popup .amount, #list_popup select",
     function (e) {
-      let row = $(this).parent().parent();
-      let id = row.find(".id").text();
-      let num = parseInt(row.find(".amount").val());
-      let curr_val = row.find(".curr_val").text();
-      let select_val = row.find("select").val();
+      const row = $(this).closest("tr");
+      const id = parseInt(row.find(".id").text());
+      const num = parseInt(row.find(".amount").val());
+      const curr_val = row.find(".curr_val").text();
+      const select_val = row.find("select").val();
       let change = num;
 
       if (select_val == "out") {
@@ -1024,14 +967,10 @@ $("body").on("click", "#list", function (e) {
           row.find(".amount").val(curr_val);
         }
       } else {
-        row.find(".amount").attr({ max: 9999 });
-        if (num > 9999) {
-          row.find(".amount").val(9999);
-        }
+        row.find(".amount").attr({ max: "" });
       }
-      let entry = { id: id, change: change };
       //add updated entry to storage
-      addToList(entry);
+      addToList({ id: id, change: change });
       //calculate new sum
       calcListPopupSum();
     }
@@ -1044,7 +983,7 @@ $("body").on("click", "#list", function (e) {
     }
   });
 
-  list_popup.find("table").append(tableData);
+  list_popup.find("table tbody").append(tableData);
   $("#tableDiv").after(list_popup);
   calcListPopupSum();
   list_popup.fadeIn();
@@ -1053,16 +992,182 @@ $("body").on("click", "#list", function (e) {
 
 //updates the sum td in the popup
 function calcListPopupSum() {
-  let rows = $("#list_popup").find("tr");
-  for (let i = 1; i < rows.length; i++) {
-    let current_val = parseInt($(rows[i]).find(".curr_val").text());
-    let val = parseInt($(rows[i]).find(".amount").val());
-    let select = $(rows[i]).find("select").val();
-    let sum;
+  const rows = $("#list_popup").find("tr");
+  for (const row of rows) {
+    const current_val = parseInt($(row).find(".curr_val").text());
+    const val = parseInt($(row).find(".amount").val());
+    const select = $(row).find("select").val();
+    const sum = select == "in" ? current_val + val : current_val - val;
 
-    sum = select == "in" ? current_val + val : current_val - val;
-
-    sum = isNaN(sum) ? current_val : sum;
-    $(rows[i]).find(".sum").text(sum);
+    $(row)
+      .find(".sum")
+      .text(isNaN(sum) ? current_val : sum);
   }
 }
+
+//search for warn rows
+$.fn.dataTable.ext.search.push(function (
+  settings,
+  searchData,
+  dataIndex,
+  rowData,
+  counter
+) {
+  return (
+    !$("#OnlyWarnRows").prop("checked") ||
+    rowData["number"] < rowData["minimum_number"]
+  );
+});
+
+//triggers if user wants to show only rows with errors
+//refreshes table with search above
+$("#OnlyWarnRows").on("change", function () {
+  table.draw();
+});
+
+$("#table tbody").on("dblclick", "tr", function (e) {
+  const that = $(this);
+
+  if (!$(this).hasClass("selected")) {
+    selectRows(that, e);
+  }
+
+  if (!e.ctrlKey && $(this).children().length > 1) {
+    $("#Edit").trigger("click");
+  }
+});
+
+$("#table tbody").on("click", "tr", function (e) {
+  const that = $(this);
+  selectRows(that, e);
+});
+
+//selects row(s)
+function selectRows(that, e) {
+  if (e.ctrlKey) {
+    that.toggleClass("selected");
+  } else {
+    const thisClass = that.hasClass("selected");
+    $("#table")
+      .DataTable()
+      .rows()
+      .every(function (rowIdx, tableLoop, rowLoop) {
+        this.nodes().to$().removeClass("selected");
+      });
+    if (!thisClass) {
+      that.toggleClass("selected");
+    }
+  }
+
+  selectHandler();
+}
+
+function selectHandler() {
+  const rowsSelected = table.rows(".selected").data().length;
+
+  $("#rows").remove();
+  $(`<span id="rows">${rowsSelected} Zeile(n) ausgewählt</span>`).insertAfter(
+    ".dataTables_info"
+  );
+
+  if (rowsSelected === 1) {
+    $("#Edit").prop("disabled", false);
+    $("#Edit").prop("title", "Aktuell ausgewählte Zeile bearbeiten");
+  } else {
+    $("#Edit").prop("disabled", true);
+    $("#Edit").prop(
+      "title",
+      "Wähle eine Zeile aus um sie bearbeiten zu können"
+    );
+  }
+
+  if (rowsSelected > 0) {
+    $("#Delete").prop("disabled", false);
+    $("#Delete").prop("title", "Aktuell ausgewählte Zeile(n) löschen");
+  } else {
+    $("#Delete").prop("disabled", true);
+    $("#Delete").prop(
+      "title",
+      "Wähle mindestens eine Zeile aus um sie löschen zu können"
+    );
+  }
+}
+
+//----------Delete Entry---------------
+
+$("#Delete").click(function () {
+  const deleteRows = $("table tr.selected");
+  const taskentries = [];
+  for (const row of deleteRows) {
+    const id = $(row).find("td.stock-id").text();
+    $.ajax({
+      async: false,
+      type: "GET",
+      url: `/api/taskentries/stock/${id}`,
+      dataType: "json",
+      success: function (data) {
+        if (data.length > 0) {
+          taskentries.push(data);
+        }
+      },
+    });
+  }
+  const counter = $("#table tr.selected").length;
+  $("#PopUpDelete").show();
+  $("#cover").show();
+  if (counter > 1) {
+    if (taskentries.length > 0) {
+      $(".PopUpDelete_middle").html(
+        `<span>Diese Artikel können zurzeit nicht gelöscht werden, da mindestens einer Teil eines aktiven Auftrags ist.<span>`
+      );
+      $(".PopUp_footer button").hide(0);
+    } else {
+      $(".PopUpDelete_middle").html(
+        `<span>Sind Sie sicher, dass Sie ${counter} Einträge <u><b>unwiderruflich</b></u> löschen möchten?<span>`
+      );
+      $(".PopUp_footer button").show(0);
+    }
+  } else {
+    if (taskentries.length > 0) {
+      $(".PopUpDelete_middle").html(
+        `<span>Dieser Artikel kann zurzeit nicht gelöscht werden, da er Teil eines aktiven Auftrags ist.<span>`
+      );
+      $(".PopUp_footer button").hide(0);
+    } else {
+      const articleName = $("#table tr.selected td.stock-art-name").text();
+      $(".PopUpDelete_middle").html(
+        `<span>Sind Sie sicher, dass Sie "${articleName}" <u><b>unwiderruflich</b></u> löschen möchten?<span>`
+      );
+      $(".PopUp_footer button").show(0);
+    }
+  }
+});
+
+$("#deleteForm").submit(function (event) {
+  event.preventDefault(); //prevent default action
+
+  const post_url = $(this).attr("action"); //get form action url
+  const deleteRows = $("table tr.selected");
+  const promiseArr = [];
+  const idArr = [];
+  for (const row of deleteRows) {
+    const id = $(row).find("td.stock-id").text();
+    idArr.push(parseInt(id));
+    promiseArr.push(
+      $.ajax({
+        url: `${post_url}/${id}`,
+        type: "DELETE",
+      })
+    );
+  }
+  Promise.all(promiseArr).then(() => {
+    const localeStorageList = JSON.parse(localStorage.getItem("list"));
+    if (localeStorageList !== null) {
+      const filterList = localeStorageList.filter((el) => !idArr.includes(el));
+      localStorage.setItem("list", JSON.stringify(filterList));
+    }
+    location.reload();
+  });
+});
+
+//------------------------------------

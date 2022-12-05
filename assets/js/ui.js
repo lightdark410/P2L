@@ -13,6 +13,7 @@ $("body").on("click", "#cover, .navbar, #mdiv", function () {
       "input",
       checkForDuplicateArtNum
     );
+    $("#name")[0]?.removeEventListener("input", checkForDuplicateArtName);
     $("#InventurPopUp form")[0]?.removeEventListener(
       "keydown",
       submitFormByEnterKey
@@ -29,18 +30,18 @@ $("body").on("click", "#cover, .navbar, #mdiv", function () {
     $("#list_popup").fadeOut(300, () => $("#list_popup").remove());
     //closes cover
     $("#cover").fadeOut();
-    $("#notification").fadeOut();
 
     //close location dropdown
     $("#myUL ul").removeClass("active");
     // remove error messages
+    $("#notificationBreak").remove();
+    $("#notification").remove();
     $("#LocationNotification").remove();
     $("#artNumNotificationBreak").remove();
     $("#artNumNotification").remove();
     $("#InventurPopUp #InventurError").text("");
 
     $("#myUL").find("div").first().attr("style", "color: inherit");
-
     $("#myUL").find("div").first().removeAttr("data-id");
     $("#myUL").find("div").first().removeAttr("data-parent");
     $("#myUL").find("div").first().text("Ort auswählen");
