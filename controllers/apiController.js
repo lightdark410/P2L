@@ -1416,7 +1416,8 @@ module.exports = function (app) {
         const response = await dbController.updateTaskEntryAmount(
           taskID,
           stockID,
-          amountReal
+          amountReal,
+          req.session.username
         );
         taskEntryID = response.taskEntryID;
       } catch (error) {
