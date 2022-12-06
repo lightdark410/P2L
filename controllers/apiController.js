@@ -359,11 +359,33 @@ module.exports = function (app) {
   //get stock entries by name
   app.get("/api/stock/name/:name", async (req, res) => {
     if (req.session.loggedin) {
-      const result = await functions.getStockByName(req.params.name);
-      res.send(result);
+      let response;
+      try {
+        response = await dbController.getStockIDByArticlename(req.params.name);
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.params.articlenumber
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      if (response.length === 0) {
+        res.status(404).send({
+          status: 404,
+          code: "ERR_NOT_FOUND",
+          message: `No stock entry with articlename ${req.params.name} found.`,
+        });
+        return;
+      }
+      res.send(response);
     } else {
-      req.session.redirectTo = `/api/stock/name/${req.params.name}`;
-      res.redirect("/"); //redirect to login page if not logged in
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
     }
   });
 
@@ -945,22 +967,34 @@ module.exports = function (app) {
   //get storage location
   app.get("/api/storageLocation", async (req, res) => {
     if (req.session.loggedin) {
+      logger.silly(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      let result;
       try {
-        var results = await masterdataDB.getStorageLocation();
-        for (var i = 0; i < results.length; i++) {
-          var empty_places =
-            await masterdataDB.countEmptyStoragePlacesByLocationId(
-              results[i].id
-            );
-          results[i].empty_places = empty_places;
-        }
-        res.send(results);
-      } catch (e) {
-        res.status(404).send("404 Not Found");
+        result = await dbController.getAllStorageLocations();
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
       }
+      res.send({
+        status: 200,
+        code: "OK",
+        data: result,
+      });
     } else {
-      req.session.redirectTo = `/api/storageLocation`;
-      res.redirect("/"); //redirect to login page if not logged in
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
     }
   });
 

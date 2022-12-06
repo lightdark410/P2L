@@ -515,6 +515,45 @@ const getAllStockInfo = async function () {
   return rows;
 };
 
+const getAllStorageLocations = async function () {
+  const [rows] = await connPool.query(
+    `WITH RECURSIVE cte as (
+			 SELECT
+         parentTable.id,
+         parentTable.name,
+         parentTable.parent,
+         parentTable.name AS fullpath
+		   FROM inventur.storage_location AS parentTable
+		   WHERE parentTable.parent = 0
+		   UNION ALL
+		   SELECT
+         childTable.id,
+         childTable.name,
+         childTable.parent,
+         CONCAT(parentTable.fullpath, '-', childTable.name) AS fullpath
+		   FROM
+         inventur.storage_location AS childTable
+		       INNER JOIN
+         cte as parentTable ON parentTable.id = childTable.parent
+		  )
+		SELECT
+		  storage_location.id,
+		  storage_location.name,
+		  storage_location.parent,
+		  (COUNT(storage_place.id) - COUNT(storage_place.stock_id)) AS empty_places,
+		  storage_location.places,
+		  cte.fullpath
+		FROM
+		  inventur.storage_location
+		    LEFT JOIN
+		  storage_place ON storage_location.id = storage_place.storage_location_id
+				INNER JOIN
+		  cte ON storage_location.id = cte.id
+		GROUP BY storage_location.id;`
+  );
+  return rows;
+};
+
 const getCategoryById = async function (categoryID) {
   const [rows] = await connPool.query(
     `SELECT category.id, category.category AS name, IFNULL(counter.article_count, 0) AS article_count
@@ -545,13 +584,25 @@ const getKeywordById = async function (keywordID) {
   return rows;
 };
 
-async function getStockIDByArticlenumber(articlenumber) {
+const getStockIDByArticlename = async function (name) {
+  const [rows, fields] = await connPool.query(
+    `SELECT stock.id
+     FROM stock
+      INNER JOIN article
+        ON stock.article_id = article.id
+     WHERE article.name = ?`,
+    [name]
+  );
+  return rows;
+};
+
+const getStockIDByArticlenumber = async function (articlenumber) {
   const [rows, fields] = await connPool.query(
     `SELECT id FROM stock WHERE articlenumber = ?`,
     [articlenumber]
   );
   return rows;
-}
+};
 
 const getTaskEntriesById = async function (taskID) {
   const result = [];
@@ -915,8 +966,10 @@ module.exports = {
   deleteUnit,
   finishTask,
   getAllStockInfo,
+  getAllStorageLocations,
   getCategoryById,
   getKeywordById,
+  getStockIDByArticlename,
   getStockIDByArticlenumber,
   getTaskEntriesById,
   getUnitById,

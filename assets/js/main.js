@@ -53,7 +53,6 @@ const checkForDuplicateArtNum = function (event) {
 };
 
 let duplicateArtNameRequestTracker;
-// TODO: refactor this API endpoint to properly return 404 if not found etc.
 const checkForDuplicateArtName = function (event) {
   const currentArtName = event.target.value;
   if (currentArtName === "") {
@@ -78,14 +77,12 @@ const checkForDuplicateArtName = function (event) {
     method: "GET",
     url: `/api/stock/name/${currentArtName}`,
     success: function (jqXHR, textStatus, error) {
-      if (jqXHR) {
-        if (!event.target.nextElementSibling) {
-          event.target.insertAdjacentHTML(
-            "afterend",
-            "<br id='notificationBreak'><span id='notification'>Dieser Artikel extistiert bereits</span>"
-          );
-          $(".ui-autocomplete").css("z-index", "0");
-        }
+      if (!event.target.nextElementSibling) {
+        event.target.insertAdjacentHTML(
+          "afterend",
+          "<br id='notificationBreak'><span id='notification'>Dieser Artikel extistiert bereits</span>"
+        );
+        $(".ui-autocomplete").css("z-index", "0");
       } else {
         if (event.target.nextElementSibling) {
           $("#notificationBreak").remove();
@@ -188,6 +185,7 @@ const buildSubTrees = function (locationTree, rootLI, rootNodes) {
       "data-parent": node.parent,
       "data-places": node.places,
       "data-empty_places": node.empty_places,
+      "data-fullpath": node.fullpath,
     });
     let childNodesExist = false;
     if (childNodes.length > 0) {
@@ -220,6 +218,7 @@ const buildNodeTree = function (locationTree) {
       "data-parent": node.parent,
       "data-places": node.places,
       "data-empty_places": node.empty_places,
+      "data-fullpath": node.fullpath,
     });
     let childNodesExist = false;
     if (childNodes.length > 0) {
@@ -241,10 +240,9 @@ const buildNodeTree = function (locationTree) {
   }
 };
 
-// TODO: refactor this API endpoint
-getStorageLocationTree().then((locationTree) => {
-  stammdatenResult.storage_location = locationTree;
-  buildNodeTree(locationTree);
+getStorageLocationTree().then((response) => {
+  stammdatenResult.storage_location = response.data;
+  buildNodeTree(response.data);
 });
 
 getCategoryList().then((response) => {
@@ -401,27 +399,12 @@ function checkForEmptyStoragePlaces() {
 }
 
 //apply selected location to popup
-// TODO: rewrite this once the corresponding API endpoint is rewritten
 $("body").on("click", "#myUL li", function (e) {
   if ($(this).data("empty_places") > 0) {
     const dataId = $(this).data("id");
     const dataParent = $(this).data("parent");
-
-    const path = [];
-    let el = $(this);
-
-    do {
-      if (el.children().length == 0) {
-        path.unshift(el.text());
-      } else {
-        path.unshift(el.find("div").first().text());
-      }
-      el = el.parent().parent();
-    } while (el.parent().attr("id") != "myUL");
-
-    let location = $("#myUL").find("div").first();
-
-    location.text(path.join("-"));
+    const location = $("#myUL").find("div").first();
+    location.text($(this).data("fullpath"));
     location.attr("data-id", dataId);
     location.attr("data-parent", dataParent);
     location.attr("style", "color: black !important");
@@ -1171,3 +1154,69 @@ $("#deleteForm").submit(function (event) {
 });
 
 //------------------------------------
+
+//triggers when click on the cover, navbar or close button on popup
+$("body").on("click", "#cover, .navbar, #mdiv", function () {
+  //only do smth if the keyword dropdown in the stock popup is closed
+  if ($(".select-pure__select--opened").length == 0) {
+    // remove articlenumber event listener
+    $("#articlenumber")[0]?.removeEventListener(
+      "input",
+      checkForDuplicateArtNum
+    );
+    $("#name")[0]?.removeEventListener("input", checkForDuplicateArtName);
+    $("#InventurPopUp form")[0]?.removeEventListener(
+      "keydown",
+      submitFormByEnterKey
+    );
+    $("#PopUp form").off("keydown", submitFormByEnterKey);
+
+    //closes all popups
+    $("#PopUp").fadeOut(300, () => $("#PopUp").remove());
+    $("#InventurPopUp").fadeOut(300, () => $("#InventurPopUp").remove());
+    $("#PopUpDelete").fadeOut(300, () => $("PopUpDelete").remove());
+    $("#list_number_popup").fadeOut(300, () =>
+      $("#list_number_popup").remove()
+    );
+    $("#list_popup").fadeOut(300, () => $("#list_popup").remove());
+    //closes cover
+    $("#cover").fadeOut();
+
+    //close location dropdown
+    $("#myUL ul").removeClass("active");
+    // remove error messages
+    $("#notificationBreak").remove();
+    $("#notification").remove();
+    $("#LocationNotification").remove();
+    $("#artNumNotificationBreak").remove();
+    $("#artNumNotification").remove();
+    $("#InventurPopUp #InventurError").text("");
+
+    $("#myUL").find("div").first().attr("style", "color: inherit");
+    $("#myUL").find("div").first().removeAttr("data-id");
+    $("#myUL").find("div").first().removeAttr("data-parent");
+    $("#myUL").find("div").first().text("Ort auswählen");
+
+    //clears all input field
+    $("#PopUp input").each(function (i) {
+      $(this).val("");
+    });
+
+    $("#InventurPopUp input").each(function (i) {
+      $(this).val("");
+    });
+
+    //clears the number buttons in edit popup
+    $("#number, #minimum_number").parent().find("span").remove();
+    $("#number , #minimum_number").parent().find("br").remove();
+
+    $("#number , #minimum_number").css("border", "none");
+    $("#number , #minimum_number").css(
+      "border-bottom",
+      "1px solid rgb(0,60,121)"
+    );
+
+    $("#keywords").val("");
+    $("#minimum_number").val("0");
+  }
+});
