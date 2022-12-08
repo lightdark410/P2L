@@ -393,7 +393,7 @@ const deleteStorageLocation = async function (locID) {
   return result;
 };
 
-async function deleteTask(taskID) {
+const deleteTask = async function (taskID) {
   const connection = await connPool.getConnection();
   await connection.beginTransaction();
   try {
@@ -408,7 +408,7 @@ async function deleteTask(taskID) {
   }
   await connection.commit();
   await connection.release();
-}
+};
 
 const deleteUnit = async function (unitID) {
   const connection = await connPool.getConnection();
@@ -433,9 +433,7 @@ const deleteUnit = async function (unitID) {
   return result;
 };
 
-// FIXME: don't log a change if the actual change amount is 0
-// TODO: move logging, tasklog and updating stock values to updateTaskEntryAmount()
-async function finishTask(taskID, username) {
+const finishTask = async function (taskID, username) {
   const connection = await connPool.getConnection();
   await connection.beginTransaction();
   try {
@@ -466,7 +464,7 @@ async function finishTask(taskID, username) {
   connection.commit();
   connection.release();
   return "Finished successfully";
-}
+};
 
 const getAllStockInfo = async function () {
   const [rows] = await connPool.query(
@@ -483,33 +481,33 @@ const getAllStockInfo = async function () {
      SELECT
        stock.id,
        stock.number,
-         stock.minimum_number,
-         stock.creator,
-         stock.change_by,
-         stock.date,
-         stock.articlenumber,
-         article.name,
-         category.category,
-         unit.unit,
-         cte.fullpath AS storage_location,
-         storage_place.place AS storage_place,
-         IFNULL(GROUP_CONCAT(keyword.keyword SEPARATOR ", "), "") AS keyword
+       stock.minimum_number,
+       stock.creator,
+       stock.change_by,
+       stock.date,
+       stock.articlenumber,
+       article.name,
+       category.category,
+       unit.unit,
+       cte.fullpath AS storage_location,
+       storage_place.place AS storage_place,
+       IFNULL(GROUP_CONCAT(keyword.keyword SEPARATOR ", "), "") AS keyword
      FROM
-         stock
-             INNER JOIN
-         article ON article.id = stock.article_id
-             INNER JOIN
-         category ON category.id = article.category_id
-             INNER JOIN
-         unit ON unit.id = article.unit_id
-             INNER JOIN
-         storage_place ON stock.id = storage_place.stock_id
-             INNER JOIN
-         cte ON storage_place.storage_location_id = cte.id
-             LEFT JOIN
-          (keyword_list INNER JOIN keyword
-             ON keyword_list.keyword_id = keyword.id)
-             ON stock.id = keyword_list.stock_id
+       stock
+         INNER JOIN
+       article ON article.id = stock.article_id
+         INNER JOIN
+       category ON category.id = article.category_id
+         INNER JOIN
+       unit ON unit.id = article.unit_id
+         INNER JOIN
+       storage_place ON stock.id = storage_place.stock_id
+         INNER JOIN
+       cte ON storage_place.storage_location_id = cte.id
+         LEFT JOIN
+       (keyword_list INNER JOIN keyword
+          ON keyword_list.keyword_id = keyword.id)
+         ON stock.id = keyword_list.stock_id
      GROUP BY stock.id;`
   );
   return rows;
@@ -683,6 +681,81 @@ const getTaskEntriesById = async function (taskID) {
   });
 };
 
+const getTaskInfo = async function (taskID, username) {
+  const connection = await connPool.getConnection();
+  await connection.beginTransaction();
+  const result = {};
+
+  try {
+    const [task] = await connection.query(
+      `SELECT id, status, processor
+       FROM task
+       WHERE id = ?
+       FOR UPDATE`,
+      [taskID]
+    );
+    if (task.length === 0) {
+      result.error = "ERR_TASK_NOT_FOUND";
+      await cleanUpConnection(connection);
+      return result;
+    }
+    if (task[0].processor !== null && task[0].processor !== username) {
+      result.error = "ERR_IN_PROGRESS_BY_OTHER_USER";
+      await cleanUpConnection(connection);
+      return result;
+    }
+    if (task[0].status === 1) {
+      result.error = "ERR_ALREADY_FINISHED";
+      await cleanUpConnection(connection);
+      return result;
+    }
+    result.status = task[0].status;
+    result.id = task[0].id;
+    const [taskEntries] = await connection.query(
+      `WITH RECURSIVE cte as (
+         SELECT parentTable.id, parentTable.name, parentTable.parent, parentTable.name AS fullpath
+           FROM inventur.storage_location AS parentTable
+           WHERE parentTable.parent = 0
+           UNION ALL
+           SELECT childTable.id, childTable.name, childTable.parent, CONCAT(parentTable.fullpath, '-', childTable.name) AS fullpath
+           FROM inventur.storage_location AS childTable
+           INNER JOIN cte as parentTable
+           ON parentTable.id = childTable.parent
+           )
+       SELECT
+         task_entries.task_id,
+         task_entries.stock_id,
+           task_entries.lay_in,
+           task_entries.amount,
+           task_entries.amount_real,
+           article.name AS articleName,
+           stock.articlenumber AS articleNumber,
+           stock.id AS stock_id,
+           storage_place.place AS storage_place,
+           cte.fullpath AS storage
+       FROM
+         task_entries
+           INNER JOIN
+         stock ON task_entries.stock_id = stock.id
+           INNER JOIN
+         article ON stock.article_id = article.id
+           INNER JOIN
+         storage_place ON task_entries.stock_id = storage_place.stock_id
+           INNER JOIN
+         cte ON storage_place.storage_location_id = cte.id
+       WHERE task_entries.task_id = ?`,
+      [taskID]
+    );
+    result.data = taskEntries;
+  } catch (error) {
+    await cleanUpConnection(error);
+    throw error;
+  }
+  await connection.commit();
+  await connection.release();
+  return result;
+};
+
 const getUnitById = async function (unitID) {
   const [rows] = await connPool.query(
     `SELECT unit.id, unit.unit AS name, IFNULL(counter.article_count, 0) AS article_count
@@ -698,7 +771,47 @@ const getUnitById = async function (unitID) {
   return rows;
 };
 
-async function resizeAndRenameStorageLocation(
+const resetTaskInfo = async function (taskID, resetProcessor, resetStatus) {
+  const connection = await connPool.getConnection();
+  await connection.beginTransaction();
+  const result = {};
+  try {
+    const [oldData] = await connection.query(
+      `SELECT id, processor, status
+       FROM task
+       WHERE id = ?`,
+      [taskID]
+    );
+    if (oldData[0].status === 1) {
+      result.error = "ERR_ALREADY_FINISHED";
+      cleanUpConnection(connection);
+      return result;
+    }
+    if (resetProcessor && resetStatus) {
+      await connection.query(
+        `UPDATE task
+         SET processor = NULL, status = -1
+         WHERE id = ?`,
+        [taskID]
+      );
+    } else {
+      await connection.query(
+        `UPDATE task
+         SET ${resetProcessor ? "processor = NULL" : "status = -1"}
+         WHERE id = ?`,
+        [taskID]
+      );
+    }
+  } catch (error) {
+    await cleanUpConnection(error);
+    throw error;
+  }
+  await connection.commit();
+  await connection.release();
+  return result;
+};
+
+const resizeAndRenameStorageLocation = async function (
   storageLocationID,
   newSize,
   newName
@@ -787,14 +900,43 @@ async function resizeAndRenameStorageLocation(
   await connection.commit();
   await connection.release();
   return result;
-}
+};
 
-async function updateTaskEntryAmount(taskID, stockID, amountReal, username) {
+const updateTaskEntryAmount = async function (
+  taskID,
+  stockID,
+  amountReal,
+  username
+) {
   const result = {};
   const connection = await connPool.getConnection();
 
   await connection.beginTransaction();
   try {
+    const [taskData] = await connection.query(
+      `SELECT id, status, processor
+       FROM task
+       WHERE id = ?
+       FOR UPDATE`,
+      [taskID]
+    );
+    if (taskData[0].status === 1) {
+      result.error = "ERR_ALREADY_FINISHED";
+      cleanUpConnection(connection);
+      return result;
+    }
+    if (taskData[0].processor === null) {
+      await connection.query(
+        `UPDATE task
+         SET processor = ?
+         WHERE id = ?`,
+        [username, taskID]
+      );
+    } else if (taskData[0].processor !== username) {
+      result.error = "ERR_IN_PROGRESS_BY_OTHER_USER";
+      cleanUpConnection(connection);
+      return result;
+    }
     const [oldData] = await connection.query(
       `SELECT *
        FROM task_entries
@@ -832,21 +974,19 @@ async function updateTaskEntryAmount(taskID, stockID, amountReal, username) {
     );
     const [keywords] = await connection.query(
       `SELECT keyword.keyword
-           FROM keyword_list, keyword
-           WHERE keyword_list.keyword_id = keyword.id
-             AND keyword_list.stock_id = ?`,
+       FROM keyword_list, keyword
+       WHERE keyword_list.keyword_id = keyword.id
+         AND keyword_list.stock_id = ?`,
       [oldData[0].stock_id]
     );
     const keywordArr = keywords.map((e) => e.keyword);
     stockEntry[0].keywords = keywordArr.join(", ");
     // calculate new amount
-    if (oldData[0].amount_real !== null) {
-      amountReal = amountReal - oldData[0].amount_real;
-    }
+    const changeDelta = amountReal - oldData[0].amount_real ?? 0;
     const newAmount =
       oldData[0].lay_in === 1
-        ? stockEntry[0].number + amountReal
-        : stockEntry[0].number - amountReal;
+        ? stockEntry[0].number + changeDelta
+        : stockEntry[0].number - changeDelta;
 
     const [storagePlace] = await connection.query(
       `SELECT place, storage_location_id
@@ -864,38 +1004,40 @@ async function updateTaskEntryAmount(taskID, stockID, amountReal, username) {
          WHERE id = ?`,
       [newAmount, oldData[0].stock_id]
     );
-    await connection.query(
-      `INSERT INTO log
-         (
-          event,
-          stock_id,
-          name,
-          category,
-          keywords,
-          location_id,
-          location,
-          creator,
-          change_by,
-          number,
-          minimum_number,
-          deleted
-         )
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        "change",
-        oldData[0].stock_id,
-        stockEntry[0].name,
-        stockEntry[0].category,
-        stockEntry[0].keywords,
-        storagePlace[0].storage_location_id,
-        storageLocation[0].fullpath,
-        stockEntry[0].creator,
-        username,
-        newAmount,
-        stockEntry[0].minimum_number,
-        0,
-      ]
-    );
+    if (changeDelta !== 0) {
+      await connection.query(
+        `INSERT INTO log
+           (
+            event,
+            stock_id,
+            name,
+            category,
+            keywords,
+            location_id,
+            location,
+            creator,
+            change_by,
+            number,
+            minimum_number,
+            deleted
+           )
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          "change",
+          oldData[0].stock_id,
+          stockEntry[0].name,
+          stockEntry[0].category,
+          stockEntry[0].keywords,
+          storagePlace[0].storage_location_id,
+          storageLocation[0].fullpath,
+          stockEntry[0].creator,
+          username,
+          newAmount,
+          stockEntry[0].minimum_number,
+          0,
+        ]
+      );
+    }
     const [oldTaskLog] = await connection.query(
       `SELECT id
        FROM task_log
@@ -943,15 +1085,17 @@ async function updateTaskEntryAmount(taskID, stockID, amountReal, username) {
   await connection.commit();
   await connection.release();
   return result;
-}
+};
 
-async function updateTaskStatus(taskID, newStatus) {
+const updateTaskStatus = async function (taskID, newStatus, username) {
   const [rows, fields] = await connPool.query(
-    `UPDATE task SET status = ? WHERE id = ?`,
-    [newStatus, taskID]
+    `UPDATE task
+     SET status = ?, processor = ?
+     WHERE id = ?`,
+    [newStatus, username, taskID]
   );
   return rows;
-}
+};
 
 module.exports = {
   createCategory,
@@ -972,7 +1116,9 @@ module.exports = {
   getStockIDByArticlename,
   getStockIDByArticlenumber,
   getTaskEntriesById,
+  getTaskInfo,
   getUnitById,
+  resetTaskInfo,
   resizeAndRenameStorageLocation,
   updateTaskEntryAmount,
   updateTaskStatus,

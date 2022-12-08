@@ -1,42 +1,57 @@
 const url = window.location.pathname;
 const id = url.substring(url.lastIndexOf("/") + 1);
 
-let req;
+let data;
 $.ajax({
   url: `/api/mobileList/${id}`,
-  async: false,
-  success: function (reqData) {
-    req = JSON.parse(reqData);
-  },
-  error: function (xhr, ajaxOptions, thrownError) {
-    $("#itemDiv").text("400 Bad Request - Auftrag existiert nicht.");
-  },
-});
-
-const tableIndex = $("#itemlist_div").data("index");
-const data = req.data;
-if (req.status === -1) {
-  $.ajax({
-    url: "/api/updateTaskStatus",
-    data: `taskID=${id}&newStatus=0`,
-    method: "POST",
-  });
-  req.status = 0;
-}
-if (req.status === 0) {
-  let ledColor;
-  try {
-    ledColor = JSON.parse(req.color);
-  } catch (error) {
-    ledColor = "";
+}).then((response) => {
+  if (response.error) {
+    switch (response.error) {
+      case "ERR_IN_PROGRESS_BY_OTHER_USER":
+        $("#itemDiv").html(
+          "Dieser Auftrag wird bereits von einer anderen Person bearbeitet.<br />Bei Fragen wenden Sie sich bitte an Ihren zuständigen Ausbilder."
+        );
+        break;
+      case "ERR_ALREADY_FINISHED":
+        $("#itemDiv").text("Auftrag abgeschlossen");
+        break;
+      case "ERR_TASK_NOT_FOUND":
+        $("#itemDiv").text("Auftrag existiert nicht.");
+        break;
+      default:
+        $("#itemDiv").text("Es ist ein Fehler aufgetreten.");
+    }
+    return;
   }
-  loadLedColor(ledColor);
-  $("#total_pages").text(data.length);
-  renderItemData(tableIndex);
-  renderListTableData();
-} else {
-  $("#itemDiv").text("Auftrag abgeschlossen");
-}
+
+  data = response.data;
+  if (response.status === -1) {
+    $.ajax({
+      url: "/api/updateTaskStatus",
+      data: `taskID=${id}&newStatus=0`,
+      method: "POST",
+    });
+    response.status = 0;
+  } else {
+    $("#already-in-progress-notification").show();
+  }
+  if (response.status === 0) {
+    let ledColor;
+    try {
+      ledColor = JSON.parse(req.color);
+    } catch (error) {
+      ledColor = "";
+    }
+    loadLedColor(ledColor);
+    $("#total_pages").text(response.data.length);
+    // show first item by default
+    renderItemData(0);
+    renderListTableData();
+  } else {
+    $("#already-in-progress-notification").hide();
+    $("#itemDiv").text("Auftrag abgeschlossen");
+  }
+});
 
 //render all data in the table
 function renderItemData(tableIndex) {
@@ -56,7 +71,7 @@ function renderItemData(tableIndex) {
     }
     $("#storage").text(data[tableIndex].storage);
     $("#storage_place").text(data[tableIndex].storage_place);
-    $("#amount-selector input").val(obj.amount_real ?? obj.amount);
+    $("#amount-selector input").val(obj.amount_real ?? 0);
     // style button based on whether an amount has been submitted
     if (obj.amount_real === null) {
       $("#amount-selector button")

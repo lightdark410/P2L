@@ -109,9 +109,14 @@ function format(d) {
               Auftrag löschen
             </button>
           </td>
-          <td style="padding: 0">
+          <td style="padding: 0 5px 0 0">
             <button class="btn btn-primary" id="qr">
               QR-Code
+            </button>
+          </td>
+          <td style="padding: 0 5px 0 0">
+            <button class="btn btn-primary" id="reset-processor">
+              BearbeiterIn/Status zurücksetzen
             </button>
           </td>
       </tr>
@@ -131,12 +136,13 @@ let taskTable = $("#task").DataTable({
       data: null,
       defaultContent: "",
     },
-    { data: "id", className: "task-id" }, //mock data for saveIcon
+    { data: "id", className: "task-id" },
     { data: "date", className: "task-date" },
     { data: "creator", className: "task-creator" },
+    { data: "processor", className: "task-processor" },
     { data: "status", className: "task-status-indicator" },
   ],
-  columnDefs: [{ width: "30%", targets: 4 }],
+  columnDefs: [{ width: "30%", targets: 5 }],
   order: [[1, "desc"]],
   createdRow: function (row, data, index) {
     //add status to last column
