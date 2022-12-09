@@ -1,3 +1,8 @@
+
+
+
+
+
 let duplicateArtNumRequestTracker;
 const checkForDuplicateArtNum = function (event) {
   const currentArtNum = parseInt(event.target.value);
@@ -753,14 +758,16 @@ $("body").on("submit", "#InventurPopUp form", function (event) {
 });
 
 //generate qr code
+//and sends request rto api 
 $("body").on("submit", "#list_popup form", function (e) {
   e.preventDefault();
-  const rows = $(this).find("tbody tr");
+  const rows = $(this).find(".article tbody tr");
   const list = [];
   for (const row of rows) {
-    const article_id = $(row).find(".id").text();
-    const select = $(row).find("select").val();
-    const amount = $(row).find(".amount").val();
+    const article_id   = $(row).find(".id").text();
+    const select       = $(row).find("select").val();
+    const amount       = $(row).find(".amount").val();
+
     list.push({
       stock_id: article_id,
       lay_in: select == "in" ? true : false,
@@ -784,9 +791,9 @@ $("#table").on("click", "td.stock-save-icon", function (e) {
   }
 
   //gets id of clicked row
-  const id = $(this).closest("tr").find("td.stock-id").text();
+  const id   = $(this).closest("tr").find("td.stock-id").text();
   const name = $(this).closest("tr").find("td.stock-art-name").text();
-  const num = $(this).closest("tr").find("td.stock-amount").text();
+  const num  = $(this).closest("tr").find("td.stock-amount").text();
 
   const errMsg =
     num > 0
@@ -830,8 +837,9 @@ $("#table").on("click", "td.stock-save-icon", function (e) {
 //updates the max attribute in the list_number popup
 function updateMaxval(ele, max) {
   const middle = $(ele).closest(".PopUp_middle");
-  const input = middle.find("input.list-add-amount");
-  const span = middle.find("span.list-error-span");
+  const input  = middle.find("input.list-add-amount");
+  const span   = middle.find("span.list-error-span");
+
   if (ele.checked) {
     $(input).attr({ max: max });
     if (max === 0) {
@@ -857,6 +865,8 @@ updateListNumber();
 $("body").on("click", "#list", function (e) {
   const list = JSON.parse(localStorage.getItem("list"));
   let tableData = "";
+  let orderTableData="";
+
 
   //the popup that will be shown
   const list_popup = $(`
@@ -864,7 +874,18 @@ $("body").on("click", "#list", function (e) {
         <form>
           <div class="PopUp_topBar">Artikelliste<div id="mdiv"><div class="mdiv"><div class="md"></div></div></div></div>
           <div class="PopUp_middle">
-            <table>
+          <table class="order">
+              <thead>
+                <tr>
+                  <td>Besteller</td>
+                  <td>Bestellnummer</td>
+                  <td></td>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+
+            <table class="article" >
               <thead>
                 <tr>
                   <td>Artikelnummer</td>
@@ -893,20 +914,36 @@ $("body").on("click", "#list", function (e) {
         </form>
       </div>
     `);
+
+
   //checks is session is empty
   if (list === null || list.length === 0) {
     tableData = $(
       `<tr><td colspan="100">Speichern Sie Artikel ab, um sie hier einsehen zu können.</td></tr>`
     );
     $(list_popup).find("#qrSubmit").attr("disabled", true);
+
   } else {
-    //fills tableData
+    orderTableData += ` 
+        <tr>
+            <td>
+                <input type="text" class="orderer" max = "60" min="3" placeholder="Max Mustermann" required>
+            </td>
+            <td>
+                <input type="number" class="order-number" max = "9999" min="1" placeholder="1234" required>
+            </td>
+        </tr>`;
+      
+    //fills tableData(for the articles)
     for (const elem of list) {
       const entry_id = elem["id"];
-      const lay_in = elem["change"] <= 0;
-      const select_in = lay_in ? "" : "selected";
+      const lay_in   = elem["change"] <= 0;
+      
+      const select_in  = lay_in ? "" : "selected";
       const select_out = !lay_in ? "" : "selected";
 
+
+      //selects the big table from "Artikelstamm" and compares the ids in order to select the correct data
       $("#table")
         .DataTable()
         .rows()
@@ -953,9 +990,9 @@ $("body").on("click", "#list", function (e) {
     "change input",
     "#list_popup .amount, #list_popup select",
     function (e) {
-      const row = $(this).closest("tr");
-      const id = parseInt(row.find(".id").text());
-      const num = parseInt(row.find(".amount").val());
+      const row      = $(this).closest("tr");
+      const id       = parseInt(row.find(".id").text());
+      const num      = parseInt(row.find(".amount").val());
       const curr_val = row.find(".curr_val").text();
       const select_val = row.find("select").val();
       let change = num;
@@ -983,7 +1020,11 @@ $("body").on("click", "#list", function (e) {
     }
   });
 
-  list_popup.find("table tbody").append(tableData);
+  //displays the table ionside of the popup
+  list_popup.find(".article tbody").append(tableData);
+  list_popup.find(".order tbody").append(orderTableData);
+
+
   $("#tableDiv").after(list_popup);
   calcListPopupSum();
   list_popup.fadeIn();
@@ -995,8 +1036,8 @@ function calcListPopupSum() {
   const rows = $("#list_popup").find("tr");
   for (const row of rows) {
     const current_val = parseInt($(row).find(".curr_val").text());
-    const val = parseInt($(row).find(".amount").val());
-    const select = $(row).find("select").val();
+    const val         = parseInt($(row).find(".amount").val());
+    const select      = $(row).find("select").val();
     const sum = select == "in" ? current_val + val : current_val - val;
 
     $(row)

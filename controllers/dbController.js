@@ -217,10 +217,12 @@ const createStorageLocation = async function (locName, locParent, places) {
   return result;
 };
 
+
 const createTask = async function (username, taskEntryInfo) {
   const connection = await connPool.getConnection();
   await connection.beginTransaction();
   const result = { taskID: undefined, stockIDs: [] };
+
   try {
     const [rows] = await connection.query(
       `INSERT INTO task (creator, status) VALUES (?, ?)`,
@@ -245,6 +247,7 @@ const createTask = async function (username, taskEntryInfo) {
     await cleanUpConnection(connection);
     throw error;
   }
+
   await connection.commit();
   await connection.release();
   return result;
