@@ -53,43 +53,41 @@ module.exports = function (app) {
   //get data for mobile list by id
   app.get("/api/mobileList/:id", async (req, res) => {
     if (req.session.loggedin) {
-      try {
-        //get all data from this task id
-        let task = await taskDB.get_task_by_id(req.params.id);
-        //for every task entry..
-        for (let i = 0; i < task.length; i++) {
-          let stock_data = await functions.getStockById(task[i].stock_id);
-          let storage = await masterdataDB.getStorageByStockId(
-            task[i].stock_id
-          );
-          let storage_name = await getFullStorageName(storage, storage.name);
-
-          task[i].articleName = stock_data.name;
-          task[i].number = stock_data.number;
-          task[i].storage = storage_name;
-          task[i].storage_place = storage.place;
-          task[i].articleNumber = stock_data.articlenumber;
-        }
-
-        //get color from led api
-        let color = await getledColor(req.params.id);
-
-        //build final json
-        let data = {
-          data: task,
-          color: color,
-          status: task[0].task_status,
-        };
-        res.send(JSON.stringify(data));
-      } catch (error) {
-        res.status(400).send(error);
-        logger.error(
-          `User: ${req.session.username} - Method: Get - Route: /api/mobileList/${req.params.id} - Error: ${error}`
-        );
+      logger.debug(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      const taskID = parseInt(req.params.id);
+      if (isNaN(taskID)) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "taskID must be an integer.",
+        });
+        return;
       }
+      let result;
+      try {
+        result = await dbController.getTaskInfo(taskID, req.session.username);
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      const color = await getledColor(taskID);
+      result.color = color;
+      res.send(result);
     } else {
-      req.session.redirectTo = `/api/mobileList/${req.params.id}`;
-      res.redirect("/"); //redirect to login page if not logged in
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
     }
   });
 
@@ -1406,7 +1404,11 @@ module.exports = function (app) {
         return;
       }
       try {
-        await dbController.updateTaskStatus(taskID, newStatus);
+        await dbController.updateTaskStatus(
+          taskID,
+          newStatus,
+          req.session.username
+        );
       } catch (error) {
         logger.error(
           `User: ${req.session.username} - Method: ${req.method} - Route: ${
@@ -1616,15 +1618,14 @@ module.exports = function (app) {
         });
         return;
       }
-      let taskEntryID;
+      let response;
       try {
-        const response = await dbController.updateTaskEntryAmount(
+        response = await dbController.updateTaskEntryAmount(
           taskID,
           stockID,
           amountReal,
           req.session.username
         );
-        taskEntryID = response.taskEntryID;
       } catch (error) {
         logger.error(
           `User: ${req.session.username} - Method: ${req.method} - Route: ${
@@ -1632,6 +1633,23 @@ module.exports = function (app) {
           } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
         );
         res.status(500).send(error);
+        return;
+      }
+      const taskEntryID = response.taskEntryID;
+      if (response.error) {
+        const result = { status: 400, code: response.error };
+        switch (response.error) {
+          case "ERR_ALREADY_FINISHED":
+            result.message = "This task is already marked as finished.";
+            break;
+          case "ERR_IN_PROGRESS_BY_OTHER_USER":
+            result.message =
+              "This task is already in progress by another user.";
+            break;
+          default:
+            result.message = "An error has occured.";
+        }
+        res.status(400).send(result);
         return;
       }
       /**
@@ -2325,6 +2343,82 @@ module.exports = function (app) {
       });
       logger.info(
         `User ${req.session.username} deleted the storage location ${result.fullPath} with the id ${result.id}.`
+      );
+    } else {
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
+    }
+  });
+
+  /**
+   * Resets processor or status of a given task.
+   **/
+  app.post("/api/resetTaskInfo", async (req, res) => {
+    if (req.session.loggedin) {
+      logger.debug(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      const taskID = parseInt(req.body.taskID);
+      if (isNaN(taskID)) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "taskID must be an integer.",
+        });
+        return;
+      }
+      const resetProcessor = req.body.processor === true;
+      const resetStatus = req.body.status === true;
+      if (!resetProcessor && !resetStatus) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message:
+            "At least one of processor or status must be present and true.",
+        });
+        return;
+      }
+      let result;
+      try {
+        result = await dbController.resetTaskInfo(
+          taskID,
+          resetProcessor,
+          resetStatus
+        );
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      if (result.error) {
+        res.status(400).send({
+          status: 400,
+          code: result.error,
+        });
+        return;
+      }
+      res.send({
+        status: 200,
+        code: "OK",
+        message: "Task information updated.",
+      });
+      logger.info(
+        `User ${req.session.username} has reset ${
+          resetProcessor
+            ? "processor " + resetStatus
+              ? " and status "
+              : ""
+            : "status "
+        } of task ${taskID}.`
       );
     } else {
       res.status(403).send({

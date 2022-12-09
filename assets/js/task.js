@@ -3,6 +3,8 @@ const closePopUp = function () {
   $(".cover").remove();
   $(".popup").fadeOut();
   $(".popup").remove();
+  $(".reset-popup").fadeOut();
+  $(".reset-popup").remove();
 };
 
 $("#task tbody").on("click", "tr", function (e) {
@@ -159,6 +161,127 @@ $("#task tbody").on("click", "#delete-task", function (e) {
             }
           }
           $(".popup .popup_mid").html(
+            `<span>${errorMessage}</span>
+             <br/>
+             <button class="btn btn-secondary cancel" type="button">Abbrechen</button>`
+          );
+        },
+      });
+    });
+  }
+});
+
+// display reset processor popup when the "reset processor" button is clicked
+$("#task tbody").on("click", "#reset-processor", function (e) {
+  const row = $(this).parents("tbody").parents("tr").prev();
+  const id = row.find("td.task-id").text();
+  let authorised;
+
+  $.ajax({
+    async: false,
+    type: "GET",
+    global: false,
+    url: "/api/user",
+    success: function (data) {
+      authorised = !(data.title === "Auszubildender");
+    },
+  });
+
+  const popUpMid = authorised
+    ? `
+        <span>Möchten Sie den Auftragsstatus oder die bearbeitende Person für den Auftrag Nummer ${id} zurücksetzen?</span>
+        <br>
+        <div class="row justify-content-around mt-3">
+          <div>
+            <label for="processor-checkbox">BearbeiterIn</label>
+            <input type="checkbox" id="processor-checkbox">
+          </div>
+          <div>
+            <label for="status-checkbox">Auftragsstatus</label>
+            <input type="checkbox" id="status-checkbox">
+          </div>
+        </div>
+        <br />
+        <button class="btn btn-danger reset mb-3" type="button">Zurücksetzen</button>
+        <button class="btn btn-secondary cancel mb-3" type="button">Abbrechen</button>
+        `
+    : `
+        Sie haben keine Berechtigung Auftragsinformationen zurückzusetzen!
+        <br />
+        <button class="btn btn-secondary cancel mb-3" type="button">Abbrechen</button>
+        `;
+
+  const popUp = `
+        <div class="reset-popup">
+            <form>
+            <div class="popup_top">
+                Auftragsinformationen zu Nummer ${id} zurücksetzen?
+                <div id="mdiv">
+                    <div class="mdiv">
+                        <div class="md"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="popup_mid">
+            ${popUpMid}
+            </div>
+            <div class="popup_foot"></div>
+            </form>
+        </div>
+    `;
+
+  const cover = '<div class="cover"></div>';
+
+  $("body").prepend(
+    $(cover + popUp)
+      .hide()
+      .fadeIn()
+  );
+
+  $(".reset-popup").on("click", ".popup_mid > .cancel", closePopUp);
+
+  if (authorised) {
+    $(".popup_mid > .reset").click(function () {
+      const processor = $(".reset-popup .popup_mid #processor-checkbox")[0]
+        .checked;
+      const status = $(".reset-popup .popup_mid #status-checkbox")[0].checked;
+
+      $.ajax({
+        type: "POST",
+        url: "/api/resetTaskInfo",
+        data: JSON.stringify({
+          taskID: id,
+          processor: processor,
+          status: status,
+        }),
+        processData: false,
+        contentType: "application/json",
+        success: function () {
+          // reload the task table
+          taskTable.ajax.reload();
+          // close the popup
+          closePopUp();
+        },
+        error: function (jqXHR, textStatus, error) {
+          let errorMessage;
+          switch (jqXHR.status) {
+            case 403: {
+              errorMessage =
+                "Sie sind nicht berechtigt diese Aktion auszuführen!";
+              break;
+            }
+            case 400: {
+              errorMessage =
+                jqXHR.responseJSON?.code === "ERR_ALREADY_FINISHED"
+                  ? "Dieser Auftrag ist bereits abgeschlossen und kann daher nicht geändert werden."
+                  : "Es ist ein Fehler aufgetreten!";
+              break;
+            }
+            default: {
+              errorMessage = "Es ist ein Fehler aufgetreten!";
+            }
+          }
+          $(".reset-popup .popup_mid").html(
             `<span>${errorMessage}</span>
              <br/>
              <button class="btn btn-secondary cancel" type="button">Abbrechen</button>`
