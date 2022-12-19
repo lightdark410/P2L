@@ -2433,4 +2433,76 @@ module.exports = function (app) {
       });
     }
   });
+
+  /**
+   * Changes the confirmed amounts for a given task.
+   **/
+  app.post("/api/overrideTaskAmounts", async (req, res) => {
+    if (req.session.loggedin) {
+      logger.debug(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      const taskID = req.body.taskID;
+      if (isNaN(taskID)) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "taskID must be an integer.",
+        });
+        return;
+      }
+      let result;
+      try {
+        result = await dbController.updateTaskConfirmedAmounts(
+          taskID,
+          req.body.entryList.map((elem) => {
+            elem.stockID = parseInt(elem.stockID);
+            elem.newAmount = parseInt(elem.newAmount);
+            return elem;
+          }),
+          req.session.username
+        );
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      if (result.error) {
+        res.status(400).send({
+          status: 400,
+          code: result.error,
+        });
+        return;
+      }
+      if (result.succeeded.length === 0) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_NOTHING_CHANGED",
+          message: result,
+        });
+        return;
+      }
+      res.send({
+        status: 200,
+        code: "OK",
+        message: result,
+      });
+      // FIXME: create proper log entry
+      logger.info(
+        `User ${req.session.username} has edited actual amounts of finished task ${taskID}.`
+      );
+    } else {
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
+    }
+  });
 };

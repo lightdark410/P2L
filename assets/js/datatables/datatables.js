@@ -119,6 +119,11 @@ function format(d) {
               BearbeiterIn/Status zurücksetzen
             </button>
           </td>
+          <td style="padding: 0 5px 0 0">
+            <button class="btn btn-primary" id="edit-task">
+              Kommisionierte Anzahl ändern
+            </button>
+          </td>
       </tr>
   </table>`;
 }
