@@ -1503,12 +1503,17 @@ module.exports = function (app) {
         } - Body: ${JSON.stringify(req.body)}`
       );
 
+      
       const username = req.session.username;
       const data     = JSON.parse(req.body.list).map((elem) => {
         elem.stock_id     = parseInt(elem.stock_id);
         elem.amount       = parseInt(elem.amount);
         return elem;
       });
+
+      const orderer      = req.body.orderer;
+      const order_number = req.body.order_number;
+        
 
       if (data.some((elem) => isNaN(elem.stock_id) || isNaN(elem.amount))) {
         res.status(400).send({
@@ -1521,7 +1526,7 @@ module.exports = function (app) {
       let response;
       try {
         // create new task
-        response = await dbController.createTask(username, data);
+        response = await dbController.createTask(username, data, orderer, order_number);
 
       } catch (error) {
         res.status(400).send(error);

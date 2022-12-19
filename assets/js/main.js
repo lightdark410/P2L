@@ -741,12 +741,14 @@ $("body").on("submit", "#InventurPopUp form", function (event) {
 });
 
 //generate qr code
-//and sends request rto api 
+//and sends request to api 
 $("body").on("submit", "#list_popup form", function (e) {
   e.preventDefault();
-  const rows = $(this).find(".article tbody tr");
+  const rowsArticle = $(this).find(".article tbody tr");
+  const rowsOrder   = $(this).find(".order tbody tr");
+
   const list = [];
-  for (const row of rows) {
+  for (const row of rowsArticle) {
     const article_id   = $(row).find(".id").text();
     const select       = $(row).find("select").val();
     const amount       = $(row).find(".amount").val();
@@ -757,8 +759,13 @@ $("body").on("submit", "#list_popup form", function (e) {
       amount: amount,
     });
   }
-  $.post("/api/createTask", { list: JSON.stringify(list) }, function (data) {
-    $("#qrcode").text("");
+
+  const orderer      =$(rowsOrder).find(".orderer").val();
+  const order_number = $(rowsOrder).find(".order_number").val();
+
+
+  $.post("/api/createTask", { orderer: orderer, order_number: order_number, list: JSON.stringify(list) }, function (data) {
+    $(".PopUp_middle").html("");
     new QRCode(document.getElementById("qrcode"), data);
     $("#qrcode").append(`<div><a href="${data}">${data}</a></div>`);
     $("#qrcode").show();
@@ -913,7 +920,7 @@ $("body").on("click", "#list", function (e) {
                 <input type="text" class="orderer" max = "60" min="3" placeholder="Max Mustermann" required>
             </td>
             <td>
-                <input type="number" class="order-number" max = "9999" min="1" placeholder="1234" required>
+                <input type="number" class="order_number" max = "9999" min="1" placeholder="1234" required>
             </td>
         </tr>`;
       
