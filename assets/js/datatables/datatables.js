@@ -143,11 +143,18 @@ let taskTable = $("#task").DataTable({
     },
     { data: "id", className: "task-id" },
     { data: "date", className: "task-date" },
+    { data: "order_number", className: "task-order-number" },
     { data: "creator", className: "task-creator" },
     { data: "processor", className: "task-processor" },
+    { data: "orderer", className: "task-orderer", visible: false },
+    {
+      data: "delivery_location",
+      className: "task-delivery-loc",
+      visible: false,
+    },
     { data: "status", className: "task-status-indicator" },
   ],
-  columnDefs: [{ width: "30%", targets: 5 }],
+  columnDefs: [{ width: "30%", targets: 8 }],
   order: [[1, "desc"]],
   createdRow: function (row, data, index) {
     //add status to last column

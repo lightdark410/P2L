@@ -1503,18 +1503,25 @@ module.exports = function (app) {
         } - Body: ${JSON.stringify(req.body)}`
       );
 
-      
       const username = req.session.username;
-      const data     = JSON.parse(req.body.list).map((elem) => {
-        elem.stock_id     = parseInt(elem.stock_id);
-        elem.amount       = parseInt(elem.amount);
+      const data = JSON.parse(req.body.list).map((elem) => {
+        elem.stock_id = parseInt(elem.stock_id);
+        elem.amount = parseInt(elem.amount);
         return elem;
       });
 
-      const orderer      = req.body.orderer;
-      const order_number = req.body.order_number;
-        
+      const orderer = req.body.orderer;
+      const order_number = parseInt(req.body.order_number);
+      const deliveryLocation = req.body.delivery_location;
 
+      if (isNaN(order_number)) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "Order_number must be an integer.",
+        });
+        return;
+      }
       if (data.some((elem) => isNaN(elem.stock_id) || isNaN(elem.amount))) {
         res.status(400).send({
           status: 400,
@@ -1526,8 +1533,13 @@ module.exports = function (app) {
       let response;
       try {
         // create new task
-        response = await dbController.createTask(username, data, orderer, order_number);
-
+        response = await dbController.createTask(
+          username,
+          data,
+          orderer,
+          order_number,
+          deliveryLocation
+        );
       } catch (error) {
         res.status(400).send(error);
         logger.error(
@@ -1535,6 +1547,7 @@ module.exports = function (app) {
             req.originalUrl
           } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
         );
+        return;
       }
       try {
         /**
@@ -1575,7 +1588,7 @@ module.exports = function (app) {
         );
       }
       //send qr code link
-      logger.info(`User $(username) has created a new task.`);
+      logger.info(`User ${username} has created a new task.`);
       res.send(`${config.get("qr.domain")}/mobileList/${response.taskID}`);
     } else {
       res.status(403).send({
@@ -2457,6 +2470,8 @@ module.exports = function (app) {
       try {
         result = await dbController.updateTaskConfirmedAmounts(
           taskID,
+          // parse integer values here, if they're invalid we'll skip them
+          // in the dbController function
           req.body.entryList.map((elem) => {
             elem.stockID = parseInt(elem.stockID);
             elem.newAmount = parseInt(elem.newAmount);

@@ -446,4 +446,15 @@ $("body").click(function (e) {
   }
 });
 
+$("#task-col-select-btn").click(function (event) {
+  $("#task-col-select").toggle();
+});
+
+$("#task-col-select").on("click", "input", function (event) {
+  const taskTable = $("#task").DataTable();
+  const column = taskTable.column($(this).attr("value"));
+
+  column.visible(!column.visible());
+});
+
 $("body").on("click", ".cover, #mdiv", closePopUp);

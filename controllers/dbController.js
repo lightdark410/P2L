@@ -217,22 +217,23 @@ const createStorageLocation = async function (locName, locParent, places) {
   return result;
 };
 
-
-const createTask = async function (username, taskEntryInfo, orderer, order_number) {
+const createTask = async function (
+  username,
+  taskEntryInfo,
+  orderer,
+  order_number,
+  delivery_location
+) {
   const connection = await connPool.getConnection();
   await connection.beginTransaction();
   const result = { taskID: undefined, stockIDs: [] };
 
   try {
     const [rows] = await connection.query(
-      `INSERT INTO task (creator, status, orderer, order_number)
-       VALUES (?, ?, ?, ?)`,
-      [
-        username,
-        -1,
-        orderer,
-        order_number,
-      ]
+      `INSERT INTO task
+       (creator, status, orderer, order_number, delivery_location)
+       VALUES (?, ?, ?, ?, ?)`,
+      [username, -1, orderer, order_number, delivery_location]
     );
     result.taskID = rows.insertId;
     for (const taskEntry of taskEntryInfo) {

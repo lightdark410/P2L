@@ -29,16 +29,40 @@
         <h1><u>Aufträge</u></h1>
     </div>
 
-    <div class="container-fluid">
+    <div class="container-fluid pb-4">
         <div class="row">
             <div class="col-sm-5 p-0">
+              <div class="row justify-content-end">
+                <button type="button" class="btn-sm btn-primary mb-2 mr-3" id="task-col-select-btn">Spalten auswählen</button>
+                <div id="task-col-select" class="my-2 col-12 row" style="display: none">
+                  <input class="col-2" type="checkbox" id="task-col-id" value="1" checked>
+                  <label class="col-2" for="task-col-id">Auftrag</label>
+                  <input class="col-2" type="checkbox" id="task-col-date" value="2" checked>
+                  <label class="col-2" for="task-col-date">Datum</label>
+                  <input class="col-2" type="checkbox" id="task-col-order-num" value="3" checked>
+                  <label class="col-2" for="task-col-order-num">Bestellnummer</label>
+                  <input class="col-2" type="checkbox" id="task-col-creator" value="4" checked>
+                  <label class="col-2" for="task-col-creator">Ersteller</label>
+                  <input class="col-2" type="checkbox" id="task-col-processor" value="5" checked>
+                  <label class="col-2" for="task-col-processor">Bearbeiter</label>
+                  <input class="col-2" type="checkbox" id="task-col-orderer" value="6">
+                  <label class="col-2" for="task-col-orderer">Besteller</label>
+                  <input class="col-2" type="checkbox" id="task-col-delivery-loc" value="7">
+                  <label class="col-2" for="task-col-delivery-loc">Lieferort</label>
+                  <input class="col-2" type="checkbox" id="task-col-status" value="8" checked>
+                  <label class="col-2" for="task-col-status">Status</label>
+                </div>
+              </div>
                 <table id="task" class="ui celled table display">
                     <thead>
                         <th></th>
                         <th>Auftrag</th>
                         <th>Datum</th>
+                        <th>Bestellnr.</th>
                         <th>Erstellt von</th>
                         <th>Bearbeitet von</th>
+                        <th>Besteller</th>
+                        <th>Lieferort</th>
                         <th>Status</th>
                     </thead>
                 </table>
