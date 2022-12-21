@@ -987,6 +987,7 @@ const updateTaskConfirmedAmounts = async function (
          task_entries.amount_real AS oldAmount,
          task_entries.amount AS taskEntryTargetAmount,
          task_log.id AS taskLogID,
+         task_log.amount_post AS oldPostAmount,
          article.name AS articleName,
          stock.id AS stockID,
          stock.number AS currentAmount,
@@ -1017,6 +1018,7 @@ const updateTaskConfirmedAmounts = async function (
         ) ON stock.id = keyword_list.stock_id
           LEFT JOIN
         task_log ON task_entries.task_id = task_log.task_id
+          AND task_entries.stock_id = task_log.stock_id
         WHERE task_entries.task_id = ?
         GROUP BY stock.id
 				FOR UPDATE`,
@@ -1047,7 +1049,7 @@ const updateTaskConfirmedAmounts = async function (
         [entry.newAmount, entryResult.newStatus, oldData[0].taskEntryID]
       );
       // calculate new amount
-      const changeDelta = entry.newAmount - oldData[0].oldAmount ?? 0;
+      const changeDelta = entry.newAmount - (oldData[0].oldAmount ?? 0);
       const newAmount =
         oldData[0].lay_in === 1
           ? oldData[0].currentAmount + changeDelta
@@ -1119,11 +1121,15 @@ const updateTaskConfirmedAmounts = async function (
           ]
         );
       } else {
+        const newPostAmount =
+          oldData[0].lay_in === 1
+            ? oldData[0].oldPostAmount + changeDelta
+            : oldData[0].oldPostAmount - changeDelta;
         await connection.query(
           `UPDATE task_log
            SET amount_post = ?, status = ?
            WHERE id = ?`,
-          [newAmount, entryResult.newStatus, oldData[0].taskLogID]
+          [newPostAmount, entryResult.newStatus, oldData[0].taskLogID]
         );
       }
       result.succeeded.push(entryResult);
