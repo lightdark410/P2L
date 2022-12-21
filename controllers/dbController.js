@@ -577,6 +577,33 @@ const getCategoryById = async function (categoryID) {
   return rows;
 };
 
+const getInvoiceInfo = async function (taskID) {
+  const [taskInfo] = await connPool.query(
+    `SELECT
+       orderer,
+       delivery_location AS deliveryLocation,
+       order_number AS orderNumber
+     FROM task
+     WHERE id = ?`,
+    [taskID]
+  );
+  const [taskEntries] = await connPool.query(
+    `SELECT
+       article.name,
+       task_entries.amount_real AS amount,
+       stock.articlenumber AS articleNumber
+     FROM
+       task_entries
+     INNER JOIN
+       stock ON task_entries.stock_id = stock.id
+     INNER JOIN
+       article ON stock.article_id = article.id
+     WHERE task_entries.task_id = ?`,
+    [taskID]
+  );
+  return { taskInfo: taskInfo, taskEntries: taskEntries };
+};
+
 const getKeywordById = async function (keywordID) {
   const [rows] = await connPool.query(
     `SELECT keyword.id, keyword.keyword AS name, IFNULL(counter.article_count, 0) AS article_count
@@ -1320,6 +1347,7 @@ module.exports = {
   getAllStockInfo,
   getAllStorageLocations,
   getCategoryById,
+  getInvoiceInfo,
   getKeywordById,
   getStockIDByArticlename,
   getStockIDByArticlenumber,

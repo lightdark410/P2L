@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <style>
+      #recipient-info {
+        display: flex;
+        justify-content: space-between;
+        padding: 20px;
+        border: 1px solid black;
+        margin: 20px 10% 15px 10%;
+      }
+
+      #recipient-info p {
+        overflow-wrap: break-word;
+      }
+
+      #recipient-info .left {
+        display: inline-block;
+        width: 40%;
+        text-align: left;
+      }
+
+      #recipient-info .right {
+        display: inline-block;
+        width: 40%;
+        text-align: right;
+      }
+
+      table {
+        margin-left: 10%;
+        margin-right: 10%;
+        table-layout: fixed;
+        width: 80%;
+        border-collapse: collapse;
+        border: 3px solid black;
+      }
+
+      thead th:nth-child(1) {
+        width: 25%
+      }
+
+      thead th:nth-child(2) {
+        width: 60%
+      }
+
+      thead th:nth-child(3) {
+        width: 15%
+      }
+
+      th,
+      td {
+        padding: 10px;
+        border: 1px solid black;
+      }
+
+      tbody tr td {
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div id="recipient-info">
+        <div class="left">
+          <p id="order-number">Bestellnummer: <strong><%= taskInfo.orderNumber %></strong></p>
+        </div>
+        <div class="right">
+          <p id="orderer">Besteller: <strong><%= taskInfo.orderer %></strong></p>
+          <p id="delivery-location">Lieferort: <strong><%= taskInfo.deliveryLocation %></strong></p>
+        </div>
+      </div>
+    </header>
+    <table>
+      <thead>
+        <th>Artikelnummer</th>
+        <th>Name</th>
+        <th>Menge</th>
+      </thead>
+      <tbody>
+        <% for (const entry of taskEntries) { %>
+          <tr>
+            <td><%= entry.articleNumber %></td>
+            <td><%= entry.name %></td>
+            <td><%= entry.amount %></td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </body>
+</html>

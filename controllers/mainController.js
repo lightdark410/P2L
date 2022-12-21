@@ -2,6 +2,7 @@ const config = require("config");
 const ldap = require("ldapjs");
 const functions = require("./functions");
 const masterdataDB = require("./masterdataDB"); //import sql functions for handling masterdata database changes
+const dbController = require("./dbController");
 const path = require("path");
 
 module.exports = function (app) {
@@ -183,4 +184,27 @@ module.exports = function (app) {
     }
   });
   //
+  app.get("/invoice/:id", async (req, res) => {
+    if (!req.session.loggedin) {
+      req.session.redirectTo = `/invoice/${req.params.id}`;
+      res.render("login"); //redirect to login page if not logged in
+      return;
+    }
+    const taskID = parseInt(req.params.id);
+    if (isNaN(taskID)) {
+      res.sendStatus(400);
+      return;
+    }
+    let response;
+    try {
+      response = await dbController.getInvoiceInfo(taskID);
+    } catch (error) {
+      res.status(400).send(error);
+      return;
+    }
+    res.render("invoice", {
+      taskInfo: response.taskInfo[0],
+      taskEntries: response.taskEntries,
+    });
+  });
 };
