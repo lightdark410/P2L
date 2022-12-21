@@ -102,28 +102,46 @@ if (table.state.loaded()) {
 /* Formatting function for row details of task table */
 function format(d) {
   // `d` is the original data object for the row
-  return `<table cellpadding="0" cellspacing="0" border="0">
-      <tr>
-          <td style="padding: 0 5px 0 0">
-            <button class="btn btn-danger" id="delete-task">
-              Auftrag löschen
+  let childRow = `
+    <table cellpadding="0" cellspacing="0" border="0">
+      <tr>`;
+  if (d.status === -1 || d.status === 1) {
+    childRow += `
+        <td style="padding: 0 5px 0 0">
+          <button class="btn btn-danger" id="delete-task">
+            Auftrag löschen
+          </button>
+        </td>`;
+  }
+  if (d.status === -1 || d.status === 0) {
+    childRow += `
+        <td style="padding: 0 5px 0 0">
+          <button class="btn btn-primary" id="qr">
+            QR-Code
+          </button>
+        </td>
+        <td style="padding: 0 5px 0 0">
+          <button class="btn btn-primary" id="reset-processor">
+            BearbeiterIn/Status zurücksetzen
+          </button>
+        </td>`;
+  }
+  if (d.status === 1) {
+    childRow += `
+        <td style="padding: 0 5px 0 0">
+          <button class="btn btn-primary" id="edit-task">
+            Kommisionierte Anzahl ändern
+          </button>
+        </td>
+        <td style="padding: 0 5px 0 0">
+          <a href="/invoice/${d.id}" target="_blank">
+            <button class="btn btn-primary" id="print-invoice">
+              Lieferschein drucken
             </button>
-          </td>
-          <td style="padding: 0 5px 0 0">
-            <button class="btn btn-primary" id="qr">
-              QR-Code
-            </button>
-          </td>
-          <td style="padding: 0 5px 0 0">
-            <button class="btn btn-primary" id="reset-processor">
-              BearbeiterIn/Status zurücksetzen
-            </button>
-          </td>
-          <td style="padding: 0 5px 0 0">
-            <button class="btn btn-primary" id="edit-task">
-              Kommisionierte Anzahl ändern
-            </button>
-          </td>
+          </a>
+        </td>`;
+  }
+  return `${childRow}
       </tr>
   </table>`;
 }

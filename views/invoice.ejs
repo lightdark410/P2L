@@ -63,6 +63,18 @@
         text-align: center;
       }
 
+      footer {
+        display: flex;
+        justify-content: center;
+      }
+
+      #print-btn {
+        width: 15%;
+        height: 5em;
+        background: blueviolet;
+        margin-top: 45px;
+      }
+
       @media screen {
         #recipient-info {
           max-width: 560px;
@@ -77,6 +89,10 @@
         #recipient-info {
           margin-left: 10%;
           margin-right: 10%;
+        }
+
+        #print-btn {
+          display: none;
         }
       }
     </style>
@@ -111,5 +127,8 @@
         </tbody>
       </table>
     </div>
+    <footer>
+      <button type="button" id="print-btn" onclick="print()">Drucken</button>
+    </footer>
   </body>
 </html>
