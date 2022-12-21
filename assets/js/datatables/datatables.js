@@ -152,28 +152,23 @@ let taskTable = $("#task").DataTable({
       className: "task-delivery-loc",
       visible: false,
     },
-    { data: "status", className: "task-status-indicator" },
+    {
+      data: "status",
+      className: "task-status-indicator",
+      render: function (data, type, row) {
+        switch (data) {
+          case -1:
+            return "<span>Offen</span>";
+          case 0:
+            return "<span>In Bearbeitung </span><img src='../assets/loading.png'/>";
+          default:
+            return "<span>Abgeschlossen </span><img src='../assets/check-mark.png'/>";
+        }
+      },
+    },
   ],
   columnDefs: [{ width: "30%", targets: 8 }],
   order: [[1, "desc"]],
-  createdRow: function (row, data, index) {
-    //add status to last column
-    const statusTD = $(row).find("td.task-status-indicator");
-    switch (parseInt(statusTD.text())) {
-      case -1:
-        statusTD.html("<span>Offen</span>");
-        break;
-      case 0:
-        statusTD.html(
-          "<span>In Bearbeitung </span><img src='../assets/loading.png'/>"
-        );
-        break;
-      default:
-        statusTD.html(
-          "<span>Abgeschlossen </span><img src='../assets/check-mark.png'/>"
-        );
-    }
-  },
   initComplete: function () {
     //get first task id
     const taskId = parseInt(
@@ -181,40 +176,7 @@ let taskTable = $("#task").DataTable({
     );
     //load task entries for the first task
     if (!isNaN(taskId)) {
-      task_entriesTable.ajax
-        .url(`/api/taskEntriesById/${taskId}`)
-        .load(function () {
-          const tr = $("#task_entries tbody tr");
-          if ($(tr).find("td").length == 1) {
-            return;
-          }
-          $(tr).each(function (i) {
-            const statusTD = $(this).find("td.status-indicator");
-            switch (parseInt(statusTD.text())) {
-              case 1:
-                statusTD.html("<img src='../assets/svg/check_noborder.svg'/>");
-                break;
-              case 2:
-                statusTD.html(
-                  "<img src='../assets/svg/warning_noborder.svg'/>"
-                );
-                break;
-              default:
-                statusTD.html("<img src='../assets/svg/cross_noborder.svg'/>");
-            }
-            const layInTD = $(this).find("td.lay-in");
-            switch (layInTD.text()) {
-              case "0":
-                layInTD.text("Nein");
-                break;
-              case "1":
-                layInTD.text("Ja");
-                break;
-              default:
-                layInTD.text("n/a");
-            }
-          });
-        });
+      task_entriesTable.ajax.url(`/api/taskEntriesById/${taskId}`).load();
     }
   },
   language: {
@@ -259,12 +221,42 @@ let task_entriesTable = $("#task_entries").DataTable({
     { data: "name", className: "article-name" },
     { data: "storage_location", className: "storage-location" },
     { data: "storage_place", className: "storage-place" },
-    { data: "lay_in", className: "lay-in" },
+    {
+      data: "lay_in",
+      className: "lay-in",
+      render: function (data, type, row) {
+        switch (data) {
+          case 0:
+            return "Nein";
+            break;
+          case 1:
+            return "Ja";
+            break;
+          default:
+            return "n/a";
+        }
+      },
+    },
     { data: "amount", className: "amount" },
     { data: "amount_real", className: "amount-real" },
     { data: "amount_pre", className: "amount-pre" },
     { data: "amount_post", className: "amount-post" },
-    { data: "status", className: "status-indicator" },
+    {
+      data: "status",
+      className: "status-indicator",
+      render: function (data, type, row) {
+        switch (data) {
+          case 1:
+            return "<img src='../assets/svg/check_noborder.svg'/>";
+            break;
+          case 2:
+            return "<img src='../assets/svg/warning_noborder.svg'/>";
+            break;
+          default:
+            return "<img src='../assets/svg/cross_noborder.svg'/>";
+        }
+      },
+    },
   ],
   columnDefs: [
     { width: "15%", targets: [0, 3, 5, 6, 7, 8, 9] },

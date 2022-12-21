@@ -20,42 +20,7 @@ $("#task tbody").on("click", "tr", function (e) {
   if (isNaN(task_id)) {
     return;
   }
-  task_entriesTable.ajax
-    .url(`/api/taskEntriesById/${task_id}`)
-    .load(function () {
-      loadEntryStatus();
-    });
-
-  function loadEntryStatus() {
-    const tr = $("#task_entries tbody tr");
-    if ($(tr).find("td").length == 1) {
-      return;
-    }
-    $(tr).each(function (i) {
-      const statusTD = $(this).find("td.status-indicator");
-      switch (statusTD.text()) {
-        case "1":
-          statusTD.html("<img src='../assets/svg/check_noborder.svg'/>");
-          break;
-        case "2":
-          statusTD.html("<img src='../assets/svg/warning_noborder.svg'/>");
-          break;
-        default:
-          statusTD.html("<img src='../assets/svg/cross_noborder.svg'/>");
-      }
-      const layInTD = $(this).find("td.lay-in");
-      switch (layInTD.text()) {
-        case "0":
-          layInTD.text("Nein");
-          break;
-        case "1":
-          layInTD.text("Ja");
-          break;
-        default:
-          layInTD.text("n/a");
-      }
-    });
-  }
+  task_entriesTable.ajax.url(`/api/taskEntriesById/${task_id}`).load();
 });
 
 $("#task tbody").on("click", "#qr", function (e) {
@@ -399,8 +364,8 @@ $("#task tbody").on("click", "#edit-task", function (e) {
         processData: false,
         contentType: "application/json",
         success: function () {
-          // reload the task table
-          taskTable.ajax.reload();
+          // reload the taskEntries table
+          task_entriesTable.ajax.reload();
           // close the popup
           closePopUp();
         },
