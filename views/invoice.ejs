@@ -3,12 +3,19 @@
   <head>
     <meta charset="UTF-8">
     <style>
+      header, #article-table {
+        display: flex;
+        justify-content: center;
+      }
+
       #recipient-info {
+        width: 80%;
         display: flex;
         justify-content: space-between;
         padding: 20px;
         border: 1px solid black;
-        margin: 20px 10% 15px 10%;
+        margin-top: 20px;
+        margin-bottom: 15px;
       }
 
       #recipient-info p {
@@ -28,8 +35,6 @@
       }
 
       table {
-        margin-left: 10%;
-        margin-right: 10%;
         table-layout: fixed;
         width: 80%;
         border-collapse: collapse;
@@ -57,6 +62,23 @@
       tbody tr td {
         text-align: center;
       }
+
+      @media screen {
+        #recipient-info {
+          max-width: 560px;
+        }
+
+        table {
+          max-width: 600px;
+        }
+      }
+
+      @media print {
+        #recipient-info {
+          margin-left: 10%;
+          margin-right: 10%;
+        }
+      }
     </style>
   </head>
   <body>
@@ -71,21 +93,23 @@
         </div>
       </div>
     </header>
-    <table>
-      <thead>
-        <th>Artikelnummer</th>
-        <th>Name</th>
-        <th>Menge</th>
-      </thead>
-      <tbody>
-        <% for (const entry of taskEntries) { %>
-          <tr>
-            <td><%= entry.articleNumber %></td>
-            <td><%= entry.name %></td>
-            <td><%= entry.amount %></td>
-          </tr>
-        <% } %>
-      </tbody>
-    </table>
+    <div id="article-table">
+      <table>
+        <thead>
+          <th>Artikelnummer</th>
+          <th>Name</th>
+          <th>Menge</th>
+        </thead>
+        <tbody>
+          <% for (const entry of taskEntries) { %>
+            <tr>
+              <td><%= entry.articleNumber %></td>
+              <td><%= entry.name %></td>
+              <td><%= entry.amount %></td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
   </body>
 </html>
