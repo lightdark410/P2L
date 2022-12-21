@@ -29,7 +29,9 @@ $("#task tbody").on("click", "#qr", function (e) {
   let data = `http://10.132.20.30:8090/mobileList/${id}`;
   $("#qrcode").text("");
   new QRCode(document.getElementById("qrcode"), data);
-  $("#qrcode").append(`<div><a href="${data}">${data}</a></div>`);
+  $("#qrcode").append(
+    `<div><a href="${data}" target="_blank">${data}</a></div>`
+  );
   $("#qrcode").show();
 });
 

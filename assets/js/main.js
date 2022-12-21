@@ -770,7 +770,9 @@ $("body").on("submit", "#list_popup form", function (e) {
     function (data) {
       $(".PopUp_middle").html("");
       new QRCode(document.getElementById("qrcode"), data);
-      $("#qrcode").append(`<div><a href="${data}">${data}</a></div>`);
+      $("#qrcode").append(
+        `<div><a href="${data}" target="_blank">${data}</a></div>`
+      );
       $("#qrcode").show();
       clearList();
     }
@@ -1013,13 +1015,6 @@ $("body").on("click", "#list", function (e) {
       calcListPopupSum();
     }
   );
-
-  $("body").on("click", "#list_popup", function (e) {
-    if (!$(e.target).is("img")) {
-      $("#qrcode").text("");
-      $("#qrcode").hide();
-    }
-  });
 });
 
 //updates the sum td in the popup
