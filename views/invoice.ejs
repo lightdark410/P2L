@@ -3,7 +3,8 @@
   <head>
     <meta charset="UTF-8">
     <style>
-      header, #article-table {
+      header,
+      #article-table {
         display: flex;
         justify-content: center;
       }
@@ -75,6 +76,56 @@
         margin-top: 45px;
       }
 
+      #task-info {
+        margin-top: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      #task-info .first-row {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: nowrap;
+        width: 100%;
+      }
+
+      #task-info .second-row {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: nowrap;
+        width: 100%;
+      }
+
+      #task-info span {
+        margin-right: 1em;
+        white-space: nowrap;
+      }
+
+      #task-info span:last-child {
+        margin-right: 0;
+      }
+
+      #task-info .underline {
+        flex-grow: 2;
+        border-bottom: 1px solid black;
+      }
+
+      #task-info .first-row .underline:last-child {
+        flex-grow: 1;
+        border-bottom: 1px solid black;
+      }
+
+      #package-count {
+        font-size: smaller;
+        margin-right: 0.5em;
+      }
+
+      .break {
+        flex-basis: 100%;
+        height: 0;
+      }
+
       @media screen {
         #recipient-info {
           max-width: 560px;
@@ -82,6 +133,11 @@
 
         table {
           max-width: 600px;
+        }
+
+        .first-row,
+        .second-row {
+          max-width: 800px;
         }
       }
 
@@ -91,12 +147,24 @@
           margin-right: 10%;
         }
 
-        #print-btn {
+        #article-table {
+          display: block;
+          width: 100%;
+        }
+
+        table {
+          margin-left: 10%;
+          margin-right: 10%;
+        }
+
+        #print-btn,
+        .break {
           display: none;
         }
       }
     </style>
   </head>
+
   <body>
     <header>
       <div id="recipient-info">
@@ -124,9 +192,82 @@
               <td><%= entry.amount %></td>
             </tr>
           <% } %>
+          <% for (const entry of taskEntries) { %>
+            <tr>
+              <td><%= entry.articleNumber %></td>
+              <td><%= entry.name %></td>
+              <td><%= entry.amount %></td>
+            </tr>
+          <% } %>
+          <% for (const entry of taskEntries) { %>
+            <tr>
+              <td><%= entry.articleNumber %></td>
+              <td><%= entry.name %></td>
+              <td><%= entry.amount %></td>
+            </tr>
+          <% } %>
+          <% for (const entry of taskEntries) { %>
+            <tr>
+              <td><%= entry.articleNumber %></td>
+              <td><%= entry.name %></td>
+              <td><%= entry.amount %></td>
+            </tr>
+          <% } %>
+          <% for (const entry of taskEntries) { %>
+            <tr>
+              <td><%= entry.articleNumber %></td>
+              <td><%= entry.name %></td>
+              <td><%= entry.amount %></td>
+            </tr>
+          <% } %>
+          <% for (const entry of taskEntries) { %>
+            <tr>
+              <td><%= entry.articleNumber %></td>
+              <td><%= entry.name %></td>
+              <td><%= entry.amount %></td>
+            </tr>
+          <% } %>
         </tbody>
       </table>
     </div>
+      <div id="task-info">
+        <div class="first-row">
+          <span id="creator">
+            Ersteller:
+          </span>
+          <span class="underline">
+          </span>
+          <span id="commissioner">
+            Kommissionierer:
+          </span>
+          <span class="underline">
+          </span>
+          <span id="packer">
+            Verpacker:
+          </span>
+          <span class="underline">
+          </span>
+          <span id="package-count">
+            Anzahl Packstücke:
+          </span>
+          <span class="underline">
+          </span>
+        </div>
+        <div class="break">
+        </div>
+        <div class="second-row">
+          <span id="invoice-number">
+            Gebucht / Lieferschein-Nr:
+          </span>
+          <span class="underline">
+          </span>
+          <span id="validator">
+            Endkontrolle:
+          </span>
+          <span class="underline">
+          </span>
+        </div>
+      </div>
     <footer>
       <button type="button" id="print-btn" onclick="print()">Drucken</button>
     </footer>
