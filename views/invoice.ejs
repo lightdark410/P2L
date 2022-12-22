@@ -161,6 +161,10 @@
         .break {
           display: none;
         }
+
+        #task-info {
+          break-before: avoid;
+        }
       }
     </style>
   </head>
@@ -185,41 +189,6 @@
           <th>Menge</th>
         </thead>
         <tbody>
-          <% for (const entry of taskEntries) { %>
-            <tr>
-              <td><%= entry.articleNumber %></td>
-              <td><%= entry.name %></td>
-              <td><%= entry.amount %></td>
-            </tr>
-          <% } %>
-          <% for (const entry of taskEntries) { %>
-            <tr>
-              <td><%= entry.articleNumber %></td>
-              <td><%= entry.name %></td>
-              <td><%= entry.amount %></td>
-            </tr>
-          <% } %>
-          <% for (const entry of taskEntries) { %>
-            <tr>
-              <td><%= entry.articleNumber %></td>
-              <td><%= entry.name %></td>
-              <td><%= entry.amount %></td>
-            </tr>
-          <% } %>
-          <% for (const entry of taskEntries) { %>
-            <tr>
-              <td><%= entry.articleNumber %></td>
-              <td><%= entry.name %></td>
-              <td><%= entry.amount %></td>
-            </tr>
-          <% } %>
-          <% for (const entry of taskEntries) { %>
-            <tr>
-              <td><%= entry.articleNumber %></td>
-              <td><%= entry.name %></td>
-              <td><%= entry.amount %></td>
-            </tr>
-          <% } %>
           <% for (const entry of taskEntries) { %>
             <tr>
               <td><%= entry.articleNumber %></td>
