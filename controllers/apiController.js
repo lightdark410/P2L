@@ -1511,17 +1511,10 @@ module.exports = function (app) {
       });
 
       const orderer = req.body.orderer;
-      const order_number = parseInt(req.body.order_number);
+      //const order_number = parseInt(req.body.order_number);
       const deliveryLocation = req.body.delivery_location;
 
-      if (isNaN(order_number)) {
-        res.status(400).send({
-          status: 400,
-          code: "ERR_BAD_REQUEST",
-          message: "Order_number must be an integer.",
-        });
-        return;
-      }
+      
       if (data.some((elem) => isNaN(elem.stock_id) || isNaN(elem.amount))) {
         res.status(400).send({
           status: 400,
@@ -1537,7 +1530,7 @@ module.exports = function (app) {
           username,
           data,
           orderer,
-          order_number,
+          req.body.order_number,
           deliveryLocation
         );
       } catch (error) {

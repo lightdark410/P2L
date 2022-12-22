@@ -922,7 +922,7 @@ $("body").on("click", "#list", function (e) {
                 <input type="text" class="orderer" max="60" min="3" placeholder="Max Mustermann" required>
             </td>
             <td>
-                <input type="number" class="order_number" max="9999" min="1" placeholder="1234" required>
+                <input type="text" class="order_number" max="9999" min="1" placeholder="ZL/1234/5678/9123" required>
             </td>
             <td>
                 <input type="text" class="delivery-location" max="100" min="3" placeholder="Lieferort" required>
