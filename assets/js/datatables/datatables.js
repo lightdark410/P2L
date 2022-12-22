@@ -235,7 +235,7 @@ let task_entriesTable = $("#task_entries").DataTable({
     url: "/assets/js/datatables/German.json",
   },
   columns: [
-    { data: "stock_id", className: "stock-id" },
+    { data: "articlenumber", className: "article-number" },
     { data: "name", className: "article-name" },
     { data: "storage_location", className: "storage-location" },
     { data: "storage_place", className: "storage-place" },

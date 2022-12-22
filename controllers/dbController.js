@@ -644,6 +644,7 @@ const getTaskEntriesById = async function (taskID) {
   const incompleteEntries = [];
   const [rows, fields] = await connPool.query(
     `SELECT
+       stock.articlenumber,
        task_entries.lay_in,
        task_entries.amount,
        task_entries.amount_real,
@@ -654,9 +655,12 @@ const getTaskEntriesById = async function (taskID) {
        task_log.storage_place,
        task_log.amount_post,
        task_log.amount_pre
-     FROM task_entries
-     LEFT JOIN task_log
-       ON task_entries.task_id = task_log.task_id
+     FROM
+       task_entries
+     INNER JOIN
+       stock ON task_entries.stock_id = stock.id
+     LEFT JOIN
+       task_log ON task_entries.task_id = task_log.task_id
          AND task_entries.stock_id = task_log.stock_id
      WHERE task_entries.task_id = ?`,
     [taskID]
