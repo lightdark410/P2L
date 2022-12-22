@@ -114,6 +114,10 @@ CREATE TABLE IF NOT EXISTS `task` (
   `creator` varchar(255) NOT NULL,
   `date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `status` int(255) NOT NULL,
+  `processor` varchar(255),
+  `orderer` varchar(255),
+  `order_number` int(255),
+  `delivery_location` varchar(255),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
@@ -130,6 +134,7 @@ CREATE TABLE IF NOT EXISTS `task_entries` (
   `lay_in` tinyint(1) NOT NULL,
   `amount` int(255) NOT NULL,
   `status` int(255) NOT NULL,
+  `amount_real`int(255),
   PRIMARY KEY (`id`),
   KEY `artikelnummer` (`stock_id`),
   KEY `task_id` (`task_id`)

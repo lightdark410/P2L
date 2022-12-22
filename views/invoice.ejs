@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <style>
+      header, #article-table {
+        display: flex;
+        justify-content: center;
+      }
+
+      #recipient-info {
+        width: 80%;
+        display: flex;
+        justify-content: space-between;
+        padding: 20px;
+        border: 1px solid black;
+        margin-top: 20px;
+        margin-bottom: 15px;
+      }
+
+      #recipient-info p {
+        overflow-wrap: break-word;
+      }
+
+      #recipient-info .left {
+        display: inline-block;
+        width: 40%;
+        text-align: left;
+      }
+
+      #recipient-info .right {
+        display: inline-block;
+        width: 40%;
+        text-align: right;
+      }
+
+      table {
+        table-layout: fixed;
+        width: 80%;
+        border-collapse: collapse;
+        border: 3px solid black;
+      }
+
+      thead th:nth-child(1) {
+        width: 25%
+      }
+
+      thead th:nth-child(2) {
+        width: 60%
+      }
+
+      thead th:nth-child(3) {
+        width: 15%
+      }
+
+      th,
+      td {
+        padding: 10px;
+        border: 1px solid black;
+      }
+
+      tbody tr td {
+        text-align: center;
+      }
+
+      footer {
+        display: flex;
+        justify-content: center;
+      }
+
+      #print-btn {
+        width: 15%;
+        height: 5em;
+        background: blueviolet;
+        margin-top: 45px;
+      }
+
+      @media screen {
+        #recipient-info {
+          max-width: 560px;
+        }
+
+        table {
+          max-width: 600px;
+        }
+      }
+
+      @media print {
+        #recipient-info {
+          margin-left: 10%;
+          margin-right: 10%;
+        }
+
+        #print-btn {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div id="recipient-info">
+        <div class="left">
+          <p id="order-number">Bestellnummer: <strong><%= taskInfo.orderNumber %></strong></p>
+        </div>
+        <div class="right">
+          <p id="orderer">Besteller: <strong><%= taskInfo.orderer %></strong></p>
+          <p id="delivery-location">Lieferort: <strong><%= taskInfo.deliveryLocation %></strong></p>
+        </div>
+      </div>
+    </header>
+    <div id="article-table">
+      <table>
+        <thead>
+          <th>Artikelnummer</th>
+          <th>Name</th>
+          <th>Menge</th>
+        </thead>
+        <tbody>
+          <% for (const entry of taskEntries) { %>
+            <tr>
+              <td><%= entry.articleNumber %></td>
+              <td><%= entry.name %></td>
+              <td><%= entry.amount %></td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+    <footer>
+      <button type="button" id="print-btn" onclick="print()">Drucken</button>
+    </footer>
+  </body>
+</html>

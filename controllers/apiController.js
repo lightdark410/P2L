@@ -1503,18 +1503,25 @@ module.exports = function (app) {
         } - Body: ${JSON.stringify(req.body)}`
       );
 
-      
       const username = req.session.username;
-      const data     = JSON.parse(req.body.list).map((elem) => {
-        elem.stock_id     = parseInt(elem.stock_id);
-        elem.amount       = parseInt(elem.amount);
+      const data = JSON.parse(req.body.list).map((elem) => {
+        elem.stock_id = parseInt(elem.stock_id);
+        elem.amount = parseInt(elem.amount);
         return elem;
       });
 
-      const orderer      = req.body.orderer;
-      const order_number = req.body.order_number;
-        
+      const orderer = req.body.orderer;
+      const order_number = parseInt(req.body.order_number);
+      const deliveryLocation = req.body.delivery_location;
 
+      if (isNaN(order_number)) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "Order_number must be an integer.",
+        });
+        return;
+      }
       if (data.some((elem) => isNaN(elem.stock_id) || isNaN(elem.amount))) {
         res.status(400).send({
           status: 400,
@@ -1526,8 +1533,13 @@ module.exports = function (app) {
       let response;
       try {
         // create new task
-        response = await dbController.createTask(username, data, orderer, order_number);
-
+        response = await dbController.createTask(
+          username,
+          data,
+          orderer,
+          order_number,
+          deliveryLocation
+        );
       } catch (error) {
         res.status(400).send(error);
         logger.error(
@@ -1535,6 +1547,7 @@ module.exports = function (app) {
             req.originalUrl
           } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
         );
+        return;
       }
       try {
         /**
@@ -1575,7 +1588,7 @@ module.exports = function (app) {
         );
       }
       //send qr code link
-      logger.info(`User $(username) has created a new task.`);
+      logger.info(`User ${username} has created a new task.`);
       res.send(`${config.get("qr.domain")}/mobileList/${response.taskID}`);
     } else {
       res.status(403).send({
@@ -2424,6 +2437,80 @@ module.exports = function (app) {
               : ""
             : "status "
         } of task ${taskID}.`
+      );
+    } else {
+      res.status(403).send({
+        status: 403,
+        code: "ERR_NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
+    }
+  });
+
+  /**
+   * Changes the confirmed amounts for a given task.
+   **/
+  app.post("/api/overrideTaskAmounts", async (req, res) => {
+    if (req.session.loggedin) {
+      logger.debug(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)}`
+      );
+      const taskID = req.body.taskID;
+      if (isNaN(taskID)) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_BAD_REQUEST",
+          message: "taskID must be an integer.",
+        });
+        return;
+      }
+      let result;
+      try {
+        result = await dbController.updateTaskConfirmedAmounts(
+          taskID,
+          // parse integer values here, if they're invalid we'll skip them
+          // in the dbController function
+          req.body.entryList.map((elem) => {
+            elem.stockID = parseInt(elem.stockID);
+            elem.newAmount = parseInt(elem.newAmount);
+            return elem;
+          }),
+          req.session.username
+        );
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        );
+        res.status(500).send(error);
+        return;
+      }
+      if (result.error) {
+        res.status(400).send({
+          status: 400,
+          code: result.error,
+        });
+        return;
+      }
+      if (result.succeeded.length === 0) {
+        res.status(400).send({
+          status: 400,
+          code: "ERR_NOTHING_CHANGED",
+          message: result,
+        });
+        return;
+      }
+      res.send({
+        status: 200,
+        code: "OK",
+        message: result,
+      });
+      // FIXME: create proper log entry
+      logger.info(
+        `User ${req.session.username} has edited actual amounts of finished task ${taskID}.`
       );
     } else {
       res.status(403).send({

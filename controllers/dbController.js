@@ -217,22 +217,23 @@ const createStorageLocation = async function (locName, locParent, places) {
   return result;
 };
 
-
-const createTask = async function (username, taskEntryInfo, orderer, order_number) {
+const createTask = async function (
+  username,
+  taskEntryInfo,
+  orderer,
+  order_number,
+  delivery_location
+) {
   const connection = await connPool.getConnection();
   await connection.beginTransaction();
   const result = { taskID: undefined, stockIDs: [] };
 
   try {
     const [rows] = await connection.query(
-      `INSERT INTO task (creator, status, orderer, order_number)
-       VALUES (?, ?, ?, ?)`,
-      [
-        username,
-        -1,
-        orderer,
-        order_number,
-      ]
+      `INSERT INTO task
+       (creator, status, orderer, order_number, delivery_location)
+       VALUES (?, ?, ?, ?, ?)`,
+      [username, -1, orderer, order_number, delivery_location]
     );
     result.taskID = rows.insertId;
     for (const taskEntry of taskEntryInfo) {
@@ -576,6 +577,33 @@ const getCategoryById = async function (categoryID) {
   return rows;
 };
 
+const getInvoiceInfo = async function (taskID) {
+  const [taskInfo] = await connPool.query(
+    `SELECT
+       orderer,
+       delivery_location AS deliveryLocation,
+       order_number AS orderNumber
+     FROM task
+     WHERE id = ?`,
+    [taskID]
+  );
+  const [taskEntries] = await connPool.query(
+    `SELECT
+       article.name,
+       task_entries.amount_real AS amount,
+       stock.articlenumber AS articleNumber
+     FROM
+       task_entries
+     INNER JOIN
+       stock ON task_entries.stock_id = stock.id
+     INNER JOIN
+       article ON stock.article_id = article.id
+     WHERE task_entries.task_id = ?`,
+    [taskID]
+  );
+  return { taskInfo: taskInfo, taskEntries: taskEntries };
+};
+
 const getKeywordById = async function (keywordID) {
   const [rows] = await connPool.query(
     `SELECT keyword.id, keyword.keyword AS name, IFNULL(counter.article_count, 0) AS article_count
@@ -911,6 +939,210 @@ const resizeAndRenameStorageLocation = async function (
   return result;
 };
 
+const updateTaskConfirmedAmounts = async function (
+  taskID,
+  entryList,
+  username
+) {
+  const result = { skipped: [], succeeded: [] };
+  const connection = await connPool.getConnection();
+
+  await connection.beginTransaction();
+  try {
+    const [taskData] = await connection.query(
+      `SELECT id, status
+       FROM task
+       WHERE id = ?`,
+      [taskID]
+    );
+    if (taskData[0].status !== 1) {
+      result.error = "ERR_NOT_FINISHED_YET";
+      cleanUpConnection(connection);
+      return result;
+    }
+    const [oldEntryData] = await connection.query(
+      `WITH RECURSIVE cte AS (
+         SELECT
+            parentTable.id,
+            parentTable.name,
+            parentTable.parent,
+            parentTable.name AS fullpath
+         FROM
+           inventur.storage_location AS parentTable
+         WHERE parentTable.parent = 0
+         UNION ALL
+         SELECT
+           childTable.id,
+           childTable.name,
+           childTable.parent,
+           CONCAT(parentTable.fullpath, '-', childTable.name) AS fullpath
+         FROM
+           inventur.storage_location AS childTable
+            INNER JOIN
+         cte AS parentTable ON parentTable.id = childTable.parent
+         )
+       SELECT
+         task_entries.id AS taskEntryID,
+         task_entries.lay_in,
+         task_entries.amount_real AS oldAmount,
+         task_entries.amount AS taskEntryTargetAmount,
+         task_log.id AS taskLogID,
+         task_log.amount_post AS oldPostAmount,
+         article.name AS articleName,
+         stock.id AS stockID,
+         stock.number AS currentAmount,
+         stock.minimum_number AS minimumAmount,
+         stock.creator,
+         category.category,
+         IFNULL(GROUP_CONCAT(keyword.keyword SEPARATOR ", "), "") AS keywords,
+         storage_place.place,
+         storage_place.storage_location_id,
+         cte.fullpath
+       FROM
+        task_entries
+          INNER JOIN
+        stock ON task_entries.stock_id = stock.id
+          INNER JOIN
+        article ON stock.article_id = article.id
+          INNER JOIN
+        category ON article.category_id = category.id
+          INNER JOIN
+        storage_place ON task_entries.stock_id = storage_place.stock_id
+					INNER JOIN
+				cte ON storage_place.storage_location_id = cte.id
+          LEFT JOIN
+        (
+          keyword
+            INNER JOIN
+          keyword_list ON keyword.id = keyword_list.keyword_id
+        ) ON stock.id = keyword_list.stock_id
+          LEFT JOIN
+        task_log ON task_entries.task_id = task_log.task_id
+          AND task_entries.stock_id = task_log.stock_id
+        WHERE task_entries.task_id = ?
+        GROUP BY stock.id
+				FOR UPDATE`,
+      [taskID]
+    );
+    for (const entry of entryList) {
+      if (isNaN(entry.stockID) || isNaN(entry.newAmount)) {
+        // if an entry does not have both stockID and newAmount properties
+        // add it to the "skipped" array to be returned for debugging purposes
+        // and continue with the next entry
+        result.skipped.push(entry);
+        continue;
+      }
+      const oldData = oldEntryData.filter(
+        (elem) => elem.stockID === entry.stockID
+      );
+      const entryResult = {};
+      entryResult.taskEntryID = oldData[0].taskEntryID;
+      entryResult.oldAmount = oldData[0].oldAmount;
+      entryResult.newStatus = 1;
+      if (oldData[0].taskEntryTargetAmount !== entry.newAmount) {
+        entryResult.newStatus = 2;
+      }
+      const [rows, fields] = await connection.query(
+        `UPDATE task_entries
+         SET amount_real = ?, status = ?
+         WHERE id = ?`,
+        [entry.newAmount, entryResult.newStatus, oldData[0].taskEntryID]
+      );
+      // calculate new amount
+      const changeDelta = entry.newAmount - (oldData[0].oldAmount ?? 0);
+      const newAmount =
+        oldData[0].lay_in === 1
+          ? oldData[0].currentAmount + changeDelta
+          : oldData[0].currentAmount - changeDelta;
+      entryResult.newAmount = newAmount;
+      await connection.query(
+        `UPDATE stock
+         SET number = ?
+         WHERE id = ?`,
+        [newAmount, oldData[0].stockID]
+      );
+      if (changeDelta !== 0) {
+        await connection.query(
+          `INSERT INTO log
+             (
+              event,
+              stock_id,
+              name,
+              category,
+              keywords,
+              location_id,
+              location,
+              creator,
+              change_by,
+              number,
+              minimum_number,
+              deleted
+             )
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            "change",
+            oldData[0].stockID,
+            oldData[0].articleName,
+            oldData[0].category,
+            oldData[0].keywords,
+            oldData[0].storage_location_id,
+            oldData[0].fullpath,
+            oldData[0].creator,
+            username,
+            newAmount,
+            oldData[0].minimumAmount,
+            0,
+          ]
+        );
+      }
+      if (oldData[0].taskLogID === null) {
+        await connection.query(
+          `INSERT INTO task_log
+           (
+            task_id,
+            stock_id,
+            name,
+            storage_location,
+            storage_place,
+            amount_pre,
+            amount_post,
+            status
+           )
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            taskID,
+            oldData[0].stockID,
+            oldData[0].articleName,
+            oldData[0].fullpath,
+            oldData[0].place,
+            oldData[0].currentAmount,
+            newAmount,
+            result.newStatus,
+          ]
+        );
+      } else {
+        const newPostAmount =
+          oldData[0].lay_in === 1
+            ? oldData[0].oldPostAmount + changeDelta
+            : oldData[0].oldPostAmount - changeDelta;
+        await connection.query(
+          `UPDATE task_log
+           SET amount_post = ?, status = ?
+           WHERE id = ?`,
+          [newPostAmount, entryResult.newStatus, oldData[0].taskLogID]
+        );
+      }
+      result.succeeded.push(entryResult);
+    }
+  } catch (error) {
+    await cleanUpConnection(connection);
+    throw error;
+  }
+  await connection.commit();
+  await connection.release();
+  return result;
+};
+
 const updateTaskEntryAmount = async function (
   taskID,
   stockID,
@@ -1121,6 +1353,7 @@ module.exports = {
   getAllStockInfo,
   getAllStorageLocations,
   getCategoryById,
+  getInvoiceInfo,
   getKeywordById,
   getStockIDByArticlename,
   getStockIDByArticlenumber,
@@ -1129,6 +1362,7 @@ module.exports = {
   getUnitById,
   resetTaskInfo,
   resizeAndRenameStorageLocation,
+  updateTaskConfirmedAmounts,
   updateTaskEntryAmount,
   updateTaskStatus,
 };
