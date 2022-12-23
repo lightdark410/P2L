@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS `task` (
   `status` int(255) NOT NULL,
   `processor` varchar(255),
   `orderer` varchar(255),
-  `order_number` int(255),
+  `order_number` varchar(255),
   `delivery_location` varchar(255),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
