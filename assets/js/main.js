@@ -663,9 +663,9 @@ $("body").on("submit", "#PopUp form", function (event) {
         table.order([1, "desc"]).draw();
 
         $("#rootUL").text("");
-        getStorageLocationTree().then((locationTree) => {
-          stammdatenResult.storage_location = locationTree;
-          buildNodeTree(locationTree);
+        getStorageLocationTree().then((response) => {
+          stammdatenResult.storage_location = response.data;
+          buildNodeTree(response.data);
         });
       });
     } else {
@@ -685,9 +685,9 @@ $("body").on("submit", "#PopUp form", function (event) {
           table.order([1, "desc"]).draw();
 
           $("#rootUL").text("");
-          getStorageLocationTree().then((locationTree) => {
-            stammdatenResult.storage_location = locationTree;
-            buildNodeTree(locationTree);
+          getStorageLocationTree().then((response) => {
+            stammdatenResult.storage_location = response.data;
+            buildNodeTree(response.data);
           });
         },
       });
