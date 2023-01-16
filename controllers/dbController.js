@@ -789,7 +789,7 @@ const getTaskInfo = async function (taskID, username) {
     );
     result.data = taskEntries;
   } catch (error) {
-    await cleanUpConnection(error);
+    await cleanUpConnection(connection);
     throw error;
   }
   await connection.commit();
@@ -1333,13 +1333,36 @@ const updateTaskEntryAmount = async function (
 };
 
 const updateTaskStatus = async function (taskID, newStatus, username) {
-  const [rows, fields] = await connPool.query(
-    `UPDATE task
-     SET status = ?, processor = ?
-     WHERE id = ?`,
-    [newStatus, username, taskID]
-  );
-  return rows;
+  const connection = await connPool.getConnection();
+  await connection.beginTransaction();
+
+  let result = {};
+  try {
+    const [oldData] = await connection.query(
+      `SELECT status
+       FROM task
+       WHERE id = ?
+       FOR UPDATE`,
+      [taskID]
+    );
+    if (oldData[0].status === 1) {
+      await cleanUpConnection(connection);
+      return { error: "ERR_ALREADY_FINISHED" };
+    }
+    const [rows, fields] = await connection.query(
+      `UPDATE task
+       SET status = ?, processor = ?
+       WHERE id = ?`,
+      [newStatus, username, taskID]
+    );
+    result = rows;
+  } catch (error) {
+    await cleanUpConnection(connection);
+    throw error;
+  }
+  await connection.commit();
+  await connection.release();
+  return result;
 };
 
 module.exports = {

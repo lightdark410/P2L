@@ -1403,8 +1403,9 @@ module.exports = function (app) {
         });
         return;
       }
+      let response;
       try {
-        await dbController.updateTaskStatus(
+        response = await dbController.updateTaskStatus(
           taskID,
           newStatus,
           req.session.username
@@ -1416,6 +1417,13 @@ module.exports = function (app) {
           } - Body: ${JSON.stringify(req.body)} Error: ${error}`
         );
         res.status(500).send(error);
+        return;
+      }
+      if (response.error) {
+        res.status(400).send({ status: 400, code: response.error });
+        logger.warn(
+          `User ${req.session.username} has tried to update status of task ${taskID} to ${newStatus}, but failed due to ${response.error}.`
+        );
         return;
       }
       res.send({ status: 200, code: "OK", message: "Update successful." });
@@ -1514,7 +1522,6 @@ module.exports = function (app) {
       //const order_number = parseInt(req.body.order_number);
       const deliveryLocation = req.body.delivery_location;
 
-      
       if (data.some((elem) => isNaN(elem.stock_id) || isNaN(elem.amount))) {
         res.status(400).send({
           status: 400,
