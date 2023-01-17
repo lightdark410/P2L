@@ -1339,7 +1339,7 @@ const updateTaskStatus = async function (taskID, newStatus, username) {
   let result = {};
   try {
     const [oldData] = await connection.query(
-      `SELECT status
+      `SELECT status, processor
        FROM task
        WHERE id = ?
        FOR UPDATE`,
@@ -1349,17 +1349,30 @@ const updateTaskStatus = async function (taskID, newStatus, username) {
       await cleanUpConnection(connection);
       return { error: "ERR_ALREADY_FINISHED" };
     }
-    const [rows, fields] = await connection.query(
-      `UPDATE task
-       SET status = ?, processor = ?
-       WHERE id = ?`,
-      [newStatus, username, taskID]
-    );
-    result = rows;
+    if (oldData[0].processor === null) {
+      await connection.query(
+        `UPDATE task
+         SET status = ?, processor = ?
+         WHERE id = ?`,
+        [newStatus, username, taskID]
+      );
+      result.newProcessor = username;
+    } else if (oldData[0].processor !== username) {
+      await cleanUpConnection(connection);
+      return { error: "ERR_IN_PROGRESS_BY_OTHER_USER" };
+    } else {
+      await connection.query(
+        `UPDATE task
+         SET status = ?
+         WHERE id = ?`,
+        [newStatus, taskID]
+      );
+    }
   } catch (error) {
     await cleanUpConnection(connection);
     throw error;
   }
+  result.newStatus = newStatus;
   await connection.commit();
   await connection.release();
   return result;

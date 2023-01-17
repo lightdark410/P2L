@@ -2432,10 +2432,10 @@ module.exports = function (app) {
       logger.info(
         `User ${req.session.username} has reset ${
           resetProcessor
-            ? "processor " + resetStatus
-              ? " and status "
+            ? "processor" + resetStatus
+              ? " and status"
               : ""
-            : "status "
+            : "status"
         } of task ${taskID}.`
       );
     } else {
