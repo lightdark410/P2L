@@ -1492,7 +1492,7 @@ module.exports = function (app) {
       }
       res.send({ status: 200, code: "OK", message: "Deletion successful." });
       logger.info(`User ${req.session.username} has deleted task ${taskID}.`);
-      if (taskStatus.status === 0) {
+      if (taskStatus.status === -1) {
         await ledRequest({ auftrag: taskID }, "DELETE");
       }
     } else {
