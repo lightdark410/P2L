@@ -1469,6 +1469,7 @@ module.exports = function (app) {
         });
         return;
       }
+      let taskStatus;
       try {
         taskStatus = await taskDB.get_task_status(taskID);
         if (taskStatus.status === 0) {
@@ -1491,6 +1492,9 @@ module.exports = function (app) {
       }
       res.send({ status: 200, code: "OK", message: "Deletion successful." });
       logger.info(`User ${req.session.username} has deleted task ${taskID}.`);
+      if (taskStatus.status === 0) {
+        await ledRequest({ auftrag: taskID }, "DELETE");
+      }
     } else {
       res.status(403).send({
         status: 403,
