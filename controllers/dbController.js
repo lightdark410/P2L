@@ -169,6 +169,150 @@ const createKeyword = async function (keywordName) {
   return result;
 };
 
+const createStock = async function (
+  articleName,
+  unitID,
+  categoryID,
+  articleNumber,
+  amount,
+  minAmount,
+  locID,
+  creator,
+  keywordArr
+) {
+  const connection = await connPool.getConnection();
+  await connection.beginTransaction();
+  const result = {};
+  try {
+    const [articleInsertResult] = await connection.query(
+      `INSERT INTO article (name, unit_id, category_id)
+       VALUES (?, ?, ?)`,
+      [articleName, unitID, categoryID]
+    );
+    const [stockInsertResult] = await connection.query(
+      `INSERT INTO stock
+       (article_id, number, minimum_number, creator, change_by, articlenumber)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        articleInsertResult.insertId,
+        amount,
+        minAmount,
+        creator,
+        creator,
+        articleNumber,
+      ]
+    );
+    for (const keywordID of keywordArr) {
+      await connection.query(
+        `INSERT INTO keyword_list (stock_id, keyword_id)
+         VALUES (?, ?)`,
+        [stockInsertResult.insertId, keywordID]
+      );
+    }
+    const [freeStoragePlaces] = await connection.query(
+      `SELECT id, place
+       FROM storage_place
+       WHERE storage_location_id = ?
+         and stock_id IS NULL
+       ORDER BY place ASC`,
+      [locID]
+    );
+    if (freeStoragePlaces.length === 0) {
+      result.error = "ERR_NO_FREE_SPACE";
+      cleanUpConnection(connection);
+      return result;
+    }
+    await connection.query(
+      `UPDATE storage_place
+       SET stock_id = ?
+       WHERE id = ?`,
+      [stockInsertResult.insertId, freeStoragePlaces[0].id]
+    );
+    const [[logInfo]] = await connection.query(
+      `WITH RECURSIVE cte as (
+         SELECT
+            parentTable.id,
+            parentTable.name,
+            parentTable.parent,
+            parentTable.name AS fullpath
+         FROM
+           inventur.storage_location AS parentTable
+         WHERE parentTable.parent = 0
+         UNION ALL
+         SELECT
+           childTable.id,
+           childTable.name,
+           childTable.parent,
+           CONCAT(parentTable.fullpath, '-', childTable.name) AS fullpath
+         FROM
+           inventur.storage_location AS childTable
+            INNER JOIN
+         cte as parentTable ON parentTable.id = childTable.parent
+         )
+       SELECT
+         a.name AS articleName,
+         s.id AS stockID,
+         s.date,
+         s.number AS currentAmount,
+         s.minimum_number AS minimumAmount,
+         s.creator,
+         s.change_by,
+         c.category,
+         IFNULL(GROUP_CONCAT(k.keyword SEPARATOR ", "), "") AS keywords,
+         sp.storage_location_id AS locationID,
+         cte.fullpath
+		   FROM
+		     stock AS s
+		   INNER JOIN
+		     article AS a ON s.article_id = a.id
+		   INNER JOIN
+		     category AS c ON a.category_id = c.id
+		   INNER JOIN
+         storage_place AS sp ON s.id = sp.stock_id
+		   INNER JOIN
+		     cte ON sp.storage_location_id = cte.id
+		   LEFT JOIN
+         (
+           keyword AS k
+             INNER JOIN
+           keyword_list AS kl ON k.id = kl.keyword_id
+         ) ON s.id = kl.stock_id
+       WHERE s.id = ?`,
+      [stockInsertResult.insertId]
+    );
+    await connection.query(
+      `INSERT INTO log
+       (event, stock_id, name, category, keywords, location_id, location, date, creator, change_by, number, minimum_number, deleted)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        "create",
+        logInfo.stockID,
+        logInfo.articleName,
+        logInfo.category,
+        logInfo.keywords,
+        logInfo.locationID,
+        logInfo.fullpath,
+        logInfo.date,
+        logInfo.creator,
+        logInfo.change_by,
+        logInfo.currentAmount,
+        logInfo.minimumAmount,
+        0,
+      ]
+    );
+    result.stockID = logInfo.stockID;
+    result.name = logInfo.articleName;
+    result.amount = logInfo.currentAmount;
+    result.minAmount = logInfo.minimumAmount;
+  } catch (error) {
+    cleanUpConnection(connection);
+    throw error;
+  }
+  await connection.commit();
+  await connection.release();
+  return result;
+};
+
 const createStorageLocation = async function (locName, locParent, places) {
   const connection = await connPool.getConnection();
   await connection.beginTransaction();
@@ -341,6 +485,116 @@ const deleteKeyword = async function (keywordID) {
   return result;
 };
 
+const deleteStock = async function (stockID) {
+  const result = {};
+  const connection = await connPool.getConnection();
+  await connection.beginTransaction();
+
+  try {
+    const [[logInfo]] = await connection.query(
+      `WITH RECURSIVE cte as (
+         SELECT
+            parentTable.id,
+            parentTable.name,
+            parentTable.parent,
+            parentTable.name AS fullpath
+         FROM
+           inventur.storage_location AS parentTable
+         WHERE parentTable.parent = 0
+         UNION ALL
+         SELECT
+           childTable.id,
+           childTable.name,
+           childTable.parent,
+           CONCAT(parentTable.fullpath, '-', childTable.name) AS fullpath
+         FROM
+           inventur.storage_location AS childTable
+            INNER JOIN
+         cte as parentTable ON parentTable.id = childTable.parent
+         )
+       SELECT
+         a.name AS articleName,
+         a.id AS articleID,
+         s.id AS stockID,
+         s.date,
+         s.number AS currentAmount,
+         s.minimum_number AS minimumAmount,
+         s.creator,
+         s.change_by,
+         c.category,
+         IFNULL(GROUP_CONCAT(k.keyword SEPARATOR ", "), "") AS keywords,
+         sp.storage_location_id AS locationID,
+         cte.fullpath
+		   FROM
+		     stock AS s
+		   INNER JOIN
+		     article AS a ON s.article_id = a.id
+		   INNER JOIN
+		     category AS c ON a.category_id = c.id
+		   INNER JOIN
+         storage_place AS sp ON s.id = sp.stock_id
+		   INNER JOIN
+		     cte ON sp.storage_location_id = cte.id
+		   LEFT JOIN
+         (
+           keyword AS k
+             INNER JOIN
+           keyword_list AS kl ON k.id = kl.keyword_id
+         ) ON s.id = kl.stock_id
+       WHERE s.id = ?
+       FOR UPDATE`,
+      [stockID]
+    );
+    await connection.query(
+      `UPDATE storage_place
+       SET stock_id = NULL
+       WHERE stock_id = ?`,
+      [stockID]
+    );
+    await connection.query(
+      `DELETE FROM keyword_list
+       WHERE stock_id = ?`,
+      [stockID]
+    );
+    await connection.query(
+      `DELETE FROM stock
+       WHERE id = ?`,
+      [stockID]
+    );
+    await connection.query(
+      `DELETE FROM article
+       WHERE id = ?`,
+      [logInfo.articleID]
+    );
+    await connection.query(
+      `INSERT INTO log
+       (event, stock_id, name, category, keywords, location_id, location, date, creator, change_by, number, minimum_number, deleted)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        "delete",
+        logInfo.stockID,
+        logInfo.articleName,
+        logInfo.category,
+        logInfo.keywords,
+        logInfo.locationID,
+        logInfo.fullpath,
+        logInfo.date,
+        logInfo.creator,
+        logInfo.change_by,
+        logInfo.currentAmount,
+        logInfo.minimumAmount,
+        1,
+      ]
+    );
+  } catch (error) {
+    await cleanUpConnection(connection);
+    throw error;
+  }
+  await connection.commit();
+  await connection.release();
+  return result;
+};
+
 const deleteStorageLocation = async function (locID) {
   const connection = await connPool.getConnection();
   await connection.beginTransaction();
@@ -476,6 +730,31 @@ const finishTask = async function (taskID, username) {
   return "Finished successfully";
 };
 
+const getAllCategories = async function () {
+  const [rows] = await connPool.query(
+    `SELECT *
+     FROM category`
+  );
+  return rows;
+};
+
+const getAllKeywords = async function () {
+  const [rows] = await connPool.query(
+    `SELECT *
+     FROM keyword`
+  );
+  return rows;
+};
+
+const getAllLogs = async function () {
+  const [rows] = await connPool.query(
+    `SELECT *
+     FROM log
+     ORDER BY date DESC;`
+  );
+  return rows;
+};
+
 const getAllStockInfo = async function () {
   const [rows] = await connPool.query(
     `WITH RECURSIVE cte as (
@@ -562,6 +841,22 @@ const getAllStorageLocations = async function () {
   return rows;
 };
 
+const getAllTasks = async function () {
+  const [rows] = await connPool.query(
+    `SELECT *
+     FROM task`
+  );
+  return rows;
+};
+
+const getAllUnits = async function () {
+  const [rows] = await connPool.query(
+    `SELECT *
+     FROM unit`
+  );
+  return rows;
+};
+
 const getCategoryById = async function (categoryID) {
   const [rows] = await connPool.query(
     `SELECT category.id, category.category AS name, IFNULL(counter.article_count, 0) AS article_count
@@ -619,6 +914,69 @@ const getKeywordById = async function (keywordID) {
   return rows;
 };
 
+const getLogsByStockId = async function (stockID) {
+  const [rows, _] = await connPool.query(
+    `SELECT *
+     FROM log
+     WHERE stock_id = ?
+     ORDER BY date DESC`,
+    [stockID]
+  );
+  return rows;
+};
+
+const getStockById = async function (stockID) {
+  const [rows] = await connPool.query(
+    `WITH RECURSIVE cte as (
+       SELECT parentTable.id, parentTable.name, parentTable.parent, parentTable.name AS fullpath
+         FROM inventur.storage_location AS parentTable
+         WHERE parentTable.parent = 0
+         UNION ALL
+         SELECT childTable.id, childTable.name, childTable.parent, CONCAT(parentTable.fullpath, '-', childTable.name) AS fullpath
+         FROM inventur.storage_location AS childTable
+         INNER JOIN cte as parentTable
+         ON parentTable.id = childTable.parent
+         )
+     SELECT
+       stock.id,
+       stock.number,
+       stock.minimum_number,
+       stock.creator,
+       stock.change_by,
+       stock.date,
+       stock.articlenumber,
+       article.name,
+       category.id AS category_id,
+       unit.id AS unit_id,
+       cte.fullpath AS storage_location,
+       cte.parent AS storage_parent,
+       storage_place.storage_location_id,
+       storage_place.place AS storage_place,
+       IFNULL(GROUP_CONCAT(keyword.id SEPARATOR ","), "") AS keyword_ids,
+       IFNULL(GROUP_CONCAT(keyword.keyword SEPARATOR ", "), "") AS keyword
+     FROM
+       stock
+         INNER JOIN
+       article ON article.id = stock.article_id
+         INNER JOIN
+       category ON category.id = article.category_id
+         INNER JOIN
+       unit ON unit.id = article.unit_id
+         INNER JOIN
+       storage_place ON stock.id = storage_place.stock_id
+         INNER JOIN
+       cte ON storage_place.storage_location_id = cte.id
+         LEFT JOIN
+       (keyword_list INNER JOIN keyword
+          ON keyword_list.keyword_id = keyword.id)
+         ON stock.id = keyword_list.stock_id
+     WHERE stock.id = ?
+     GROUP BY stock.id;`,
+    [stockID]
+  );
+  return rows[0];
+};
+
 const getStockIDByArticlename = async function (name) {
   const [rows, fields] = await connPool.query(
     `SELECT stock.id
@@ -635,6 +993,135 @@ const getStockIDByArticlenumber = async function (articlenumber) {
   const [rows, fields] = await connPool.query(
     `SELECT id FROM stock WHERE articlenumber = ?`,
     [articlenumber]
+  );
+  return rows;
+};
+
+const getStorageLocationById = async function (locID) {
+  const [rows] = await connPool.query(
+    `WITH RECURSIVE cte as (
+		 SELECT
+          parentTable.id,
+          parentTable.name,
+          parentTable.parent,
+          parentTable.name AS fullpath
+		    FROM inventur.storage_location AS parentTable
+		    WHERE parentTable.parent = 0
+		    UNION ALL
+		    SELECT
+          childTable.id,
+          childTable.name,
+          childTable.parent,
+          CONCAT(parentTable.fullpath, '-', childTable.name) AS fullpath
+		    FROM
+          inventur.storage_location AS childTable
+		        INNER JOIN
+          cte as parentTable ON parentTable.id = childTable.parent
+		   )
+		 SELECT
+		   storage_location.id,
+		   storage_location.name,
+		   storage_location.parent,
+		   (COUNT(storage_place.id) - COUNT(storage_place.stock_id)) AS empty_places,
+		   storage_location.places,
+		   cte.fullpath
+		 FROM
+		   inventur.storage_location
+		     LEFT JOIN
+		   storage_place ON storage_location.id = storage_place.storage_location_id
+		     INNER JOIN
+		   cte ON storage_location.id = cte.id
+     WHERE storage_location.id = ?
+		 GROUP BY storage_location.id;`,
+    [locID]
+  );
+  return rows[0];
+};
+
+const getStorageLocationPathByStockIDs = async function (stockIDs) {
+  const result = [];
+  for (let i = 0; i < stockIDs.length; i++) {
+    result.push([]);
+  }
+
+  // extra parentheses are needed to use the [] operator on array and not promise object
+  const leafIDs = (
+    await connPool.query(
+      `SELECT storage_location_id AS id
+     FROM storage_place
+     WHERE stock_id in (?)`,
+      [stockIDs]
+    )
+  )[0].map((elem) => elem.id);
+
+  const [locationIDs] = await connPool.query(
+    `WITH RECURSIVE cte AS
+       (
+	       SELECT
+           childTable.id,
+           childTable.name,
+           childTable.parent,
+           childTable.name AS fullpath
+         FROM inventur.storage_location AS childTable
+         WHERE childTable.id in (?)
+         UNION ALL
+         SELECT
+           parentTable.id,
+           parentTable.name,
+           parentTable.parent,
+           CONCAT(
+             parentTable.name,
+             '-',
+             childTable.fullpath) AS fullpath
+         FROM inventur.storage_location AS parentTable
+         INNER JOIN cte as childTable ON childTable.parent = parentTable.id
+       )
+     SELECT id FROM cte`,
+    [leafIDs]
+  );
+  for (const index in locationIDs) {
+    result[index % leafIDs.length].push(locationIDs[index].id);
+  }
+  return result.flat().reverse();
+};
+
+const getStorageLocationsByParentId = async function (parentID) {
+  const [rows] = await connPool.query(
+    `WITH RECURSIVE cte as (
+		 SELECT
+          parentTable.id,
+          parentTable.name,
+          parentTable.parent,
+          parentTable.name AS fullpath
+		    FROM inventur.storage_location AS parentTable
+		    WHERE parentTable.parent = 0
+		    UNION ALL
+		    SELECT
+          childTable.id,
+          childTable.name,
+          childTable.parent,
+          CONCAT(parentTable.fullpath, '-', childTable.name) AS fullpath
+		    FROM
+          inventur.storage_location AS childTable
+		        INNER JOIN
+          cte as parentTable ON parentTable.id = childTable.parent
+		   )
+		 SELECT
+		   storage_location.id,
+		   storage_location.name,
+		   storage_location.parent,
+		   (COUNT(storage_place.id) - COUNT(storage_place.stock_id)) AS empty_places,
+		   storage_location.places,
+		   cte.fullpath
+		 FROM
+		   inventur.storage_location
+		     LEFT JOIN
+		   storage_place ON storage_location.id = storage_place.storage_location_id
+		     INNER JOIN
+		   cte ON storage_location.id = cte.id
+     WHERE storage_location.parent = ?
+		 GROUP BY storage_location.id;`,
+    [parentID]
   );
   return rows;
 };
@@ -722,6 +1209,16 @@ const getTaskEntriesById = async function (taskID) {
   });
 };
 
+const getTaskEntriesByStockId = async function (stockID) {
+  const [rows] = await connPool.query(
+    `SELECT *
+     FROM task_entries
+     WHERE stock_id = ?`,
+    [stockID]
+  );
+  return rows;
+};
+
 const getTaskInfo = async function (taskID, username) {
   const connection = await connPool.getConnection();
   await connection.beginTransaction();
@@ -789,12 +1286,32 @@ const getTaskInfo = async function (taskID, username) {
     );
     result.data = taskEntries;
   } catch (error) {
-    await cleanUpConnection(error);
+    await cleanUpConnection(connection);
     throw error;
   }
   await connection.commit();
   await connection.release();
   return result;
+};
+
+const getTaskStatusById = async function (taskID) {
+  const [rows] = await connPool.query(
+    `SELECT id, status
+     FROM task
+     WHERE id = ?`,
+    [taskID]
+  );
+  return rows[0];
+};
+
+const getUnfinishedTaskEntriesById = async function (taskID) {
+  const [rows] = await connPool.query(
+    `SELECT stock_id, amount, status
+     FROM task_entries
+     WHERE task_id = ? AND status != 0`,
+    [taskID]
+  );
+  return rows;
 };
 
 const getUnitById = async function (unitID) {
@@ -825,7 +1342,7 @@ const resetTaskInfo = async function (taskID, resetProcessor, resetStatus) {
     );
     if (oldData[0].status === 1) {
       result.error = "ERR_ALREADY_FINISHED";
-      cleanUpConnection(connection);
+      await cleanUpConnection(connection);
       return result;
     }
     if (resetProcessor && resetStatus) {
@@ -941,6 +1458,327 @@ const resizeAndRenameStorageLocation = async function (
   await connection.commit();
   await connection.release();
   return result;
+};
+
+const updateStock = async function (
+  stockID,
+  articleName,
+  articleNumber,
+  locationID,
+  amount,
+  minAmount,
+  categoryID,
+  unitID,
+  keywordIDs
+) {
+  const result = { changed: {}, addedKeywords: [], removedKeywords: [] };
+  const connection = await connPool.getConnection();
+  await connection.beginTransaction();
+
+  try {
+    const [[oldData]] = await connection.query(
+      `SELECT
+         article.name AS articleName,
+         article.id AS articleID,
+         stock.articlenumber AS articleNumber,
+         storage_place.id AS storagePlaceID,
+         storage_place.storage_location_id AS locationID,
+         stock.number AS amount,
+         stock.minimum_number AS minAmount,
+         article.category_id AS categoryID,
+         article.unit_id AS unitID,
+         JSON_ARRAYAGG(keyword_list.keyword_id) AS keywordIDs
+       FROM
+         stock
+       INNER JOIN
+         article ON stock.article_id = article.id
+       INNER JOIN
+         storage_place ON stock.id = storage_place.stock_id
+       LEFT JOIN
+         keyword_list ON stock.id = keyword_list.stock_id
+       WHERE stock.id = ?
+       GROUP BY stock.id
+       FOR UPDATE`,
+      [stockID]
+    );
+    if (articleName !== oldData.articleName) {
+      result.changed.articleName = {
+        old: oldData.articleName,
+        new: articleName,
+      };
+    }
+    if (articleNumber !== oldData.articleNumber) {
+      result.changed.articleNumber = {
+        old: oldData.articleNumber,
+        new: articleNumber,
+      };
+    }
+    if (locationID !== oldData.locationID) {
+      result.changed.locationID = { old: oldData.locationID, new: locationID };
+    }
+    if (amount !== oldData.amount) {
+      result.changed.amount = { old: oldData.amount, new: amount };
+    }
+    if (minAmount !== oldData.minAmount) {
+      result.changed.minAmount = { old: oldData.minAmount, new: minAmount };
+    }
+    if (categoryID !== oldData.categoryID) {
+      result.changed.categoryID = { old: oldData.categoryID, new: categoryID };
+    }
+    if (unitID !== oldData.unitID) {
+      result.changed.unitID = { old: oldData.unitID, new: unitID };
+    }
+    const oldKeywords = oldData.keywordIDs.filter((elem) => elem !== null);
+    result.addedKeywords = keywordIDs.filter(
+      (elem) => !oldKeywords.includes(elem)
+    );
+    result.removedKeywords = oldKeywords.filter(
+      (elem) => !keywordIDs.includes(elem)
+    );
+    if (
+      Object.keys(result.changed).length === 0 &&
+      result.addedKeywords.length === 0 &&
+      result.removedKeywords.length === 0
+    ) {
+      result.error = "ERR_NOTHING_TO_DO";
+      await cleanUpConnection(connection);
+      return result;
+    }
+    if (result.removedKeywords.length !== 0) {
+      await connection.query(
+        `DELETE FROM keyword_list
+         WHERE stock_id = ?
+           AND keyword_id IN (?)`,
+        [stockID, result.removedKeywords]
+      );
+    }
+    if (result.addedKeywords.length !== 0) {
+      await connection.query(
+        `INSERT INTO keyword_list
+         (stock_id, keyword_id)
+         VALUES ?`,
+        [result.addedKeywords.map((elem) => [stockID, elem])]
+      );
+    }
+    if (
+      result.changed.categoryID ||
+      result.changed.unitID ||
+      result.changed.articleName
+    ) {
+      await connection.query(
+        `UPDATE article
+         SET category_id = ?, unit_id = ?, name = ?
+         WHERE id = ?`,
+        [categoryID, unitID, articleName, oldData.articleID]
+      );
+    }
+    if (result.changed.locationID) {
+      const [possibleNewStoragePlaces] = await connection.query(
+        `SELECT id
+         FROM storage_place
+         WHERE storage_location_id = ?
+           AND stock_id IS NULL
+         ORDER BY place ASC`,
+        [locationID]
+      );
+      if (possibleNewStoragePlaces.length === 0) {
+        result.error = "ERR_NO_FREE_SPACE";
+        return result;
+      }
+      await connection.query(
+        `UPDATE storage_place
+         SET stock_id = NULL
+         WHERE id = ?`,
+        [oldData.storagePlaceID]
+      );
+      await connection.query(
+        `UPDATE storage_place
+         SET stock_id = ?
+         WHERE id = ?`,
+        [stockID, possibleNewStoragePlaces[0].id]
+      );
+    }
+    if (
+      result.changed.articleNumber ||
+      result.changed.amount ||
+      result.changed.minAmount
+    ) {
+      await connection.query(
+        `UPDATE stock
+         SET articlenumber = ?, number = ?, minimum_number = ?
+         WHERE id = ?`,
+        [articleNumber, amount, minAmount, stockID]
+      );
+    }
+    const [[logInfo]] = await connection.query(
+      `WITH RECURSIVE cte as (
+         SELECT
+            parentTable.id,
+            parentTable.name,
+            parentTable.parent,
+            parentTable.name AS fullpath
+         FROM
+           inventur.storage_location AS parentTable
+         WHERE parentTable.parent = 0
+         UNION ALL
+         SELECT
+           childTable.id,
+           childTable.name,
+           childTable.parent,
+           CONCAT(parentTable.fullpath, '-', childTable.name) AS fullpath
+         FROM
+           inventur.storage_location AS childTable
+            INNER JOIN
+         cte as parentTable ON parentTable.id = childTable.parent
+         )
+       SELECT
+         a.name AS articleName,
+         s.id AS stockID,
+         s.date,
+         s.number AS currentAmount,
+         s.minimum_number AS minimumAmount,
+         s.creator,
+         s.change_by,
+         c.category,
+         IFNULL(GROUP_CONCAT(k.keyword SEPARATOR ", "), "") AS keywords,
+         sp.storage_location_id AS locationID,
+         cte.fullpath
+		   FROM
+		     stock AS s
+		   INNER JOIN
+		     article AS a ON s.article_id = a.id
+		   INNER JOIN
+		     category AS c ON a.category_id = c.id
+		   INNER JOIN
+         storage_place AS sp ON s.id = sp.stock_id
+		   INNER JOIN
+		     cte ON sp.storage_location_id = cte.id
+		   LEFT JOIN
+         (
+           keyword AS k
+             INNER JOIN
+           keyword_list AS kl ON k.id = kl.keyword_id
+         ) ON s.id = kl.stock_id
+       WHERE s.id = ?`,
+      [stockID]
+    );
+    await connection.query(
+      `INSERT INTO log
+       (event, stock_id, name, category, keywords, location_id, location, date, creator, change_by, number, minimum_number, deleted)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        "change",
+        logInfo.stockID,
+        logInfo.articleName,
+        logInfo.category,
+        logInfo.keywords,
+        logInfo.locationID,
+        logInfo.fullpath,
+        logInfo.date,
+        logInfo.creator,
+        logInfo.change_by,
+        logInfo.currentAmount,
+        logInfo.minimumAmount,
+        0,
+      ]
+    );
+  } catch (error) {
+    await cleanUpConnection(connection);
+    throw error;
+  }
+  await connection.commit();
+  await connection.release();
+  return result;
+};
+
+const updateStockAmount = async function (stockID, newAmount, username) {
+  const connection = await connPool.getConnection();
+  await connection.beginTransaction();
+  try {
+    await connection.query(
+      `UPDATE stock
+       SET number = ?, change_by = ?
+       WHERE id = ?`,
+      [stockID, username, newAmount]
+    );
+    const [[logInfo]] = await connection.query(
+      `WITH RECURSIVE cte as (
+         SELECT
+            parentTable.id,
+            parentTable.name,
+            parentTable.parent,
+            parentTable.name AS fullpath
+         FROM
+           inventur.storage_location AS parentTable
+         WHERE parentTable.parent = 0
+         UNION ALL
+         SELECT
+           childTable.id,
+           childTable.name,
+           childTable.parent,
+           CONCAT(parentTable.fullpath, '-', childTable.name) AS fullpath
+         FROM
+           inventur.storage_location AS childTable
+            INNER JOIN
+         cte as parentTable ON parentTable.id = childTable.parent
+         )
+       SELECT
+         a.name AS articleName,
+         s.id AS stockID,
+         s.date,
+         s.number AS currentAmount,
+         s.minimum_number AS minimumAmount,
+         s.creator,
+         s.change_by,
+         c.category,
+         IFNULL(GROUP_CONCAT(k.keyword SEPARATOR ", "), "") AS keywords,
+         sp.storage_location_id AS locationID,
+         cte.fullpath
+		   FROM
+		     stock AS s
+		   INNER JOIN
+		     article AS a ON s.article_id = a.id
+		   INNER JOIN
+		     category AS c ON a.category_id = c.id
+		   INNER JOIN
+         storage_place AS sp ON s.id = sp.stock_id
+		   INNER JOIN
+		     cte ON sp.storage_location_id = cte.id
+		   LEFT JOIN
+         (
+           keyword AS k
+             INNER JOIN
+           keyword_list AS kl ON k.id = kl.keyword_id
+         ) ON s.id = kl.stock_id
+       WHERE s.id = ?`,
+      [stockID]
+    );
+    await connection.query(
+      `INSERT INTO log
+       (event, stock_id, name, category, keywords, location_id, location, date, creator, change_by, number, minimum_number, deleted)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        "change",
+        logInfo.stockID,
+        logInfo.articleName,
+        logInfo.category,
+        logInfo.keywords,
+        logInfo.locationID,
+        logInfo.fullpath,
+        logInfo.date,
+        logInfo.creator,
+        logInfo.change_by,
+        logInfo.currentAmount,
+        logInfo.minimumAmount,
+        0,
+      ]
+    );
+  } catch (error) {
+    await cleanUpConnection(connection);
+    throw error;
+  }
+  await connection.commit();
+  await connection.release();
 };
 
 const updateTaskConfirmedAmounts = async function (
@@ -1333,39 +2171,78 @@ const updateTaskEntryAmount = async function (
 };
 
 const updateTaskStatus = async function (taskID, newStatus, username) {
-  const [rows, fields] = await connPool.query(
-    `UPDATE task
-     SET status = ?, processor = ?
-     WHERE id = ?`,
-    [newStatus, username, taskID]
-  );
-  return rows;
+  const connection = await connPool.getConnection();
+  await connection.beginTransaction();
+
+  let result = {};
+  try {
+    const [oldData] = await connection.query(
+      `SELECT status
+       FROM task
+       WHERE id = ?
+       FOR UPDATE`,
+      [taskID]
+    );
+    if (oldData[0].status === 1) {
+      return { error: "ERR_ALREADY_FINISHED" };
+    }
+    const [rows, fields] = await connection.query(
+      `UPDATE task
+       SET status = ?, processor = ?
+       WHERE id = ?`,
+      [newStatus, username, taskID]
+    );
+    result = rows;
+  } catch (error) {
+    await cleanUpConnection(connection);
+    throw error;
+  }
+  await connection.commit();
+  await connection.release();
+  return result;
 };
 
 module.exports = {
   createCategory,
   createKeyword,
+  createStock,
   createStorageLocation,
   createTask,
   createUnit,
   deleteCategory,
   deleteKeyword,
+  deleteStock,
   deleteStorageLocation,
   deleteTask,
   deleteUnit,
   finishTask,
+  getAllCategories,
+  getAllKeywords,
+  getAllLogs,
   getAllStockInfo,
   getAllStorageLocations,
+  getAllTasks,
+  getAllUnits,
   getCategoryById,
   getInvoiceInfo,
   getKeywordById,
+  getLogsByStockId,
+  getStockById,
   getStockIDByArticlename,
   getStockIDByArticlenumber,
+  getStorageLocationById,
+  getStorageLocationPathByStockIDs,
+  getStorageLocationsByParentId,
   getTaskEntriesById,
+  getTaskEntriesByStockId,
   getTaskInfo,
+  getTaskStatusById,
+  getUnfinishedTaskEntriesById,
   getUnitById,
   resetTaskInfo,
   resizeAndRenameStorageLocation,
+  updateStock,
+  updateStockAmount,
   updateTaskConfirmedAmounts,
   updateTaskEntryAmount,
   updateTaskStatus,

@@ -25,6 +25,19 @@ $.ajax({
   }
 
   data = response.data;
+  data.sort((a, b) => {
+    const locA = a.storage.toUpperCase();
+    const locB = b.storage.toUpperCase();
+
+    if (locA < locB) {
+      return -1;
+    }
+    if (locA > locB) {
+      return 1;
+    }
+    return 0;
+  });
+
   if (response.status === -1) {
     $.ajax({
       url: "/api/updateTaskStatus",
