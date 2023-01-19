@@ -132,9 +132,6 @@ function getledColor(auftragsId) {
  ******************************************************/
 module.exports = function (app) {
   /*******************************************************
-   *                To be refactored                     *
-   *******************************************************/
-  /*******************************************************
    *          Maybe obsolete/Needs checking              *
    *******************************************************/
   //creates new task/mobileList
@@ -670,6 +667,7 @@ module.exports = function (app) {
       });
       return;
     }
+    logger.silly(`User ${req.session.username} has requested all log data.`);
     let response;
     try {
       response = await dbController.getAllLogs();
@@ -678,7 +676,9 @@ module.exports = function (app) {
       logger.error(
         `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${
+          error.stack ? "\n" + error.stack : ""
+        }`
       );
       return;
     }
@@ -719,9 +719,11 @@ module.exports = function (app) {
       response = await dbController.getLogsByStockId(req.params.stockId);
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${
+          error.stack ? "\n" + error.stack : ""
+        }`
       );
       res.status(500).send(error);
       return;
@@ -776,9 +778,11 @@ module.exports = function (app) {
       response = await dbController.getStockIDByArticlenumber(articleNumber);
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${
+          error.stack ? "\n" + error.stack : ""
+        }`
       );
       res.status(500).send(error);
       return;
@@ -870,9 +874,11 @@ module.exports = function (app) {
       );
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${
+          error.stack ? "\n" + error.stack : ""
+        }`
       );
       res.status(500).send(error);
       return;
@@ -887,6 +893,9 @@ module.exports = function (app) {
           httpResponse.message = "An error occurred.";
       }
       res.status(400).send(httpResponse);
+      logger.info(
+        `User ${req.session.username} tried to create a stock entry, but failed with error ${response.error}.`
+      );
       return;
     }
     logger.info(
@@ -1007,9 +1016,11 @@ module.exports = function (app) {
       );
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${
+          error.stack ? "\n" + error.stack : ""
+        }`
       );
       res.status(500).send(error);
       return;
@@ -1040,9 +1051,11 @@ module.exports = function (app) {
       );
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${
+          error.stack ? "\n" + error.stack : ""
+        }`
       );
       res
         .status(500)
@@ -1064,6 +1077,9 @@ module.exports = function (app) {
           break;
       }
       res.status(400).send(httpResponse);
+      logger.info(
+        `User ${req.session.username} tried to edit a stock entry, but failed with error ${response.error}.`
+      );
       return;
     }
     for (const key in response.changed) {
@@ -1095,6 +1111,17 @@ module.exports = function (app) {
         req.originalUrl
       } - Body: ${JSON.stringify(req.body)}`
     );
+    if (req.session.title === "Auszubildender") {
+      logger.warn(
+        `User ${req.session.username} tried to delete a stock entry without proper permissions.`
+      );
+      res.status(403).send({
+        status: 403,
+        code: "ERR_PERMISSION_DENIED",
+        message: "Permission denied",
+      });
+      return;
+    }
     const stockID = parseInt(req.params.id);
     if (isNaN(stockID)) {
       res.status(400).send({
@@ -1108,9 +1135,11 @@ module.exports = function (app) {
       await dbController.deleteStock(stockID);
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${
+          error.stack ? "\n" + error.stack : ""
+        }`
       );
       res
         .status(500)
@@ -1140,17 +1169,14 @@ module.exports = function (app) {
         req.originalUrl
       } - Body: ${JSON.stringify(req.body)}`
     );
-
     const username = req.session.username;
     const data = JSON.parse(req.body.list).map((elem) => {
       elem.stock_id = parseInt(elem.stock_id);
       elem.amount = parseInt(elem.amount);
       return elem;
     });
-
     const orderer = req.body.orderer;
     const deliveryLocation = req.body.delivery_location;
-
     if (data.some((elem) => isNaN(elem.stock_id) || isNaN(elem.amount))) {
       res.status(400).send({
         status: 400,
@@ -1169,14 +1195,19 @@ module.exports = function (app) {
         deliveryLocation
       );
     } catch (error) {
-      res.status(400).send(error);
+      res.status(500).send(error);
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${
+          error.stack ? "\n" + error.stack : ""
+        }`
       );
       return;
     }
+    logger.info(`User ${username} has created a new task.`);
+    // send qr code link
+    res.send(`${config.get("qr.domain")}/mobileList/${response.taskID}`);
     /**
      * LED Request
      **/
@@ -1185,25 +1216,19 @@ module.exports = function (app) {
         response.stockIDs
       );
       //Build JSON for led POST request
-      const storageData = {};
-      storageData.auftrag = response.taskID;
-      storageData.lager = locationArr;
-      await ledRequest(storageData, "POST"); //post storage data to led api
+      const storageData = { auftrag: response.taskID, lager: locationArr };
       console.log("LED request payload (POST): ", storageData);
+      await ledRequest(storageData, "POST"); //post storage data to led api
     } catch (error) {
       logger.error(
         `User: ${req.session.username} - Method: ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error in LED request: ${error}
-        ${error.stack}`
+        } - Body: ${JSON.stringify(req.body)} - Error in LED request: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
     }
     /**
      * END LED Request
      **/
-    logger.info(`User ${username} has created a new task.`);
-    // send qr code link
-    res.send(`${config.get("qr.domain")}/mobileList/${response.taskID}`);
   });
 
   /**
@@ -1259,9 +1284,9 @@ module.exports = function (app) {
       );
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       res.status(500).send(error);
       return;
@@ -1280,33 +1305,44 @@ module.exports = function (app) {
           result.message = "An error has occured.";
       }
       res.status(400).send(result);
+      logger.info(
+        `User ${req.session.username} tried to update a task entries' amount, but failed with error ${response.error}.`
+      );
       return;
     }
-    /**
-     *              LED request
-     **/
-    const unfinishedEntries = await dbController.getUnfinishedTaskEntriesById(
-      taskID
-    );
-
-    const lagerData = { auftrag: taskID, lager: [] };
-    if (unfinishedEntries.length > 0) {
-      const stockIDs = unfinishedEntries.map((elem) => elem.stock_id);
-      const locationArr = await dbController.getStorageLocationPathByStockIDs(
-        stockIDs
-      );
-      lagerData.lager = locationArr;
-    }
-
-    await ledRequest(lagerData, "PUT");
-    console.log("LED request payload (PUT): ", lagerData);
-    /**
-     *              LED request end
-     **/
     res.send({ status: 200, code: "OK", message: "Update successful." });
     logger.info(
       `User ${req.session.username} has updated task entry ${taskEntryID} with actual amount ${amountReal}.`
     );
+    /**
+     *              LED request
+     **/
+    try {
+      const unfinishedEntries = await dbController.getUnfinishedTaskEntriesById(
+        taskID
+      );
+
+      const lagerData = { auftrag: taskID, lager: [] };
+      if (unfinishedEntries.length > 0) {
+        const stockIDs = unfinishedEntries.map((elem) => elem.stock_id);
+        const locationArr = await dbController.getStorageLocationPathByStockIDs(
+          stockIDs
+        );
+        lagerData.lager = locationArr;
+      }
+
+      console.log("LED request payload (PUT): ", lagerData);
+      await ledRequest(lagerData, "PUT");
+    } catch (error) {
+      logger.error(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)} - Error in LED request: ${error}${error.stack ? "\n" + error.stack : ""}`
+      );
+    }
+    /**
+     *              LED request end
+     **/
   });
 
   // get all categories
@@ -1328,7 +1364,7 @@ module.exports = function (app) {
       logger.error(
         `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       return;
     }
@@ -1354,7 +1390,7 @@ module.exports = function (app) {
       logger.error(
         `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       return;
     }
@@ -1380,7 +1416,7 @@ module.exports = function (app) {
       logger.error(
         `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       return;
     }
@@ -1406,7 +1442,7 @@ module.exports = function (app) {
       logger.error(
         `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       return;
     }
@@ -1443,7 +1479,7 @@ module.exports = function (app) {
       logger.error(
         `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       return;
     }
@@ -1480,7 +1516,7 @@ module.exports = function (app) {
       logger.error(
         `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       return;
     }
@@ -1517,7 +1553,7 @@ module.exports = function (app) {
       logger.error(
         `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       return;
     }
@@ -1554,7 +1590,7 @@ module.exports = function (app) {
       logger.error(
         `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       return;
     }
@@ -1578,16 +1614,26 @@ module.exports = function (app) {
         req.originalUrl
       } - Body: ${JSON.stringify(req.body)}`
     );
+    const articleNumber = parseInt(req.body.articlenumber);
+    if (isNaN(articleNumber)) {
+      res.status(400).send({status: 400, code: "ERR_BAD_REQUEST", message: "articlenumber must be an integer."});
+      return;
+    }
+    const newAmount = parseInt(req.body.number);
+    if (isNaN(newAmount) || newAmount < 0) {
+      res.status(400).send({status: 400, code: "ERR_BAD_REQUEST", message: "number must be a positive integer."});
+      return;
+    }
     let response;
     try {
       response = await dbController.getStockIDByArticlenumber(
-        req.body.articlenumber
+        articleNumber
       );
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       res.status(500).send(error);
       return;
@@ -1603,14 +1649,14 @@ module.exports = function (app) {
     try {
       reponse = await dbController.updateStockAmount(
         response[0].id,
-        req.body.number,
+        newAmount
         req.session.username
       );
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       res.status(500).send(error);
       return;
@@ -1650,9 +1696,9 @@ module.exports = function (app) {
       result = await dbController.getTaskInfo(taskID, req.session.username);
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       res.status(500).send(error);
       return;
@@ -1673,18 +1719,16 @@ module.exports = function (app) {
       return;
     }
     logger.silly(
-      `User: ${req.session.username} - Method: ${req.method} - Route: ${
-        req.originalUrl
-      } - Body: ${JSON.stringify(req.body)}`
+      `User: ${req.session.username} has requested all stock information.`
     );
     let result;
     try {
       result = await dbController.getAllStockInfo();
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       res.status(500).send(error);
       return;
@@ -1710,18 +1754,16 @@ module.exports = function (app) {
       return;
     }
     logger.silly(
-      `User: ${req.session.username} - Method: ${req.method} - Route: ${
-        req.originalUrl
-      } - Body: ${JSON.stringify(req.body)}`
+      `User: ${req.session.username} has requested stock information for name ${req.params.name}.`
     );
     let response;
     try {
       response = await dbController.getStockIDByArticlename(req.params.name);
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       res.status(500).send(error);
       return;
@@ -1748,9 +1790,7 @@ module.exports = function (app) {
       return;
     }
     logger.silly(
-      `User: ${req.session.username} - Method: ${req.method} - Route: ${
-        req.originalUrl
-      } - Body: ${JSON.stringify(req.body)}`
+      `User: ${req.session.username} has requested stock information for articlenumber ${req.params.articlenumber}.`
     );
     let response;
     try {
@@ -1759,9 +1799,9 @@ module.exports = function (app) {
       );
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       res.status(500).send(error);
       return;
@@ -1788,18 +1828,16 @@ module.exports = function (app) {
       return;
     }
     logger.silly(
-      `User: ${req.session.username} - Method: ${req.method} - Route: ${
-        req.originalUrl
-      } - Body: ${JSON.stringify(req.body)}`
+      `User: ${req.session.username} has requested all storage locations.`
     );
     let result;
     try {
       result = await dbController.getAllStorageLocations();
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       res.status(500).send(error);
       return;
@@ -1826,6 +1864,17 @@ module.exports = function (app) {
         req.originalUrl
       } - Body: ${JSON.stringify(req.body)}`
     );
+    if (req.session.title === "Auszubildender") {
+      logger.warn(
+        `User ${req.session.username} tried to create a new stock entry without proper permissions.`
+      );
+      res.status(403).send({
+        status: 403,
+        code: "ERR_PERMISSION_DENIED",
+        message: "Permission denied",
+      });
+      return;
+    }
     const locID = parseInt(req.body.id);
     if (isNaN(locID)) {
       res.status(400).send({
@@ -1833,6 +1882,7 @@ module.exports = function (app) {
         code: "ERR_BAD_REQUEST",
         message: "id must be an integer",
       });
+      return;
     }
     const newPlaceAmount = parseInt(req.body.number);
     if (isNaN(newPlaceAmount) && newPlaceAmount >= 0) {
@@ -1850,6 +1900,7 @@ module.exports = function (app) {
         code: "ERR_BAD_REQUEST",
         message: "name is required",
       });
+      return;
     }
     let result;
     try {
@@ -1860,9 +1911,9 @@ module.exports = function (app) {
       );
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       res.status("500").send(error);
       console.log(error);
@@ -1876,25 +1927,23 @@ module.exports = function (app) {
         });
         return;
       }
-      let errorMessage;
+      const response = {status: 400, code: result.error};
       switch (result.error) {
         case "ERR_LOC_NOT_FOUND":
-          errorMessage = "Storage location not found.";
+          response.message = "Storage location not found.";
           break;
         case "ERR_NOT_ENOUGH_EMPTY_PLACES":
-          errorMessage = "There are too many occupied places.";
+          response.message = "There are too many occupied places.";
           break;
         default:
-          errorMessage = "An error has oocured.";
+          response.message = "An error has oocured.";
       }
-      logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
-          req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${result.error}`
-      );
       res
         .status(400)
-        .send({ status: 400, code: result.error, message: errorMessage });
+        .send(response);
+      logger.info(
+        `User ${req.session.username} tried to update a storage location, but failed with error ${result.error}.`
+      );
       return;
     }
     let logString = `User ${req.session.username} edited storage location id ${locID} by: `;
@@ -1962,16 +2011,16 @@ module.exports = function (app) {
       );
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       res.status(500).send(error);
       return;
     }
     if (response.error) {
       res.status(400).send({ status: 400, code: response.error });
-      logger.error(
+      logger.info(
         `User ${req.session.username} tried to update status of task ${taskID} to ${newStatus}, but failed with error ${response.error}.`
       );
       return;
@@ -2033,9 +2082,9 @@ module.exports = function (app) {
       await dbController.deleteTask(taskID);
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       res.status(500).send(error);
       return;
@@ -2043,7 +2092,15 @@ module.exports = function (app) {
     res.send({ status: 200, code: "OK", message: "Deletion successful." });
     logger.info(`User ${req.session.username} has deleted task ${taskID}.`);
     if (taskStatus.status === -1) {
-      await ledRequest({ auftrag: taskID }, "DELETE");
+      try {
+        await ledRequest({ auftrag: taskID }, "DELETE");
+      } catch (error) {
+        logger.error(
+          `User: ${req.session.username} - Method: ${req.method} - Route: ${
+            req.originalUrl
+          } - Body: ${JSON.stringify(req.body)} - Error in LED request: ${error}${error.stack ? "\n" + error.stack : ""}`
+        );
+      }
     }
   });
 
@@ -2077,14 +2134,13 @@ module.exports = function (app) {
       await dbController.finishTask(taskID, req.session.username);
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       res.status(500).send(error);
       return;
     }
-    console.log(await ledRequest({ auftrag: taskID }, "DELETE"));
     res.send({
       status: 200,
       code: "OK",
@@ -2093,6 +2149,15 @@ module.exports = function (app) {
     logger.info(
       `User ${req.session.username} has marked task ${taskID} as finished.`
     );
+    try {
+      await ledRequest({ auftrag: taskID }, "DELETE");
+    } catch (error) {
+      logger.error(
+        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+          req.originalUrl
+        } - Body: ${JSON.stringify(req.body)} - Error in LED request: ${error}${error.stack ? "\n" + error.stack : ""}`
+      );
+    }
   });
 
   /**
@@ -2107,10 +2172,8 @@ module.exports = function (app) {
       });
       return;
     }
-    logger.debug(
-      `User: ${req.session.username} - Method: ${req.method} - Route: ${
-        req.originalUrl
-      } - Body: ${JSON.stringify(req.body)}`
+    logger.silly(
+      `User: ${req.session.username} has requested task entry information for task ID ${req.params.id}.`
     );
     const taskID = parseInt(req.params.id);
     if (isNaN(taskID)) {
@@ -2126,9 +2189,9 @@ module.exports = function (app) {
       result = await dbController.getTaskEntriesById(taskID);
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       res.status(500).send(error);
       return;
@@ -2153,38 +2216,45 @@ module.exports = function (app) {
         req.originalUrl
       } - Body: ${JSON.stringify(req.body)}`
     );
+    if (req.session.title === "Auszubildender") {
+      logger.warn(
+        `User ${req.session.username} tried to create a new category without proper permissions.`
+      );
+      res.status(403).send({
+        status: 403,
+        code: "ERR_PERMISSION_DENIED",
+        message: "Permission denied",
+      });
+      return;
+    }
     const categoryName = req.body.value;
     let result;
     try {
       result = await dbController.createCategory(categoryName);
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       res.status(500).send(error);
       return;
     }
     if (result.error) {
-      let errorMessage;
+      const response = {status: 400, code: result.error };
       switch (result.error) {
         case "ERR_DUPLICATE_NAME":
-          errorMessage = "A category with this name already exists";
+          response.message = "A category with this name already exists";
           break;
         default:
-          errorMessage = "An error has oocured.";
+          response.message = "An error has oocured.";
       }
-      logger.error(
-        `User: ${
-          req.session.username
-        } - Method: Patch - Route: /api/storagePlace - Body: ${JSON.stringify(
-          req.body
-        )} - Error: ${result.error}`
+      logger.info(
+        `User ${req.session.username} tried to create a new category but failed with error ${result.error}.`
       );
       res
         .status(400)
-        .send({ status: 400, code: result.error, message: errorMessage });
+        .send(response);
       return;
     }
     logger.info(
@@ -2205,10 +2275,8 @@ module.exports = function (app) {
       });
       return;
     }
-    logger.debug(
-      `User: ${req.session.username} - Method: ${req.method} - Route: ${
-        req.originalUrl
-      } - Body: ${JSON.stringify(req.body)}`
+    logger.silly(
+      `User ${req.session.username} has requested category information for ID ${req.params.id}.`
     );
     const categoryID = parseInt(req.params.id);
     if (isNaN(categoryID)) {
@@ -2224,9 +2292,9 @@ module.exports = function (app) {
       result = await dbController.getCategoryById(categoryID);
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       res.status(500).send(error);
       return;
@@ -2251,6 +2319,17 @@ module.exports = function (app) {
         req.originalUrl
       } - Body: ${JSON.stringify(req.body)}`
     );
+    if (req.session.title === "Auszubildender") {
+      logger.warn(
+        `User ${req.session.username} tried to delete a category without proper permissions.`
+      );
+      res.status(403).send({
+        status: 403,
+        code: "ERR_PERMISSION_DENIED",
+        message: "Permission denied",
+      });
+      return;
+    }
     const categoryID = parseInt(req.params.id);
     if (isNaN(categoryID)) {
       res.status(400).send({
@@ -2265,9 +2344,9 @@ module.exports = function (app) {
       result = await dbController.deleteCategory(categoryID);
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       res.status(500).send(error);
       return;
@@ -2295,38 +2374,45 @@ module.exports = function (app) {
         req.originalUrl
       } - Body: ${JSON.stringify(req.body)}`
     );
+    if (req.session.title === "Auszubildender") {
+      logger.warn(
+        `User ${req.session.username} tried to create a new unit without proper permissions.`
+      );
+      res.status(403).send({
+        status: 403,
+        code: "ERR_PERMISSION_DENIED",
+        message: "Permission denied",
+      });
+      return;
+    }
     const unitName = req.body.value;
     let result;
     try {
       result = await dbController.createUnit(unitName);
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       res.status(500).send(error);
       return;
     }
     if (result.error) {
-      let errorMessage;
+      const response = { status: 400, code: result.error };
       switch (result.error) {
         case "ERR_DUPLICATE_NAME":
-          errorMessage = "A unit with this name already exists";
+          response.message = "A unit with this name already exists";
           break;
         default:
-          errorMessage = "An error has oocured.";
+          response.message = "An error has oocured.";
       }
-      logger.error(
-        `User: ${
-          req.session.username
-        } - Method: Patch - Route: /api/storagePlace - Body: ${JSON.stringify(
-          req.body
-        )} - Error: ${result.error}`
+      logger.info(
+        `User ${req.session.username} tried to create a unit, but failed with error ${result.error}.`
       );
       res
         .status(400)
-        .send({ status: 400, code: result.error, message: errorMessage });
+        .send(response);
       return;
     }
     logger.info(
@@ -2347,10 +2433,8 @@ module.exports = function (app) {
       });
       return;
     }
-    logger.debug(
-      `User: ${req.session.username} - Method: ${req.method} - Route: ${
-        req.originalUrl
-      } - Body: ${JSON.stringify(req.body)}`
+    logger.silly(
+      `User: ${req.session.username} has requested unit information for ID ${req.params.id}.`
     );
     const unitID = parseInt(req.params.id);
     if (isNaN(unitID)) {
@@ -2366,9 +2450,9 @@ module.exports = function (app) {
       result = await dbController.getUnitById(unitID);
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       res.status(500).send(error);
       return;
@@ -2393,6 +2477,17 @@ module.exports = function (app) {
         req.originalUrl
       } - Body: ${JSON.stringify(req.body)}`
     );
+    if (req.session.title === "Auszubildender") {
+      logger.warn(
+        `User ${req.session.username} tried to delte a unit without proper permissions.`
+      );
+      res.status(403).send({
+        status: 403,
+        code: "ERR_PERMISSION_DENIED",
+        message: "Permission denied",
+      });
+      return;
+    }
     const unitID = parseInt(req.params.id);
     if (isNaN(unitID)) {
       res.status(400).send({
@@ -2407,9 +2502,9 @@ module.exports = function (app) {
       result = await dbController.deleteUnit(unitID);
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       res.status(500).send(error);
       return;
@@ -2437,38 +2532,45 @@ module.exports = function (app) {
         req.originalUrl
       } - Body: ${JSON.stringify(req.body)}`
     );
+    if (req.session.title === "Auszubildender") {
+      logger.warn(
+        `User ${req.session.username} tried to create a new keyword without proper permissions.`
+      );
+      res.status(403).send({
+        status: 403,
+        code: "ERR_PERMISSION_DENIED",
+        message: "Permission denied",
+      });
+      return;
+    }
     const keywordName = req.body.value;
     let result;
     try {
       result = await dbController.createKeyword(keywordName);
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       res.status(500).send(error);
       return;
     }
     if (result.error) {
-      let errorMessage;
+      const response = { status: 400, code: result.error };
       switch (result.error) {
         case "ERR_DUPLICATE_NAME":
-          errorMessage = "A keyword with this name already exists";
+          response.message = "A keyword with this name already exists";
           break;
         default:
-          errorMessage = "An error has oocured.";
+          response.message = "An error has oocured.";
       }
-      logger.error(
-        `User: ${
-          req.session.username
-        } - Method: Patch - Route: /api/storagePlace - Body: ${JSON.stringify(
-          req.body
-        )} - Error: ${result.error}`
+      logger.info(
+        `User ${req.session.username} tried to create a new keyword, but failed with error ${result.error}.`
       );
       res
         .status(400)
-        .send({ status: 400, code: result.error, message: errorMessage });
+        .send(response);
       return;
     }
     logger.info(
@@ -2489,10 +2591,8 @@ module.exports = function (app) {
       });
       return;
     }
-    logger.debug(
-      `User: ${req.session.username} - Method: ${req.method} - Route: ${
-        req.originalUrl
-      } - Body: ${JSON.stringify(req.body)}`
+    logger.silly(
+      `User ${req.session.username} has requested keyword information for ID ${req.params.id}.`
     );
     const keywordID = parseInt(req.params.id);
     if (isNaN(keywordID)) {
@@ -2508,9 +2608,9 @@ module.exports = function (app) {
       result = await dbController.getKeywordById(keywordID);
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       res.status(500).send(error);
       return;
@@ -2535,6 +2635,17 @@ module.exports = function (app) {
         req.originalUrl
       } - Body: ${JSON.stringify(req.body)}`
     );
+    if (req.session.title === "Auszubildender") {
+      logger.warn(
+        `User ${req.session.username} tried to delete a keyword without proper permissions.`
+      );
+      res.status(403).send({
+        status: 403,
+        code: "ERR_PERMISSION_DENIED",
+        message: "Permission denied",
+      });
+      return;
+    }
     const keywordID = parseInt(req.params.id);
     if (isNaN(keywordID)) {
       res.status(400).send({
@@ -2549,9 +2660,9 @@ module.exports = function (app) {
       result = await dbController.deleteKeyword(keywordID);
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       res.status(500).send(error);
       return;
@@ -2579,6 +2690,17 @@ module.exports = function (app) {
         req.originalUrl
       } - Body: ${JSON.stringify(req.body)}`
     );
+    if (req.session.title === "Auszubildender") {
+      logger.warn(
+        `User ${req.session.username} tried to create a new storage location without proper permissions.`
+      );
+      res.status(403).send({
+        status: 403,
+        code: "ERR_PERMISSION_DENIED",
+        message: "Permission denied",
+      });
+      return;
+    }
     const locName = req.body.name;
     if (!locName) {
       res.status(400).send({
@@ -2615,31 +2737,29 @@ module.exports = function (app) {
       );
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       res.status(500).send(error);
       return;
     }
     if (result.error) {
-      let errorMessage;
+      const response = {status: 400, code: result.error};
       switch (result.error) {
         case "ERR_DUPLICATE_NAME":
-          errorMessage =
+          response.message =
             "A storage location with this name and parent node already exists";
           break;
         default:
-          errorMessage = "An error has oocured.";
+          response.message = "An error has oocured.";
       }
-      logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
-          req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${result.error}`
+      logger.info(
+        `User ${req.session.username} tried to create a storage location, but failed with error ${result.error}.`
       );
       res
         .status(400)
-        .send({ status: 400, code: result.error, message: errorMessage });
+        .send(response);
       return;
     }
     logger.info(
@@ -2669,6 +2789,17 @@ module.exports = function (app) {
         req.originalUrl
       } - Body: ${JSON.stringify(req.body)}`
     );
+    if (req.session.title === "Auszubildender") {
+      logger.warn(
+        `User ${req.session.username} tried to delete a storage location without proper permissions.`
+      );
+      res.status(403).send({
+        status: 403,
+        code: "ERR_PERMISSION_DENIED",
+        message: "Permission denied",
+      });
+      return;
+    }
     const locID = parseInt(req.params.id);
     if (isNaN(locID)) {
       res.status(400).send({
@@ -2683,9 +2814,9 @@ module.exports = function (app) {
       result = await dbController.deleteStorageLocation(locID);
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       res.status(500).send(error);
       return;
@@ -2717,6 +2848,17 @@ module.exports = function (app) {
         req.originalUrl
       } - Body: ${JSON.stringify(req.body)}`
     );
+    if (req.session.title === "Auszubildender") {
+      logger.warn(
+        `User ${req.session.username} tried to reset task info without proper permissions.`
+      );
+      res.status(403).send({
+        status: 403,
+        code: "ERR_PERMISSION_DENIED",
+        message: "Permission denied",
+      });
+      return;
+    }
     const taskID = parseInt(req.body.taskID);
     if (isNaN(taskID)) {
       res.status(400).send({
@@ -2746,14 +2888,15 @@ module.exports = function (app) {
       );
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       res.status(500).send(error);
       return;
     }
     if (result.error) {
+      // TODO: send proper human-readable error messages as well
       res.status(400).send({
         status: 400,
         code: result.error,
@@ -2793,6 +2936,17 @@ module.exports = function (app) {
         req.originalUrl
       } - Body: ${JSON.stringify(req.body)}`
     );
+    if (req.session.title === "Auszubildender") {
+      logger.warn(
+        `User ${req.session.username} tried to override task amounts without proper permissions.`
+      );
+      res.status(403).send({
+        status: 403,
+        code: "ERR_PERMISSION_DENIED",
+        message: "Permission denied",
+      });
+      return;
+    }
     const taskID = req.body.taskID;
     if (isNaN(taskID)) {
       res.status(400).send({
@@ -2817,14 +2971,15 @@ module.exports = function (app) {
       );
     } catch (error) {
       logger.error(
-        `User: ${req.session.username} - Method: ${req.method} - Route: ${
+        `User ${req.session.username} - Method ${req.method} - Route: ${
           req.originalUrl
-        } - Body: ${JSON.stringify(req.body)} - Error: ${error}`
+        } - Body: ${JSON.stringify(req.body)} - Error: ${error}${error.stack ? "\n" + error.stack : ""}`
       );
       res.status(500).send(error);
       return;
     }
     if (result.error) {
+      // TODO: send proper human-readable error messages as well
       res.status(400).send({
         status: 400,
         code: result.error,
@@ -2844,7 +2999,7 @@ module.exports = function (app) {
       code: "OK",
       message: result,
     });
-    // FIXME: create proper log entry
+    // TODO: create proper log entry
     logger.info(
       `User ${req.session.username} has edited actual amounts of finished task ${taskID}.`
     );
