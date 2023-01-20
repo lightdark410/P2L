@@ -115,11 +115,11 @@ const submitFormByEnterKey = function (event) {
   }
 };
 
-let KeywordsAutocomplete;
+let keywordsAutocomplete;
 
 const keywordsSelectOptions = {
   options: [],
-  value: "",
+  value: [],
   multiple: true,
   autocomplete: true,
   icon: "fa fa-times",
@@ -250,7 +250,7 @@ getCategoryList().then((response) => {
   for (const cat of response.data) {
     popup
       .find("#category")
-      .append($("<option></option>").val(cat.category).html(cat.category));
+      .append($("<option></option>").val(cat.id).html(cat.category));
   }
 });
 
@@ -268,7 +268,7 @@ getKeywordList().then((response) => {
   for (const keyword of response.data) {
     keywordsSelectOptions.options.push({
       label: keyword.keyword,
-      value: keyword.keyword,
+      value: keyword.id.toString(),
       "data-id": keyword.id,
     });
   }
@@ -456,8 +456,8 @@ $("#New").click(function () {
 
   //apply multi dropdown field for keywords
   $(".select-pure__select").remove();
-  keywordsSelectOptions.value = "";
-  KeywordsAutocomplete = new SelectPure(
+  keywordsSelectOptions.value = [];
+  keywordsAutocomplete = new SelectPure(
     ".autocomplete-select",
     keywordsSelectOptions
   );
@@ -482,8 +482,9 @@ $("#Edit").click(function () {
   }).then((response) => {
     //apply multi dropdown field for keywords
     $(".select-pure__select").remove();
-    keywordsSelectOptions.value = response.keyword?.split(",") ?? "";
-    KeywordsAutocomplete = new SelectPure(
+    keywordsSelectOptions.value =
+      response.keyword_ids?.split(",").filter((elem) => elem !== "") ?? [];
+    keywordsAutocomplete = new SelectPure(
       ".autocomplete-select",
       keywordsSelectOptions
     );
@@ -497,7 +498,7 @@ $("#Edit").click(function () {
     $("#number").val(response.number);
     $("#articlenumber").val(response.articlenumber);
     $("#minimum_number").val(response.minimum_number);
-    $("#category").val(response.category);
+    $("#category").val(response.category_id);
     $("#unit").val(response.unit_id);
   });
 
@@ -643,38 +644,53 @@ $("body").on("submit", "#PopUp form", function (event) {
   const minimum_number = $("#minimum_number").val();
   const category = $("#category").val();
   const keywords = $(".select-pure__selected-label");
-  const keywordArr = [];
+  const keywordArr = keywordsAutocomplete.value();
   const unit = $("#unit").val();
-  $(keywords).each(function (i) {
-    keywordArr.push($(this).first().text());
-  });
 
   //only submit if a location was selected
   if (location > 0) {
-    const formdata = `id=${id}&articlenumber=${articlenumber}&name=${name}&location=${location}&number=${number}&minimum_number=${minimum_number}&category=${category}&keywords=${keywordArr}&unit=${unit}`;
+    // const formdata = `id=${id}&articlenumber=${articlenumber}&name=${name}&location=${location}&number=${number}&minimum_number=${minimum_number}&category=${category}&keywords=${keywordArr}&unit=${unit}`;
+    const formdata = {
+      id: id,
+      articlenumber: articlenumber,
+      name: name,
+      location: location,
+      number: number,
+      minimum_number: minimum_number,
+      category: category,
+      keywords: keywordArr,
+      unit: unit,
+    };
     if (id === "") {
-      $.post("/api/stock", formdata, function (response) {
-        //load new data
-        table.ajax.reload();
-        //close popup
-        $("#mdiv").click();
+      $.ajax({
+        type: "POST",
+        url: "/api/stock",
+        data: JSON.stringify(formdata),
+        processData: false,
+        contentType: "application/json",
+        success: function (response) {
+          //load new data
+          table.ajax.reload();
+          //close popup
+          $("#mdiv").click();
 
-        //find and show the new row
-        table.order([1, "desc"]).draw();
+          //find and show the new row
+          table.order([1, "desc"]).draw();
 
-        $("#rootUL").text("");
-        getStorageLocationTree().then((response) => {
-          stammdatenResult.storage_location = response.data;
-          buildNodeTree(response.data);
-        });
+          $("#rootUL").text("");
+          getStorageLocationTree().then((response) => {
+            stammdatenResult.storage_location = response.data;
+            buildNodeTree(response.data);
+          });
+        },
       });
     } else {
       $.ajax({
         type: "PATCH",
         url: "/api/stock",
-        data: formdata,
+        data: JSON.stringify(formdata),
         processData: false,
-        contentType: "application/x-www-form-urlencoded",
+        contentType: "application/json",
         success: function () {
           //load new data
           table.ajax.reload();
