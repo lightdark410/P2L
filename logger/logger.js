@@ -6,13 +6,13 @@ const logFormat = printf(({ level, message, timestamp }) => {
 });
 
 const logger = createLogger({
-  level: "debug",
+  level: "silly",
   format: combine(timestamp({ format: "YYYY-MM-DD HH:mm:ss" }), logFormat),
   transports: [
     new transports.DailyRotateFile({
       filename: "logs/info-%DATE%.log",
       level: "debug",
-      maxFiles: "14d",
+      maxFiles: "14",
     }),
   ],
 });
