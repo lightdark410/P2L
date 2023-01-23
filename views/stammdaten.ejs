@@ -37,13 +37,13 @@
                 <button id="CreateNode" class="btn btn-success mb-3" style="color: black"><i class="fas fa-certificate"></i> Erstellen</button>
                 <button id="EditNode" class="btn btn-warning mb-3" disabled ><i class="fas fa-pen"></i> Bearbeiten</button>
                 <button id="DeleteNode" class="btn btn-danger mb-3" style="color: black" disabled><i class="fas fa-times"></i> Löschen</button>
+                <button id="CreateQRCode" class="btn btn-danger mb-3 QRCodeBtn" style="color: black" disabled><i class="fas fa-times"></i> QRCode</button>
                 <% } %>
                 <div id="locationUL" class="border">
 
                 </div>
                 </ul>
             </div>
-
 
         </div>
         <div class="Stamm_div col-6">
@@ -111,6 +111,7 @@
 
     </footer>
     <%- include('scripts'); %>
+    <script src="../assets/js/qrcode.min.js"></script>
     <script src="../assets/js/stammdaten.js"></script>
     <script src="../assets/js/masterdata_location.js"></script>
 

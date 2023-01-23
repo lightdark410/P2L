@@ -186,3 +186,13 @@ ul,
 #ortTable > tbody > tr > td:nth-child(2):hover:after {
   cursor: pointer !important;
 }
+
+.QRCodeBtn{
+  background-color: #3980d1 !important;
+  border-color: #3980d1 !important;
+}
+
+#QR{
+  height: 256px;
+  width: 256px;
+}

@@ -198,6 +198,8 @@ $("#locationUL").on("click", ".caret", function () {
 
   $("#EditNode").prop("disabled", false);
   $("#DeleteNode").prop("disabled", false);
+  $("#CreateQRCode").prop("disabled", false);
+
 
   if ($(this).hasClass("caret-down")) {
     displayChildNodes($(this));
@@ -292,6 +294,69 @@ $("#EditNode").click(function () {
     });
 });
 
+//displays QR popup
+$("#CreateQRCode").click(function () {
+  $(".CreateNode").remove();
+  $(".editForm").remove();
+
+  const selectedText = $(".selectedNode").text();
+  const selectedId = $(".selectedNode").data("id");
+  
+
+  let popUpMid = ``;
+
+  
+    popUpMid = `
+        <div id="QR"></div>
+        <div><a href="/inventur/${selectedId}">/inventur/${selectedId}</a></div>
+        `;
+  
+
+  let popUp =
+    `
+        <div class="popup">
+            <form>
+            <div class="popup_top">
+                
+                <div id="mdiv">
+                    <div class="mdiv">
+                        <div class="md"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="popup_mid">
+            ` +
+    popUpMid +
+    `
+            </div>
+            <div class="popup_foot"></div>
+            </form>
+        </div>
+    `;
+
+  let cover = '<div class="cover"></div>';
+
+
+  $("body").prepend(
+    $(cover + popUp)
+      .hide()
+      .fadeIn()
+  );
+
+  new QRCode(document.getElementById("QR"), `/inventur/${selectedId}`);
+
+  $(".popup_mid > .cancel").click(function () {
+    $(".cover").fadeOut();
+    $(".popup").fadeOut();
+  });
+
+  
+});
+
+
+
+
+
 //displays delete popup
 $("#DeleteNode").click(function () {
   $(".CreateNode").remove();
@@ -299,8 +364,7 @@ $("#DeleteNode").click(function () {
 
   const selectedText = $(".selectedNode").text();
   const selectedId = $(".selectedNode").data("id");
-  const selectedEmptyPlaces =
-    $(".selectedNode").parent().find(".places").data("empty_places") ?? 0;
+  const selectedEmptyPlaces = $(".selectedNode").parent().find(".places").data("empty_places") ?? 0;
   const places =
     $(".selectedNode").parent().find(".places").data("places") ?? 0;
 
@@ -437,5 +501,6 @@ $("body").on("click", function (e) {
     $("span").removeClass("selectedNode");
     $("#EditNode").prop("disabled", true);
     $("#DeleteNode").prop("disabled", true);
+    $("#CreateQRCode").prop("disabled", true);
   }
 });
