@@ -38,12 +38,15 @@ function getStockById(id) {
   return new Promise((resolve, reject) => {
     con.query(
       `
-            SELECT article.name, unit.id as unit_id, category.category, stock.*
+            SELECT article.name, unit.id as unit_id, category.id as category_id, stock.*, IFNULL(GROUP_CONCAT(keyword_list.keyword_id SEPARATOR ","), "") AS keyword_ids
             FROM stock
             LEFT JOIN article ON article.id = stock.article_id
             LEFT JOIN category ON category.id = article.category_id
             LEFT JOIN unit ON unit.id = article.unit_id
-            WHERE stock.id = ? LIMIT 1
+            LEFT JOIN keyword_list ON stock.id = keyword_list.stock_id
+            WHERE stock.id = ?
+            GROUP BY stock.id
+            LIMIT 1
           `,
       [id],
       function (err, result) {
@@ -131,7 +134,7 @@ function insertStock(
 ) {
   return new Promise((resolve, reject) => {
     con.query(
-      `INSERT INTO stock 
+      `INSERT INTO stock
         (
             article_id,
             articlenumber,

@@ -160,7 +160,13 @@ let taskTable = $("#task").DataTable({
       defaultContent: "",
     },
     { data: "id", className: "task-id" },
-    { data: "date", className: "task-date" },
+    {
+      data: "date",
+      className: "task-date",
+      render: function (data, type, row) {
+        return new Date(data).toLocaleString();
+      },
+    },
     { data: "order_number", className: "task-order-number" },
     { data: "creator", className: "task-creator" },
     { data: "processor", className: "task-processor" },
