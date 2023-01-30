@@ -1308,7 +1308,7 @@ const getUnfinishedTaskEntriesById = async function (taskID) {
   const [rows] = await connPool.query(
     `SELECT stock_id, amount, status
      FROM task_entries
-     WHERE task_id = ? AND status != 0`,
+     WHERE task_id = ? AND status = 0`,
     [taskID]
   );
   return rows;

@@ -1266,7 +1266,7 @@ module.exports = function (app) {
       return;
     }
     const amountReal = parseInt(req.body.amount_real);
-    if (isNaN(amountReal) && amountReal <= 0) {
+    if (isNaN(amountReal) || amountReal < 0) {
       res.status(400).send({
         status: 400,
         code: "ERR_BAD_REQUEST",
@@ -1885,7 +1885,7 @@ module.exports = function (app) {
       return;
     }
     const newPlaceAmount = parseInt(req.body.number);
-    if (isNaN(newPlaceAmount) && newPlaceAmount >= 0) {
+    if (isNaN(newPlaceAmount) || newPlaceAmount < 0) {
       res.status(400).send({
         status: 400,
         code: "ERR_BAD_REQUEST",
