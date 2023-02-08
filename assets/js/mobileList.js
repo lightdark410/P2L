@@ -51,7 +51,7 @@ $.ajax({
   if (response.status === 0) {
     let ledColor;
     try {
-      ledColor = JSON.parse(req.color);
+      ledColor = JSON.parse(response.color);
     } catch (error) {
       ledColor = "";
     }
@@ -133,7 +133,8 @@ function loadLedColor(color) {
       `rgb(${color[0]}, ${color[1]}, ${color[2]})`
     );
   } else {
-    $("#led").remove();
+    //$("#led").remove();
+    $("#led").css("background-color", "black");
   }
 }
 
